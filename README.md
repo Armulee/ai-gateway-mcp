@@ -14,64 +14,69 @@
 </p>
 
 <p align="center">
-  <a href="#set-up">Set up</a> ·
-  <a href="#the-setup-page">The setup page</a> ·
+  <a href="#what-you-can-do">What you can do</a> ·
+  <a href="#get-started-in-3-steps">Get started</a> ·
+  <a href="#what-it-costs">What it costs</a> ·
   <a href="#tools">Tools</a> ·
-  <a href="#configuration">Configuration</a> ·
-  <a href="#security-and-costs">Security</a> ·
-  <a href="#local-development">Local development</a>
+  <a href="#keep-it-safe">Keep it safe</a> ·
+  <a href="#reference">Reference</a>
 </p>
 
 <br>
 
-AI Gateway MCP is an open-source MCP server that lets Claude, ChatGPT and other MCP clients call any model on [Vercel AI Gateway](https://vercel.com/docs/ai-gateway), for text, images and video.
+**AI Gateway MCP lets you use any model on [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) (text, images and video) right inside Claude, ChatGPT and other chat apps.** You run your own copy on your Vercel account, so every call is billed to your own AI Gateway credits at the provider's price. No subscription, no API key, and nobody else holds your money.
 
-You deploy your own copy to your Vercel account, so every call is billed to **your own AI Gateway credits**. The deployment authenticates to AI Gateway with its OIDC token, so you don't need an API key, and nobody else ever holds your money or keys.
-
-This repo is the app you deploy: the MCP server and its setup page. The project's website lives in [armulee/ai-gateway-mcp-landing](https://github.com/armulee/ai-gateway-mcp-landing).
+> **What is MCP?** The Model Context Protocol is how chat apps like Claude and ChatGPT plug in outside tools. This project is one of those tools: once you add its link, your chat app can call any AI Gateway model for you.
 
 <p align="center">
   <img src="docs/readme/how-it-works.svg" width="100%" alt="How it works: you ask in Claude, ChatGPT or any MCP app; your own copy on Vercel checks the secret and calls AI Gateway with its OIDC token, billed to your credits; any text, image or video model answers.">
 </p>
 
-## Why Vercel AI Gateway
+## What you can do
 
-This project is not made by or affiliated with Vercel. It uses AI Gateway because of how it prices models. In Vercel's own words ([AI Gateway pricing](https://vercel.com/docs/ai-gateway/pricing)):
+Ask in plain words. Your chat app picks the tool and the model, or you name one.
 
-> AI Gateway charges no markup and no platform fee on tokens. You pay the provider's list price on a pay-as-you-go basis.
+<table>
+  <tr>
+    <th width="33%">Text</th>
+    <th width="33%">Image</th>
+    <th width="33%">Video</th>
+  </tr>
+  <tr>
+    <td valign="top"><i>"Ask GPT-5 mini and Gemini 3 Flash the same question and compare their answers."</i></td>
+    <td valign="top"><i>"Make a poster of a lighthouse at night with Flux, 3:4."</i></td>
+    <td valign="top"><i>"Make a 5-second video of waves at sunset with Veo."</i></td>
+  </tr>
+  <tr>
+    <td valign="top">The answer, plus what it cost.</td>
+    <td valign="top">The image inline, plus a download link.</td>
+    <td valign="top">A link to the video when it is ready.</td>
+  </tr>
+  <!-- Chat screenshots go here, one per column:
+  <tr>
+    <td><img src="docs/readme/chat-text.png" alt="Claude comparing two models' answers through AI Gateway MCP"></td>
+    <td><img src="docs/readme/chat-image.png" alt="Claude returning an image made with Flux through AI Gateway MCP"></td>
+    <td><img src="docs/readme/chat-video.png" alt="Claude returning a video made with Veo through AI Gateway MCP"></td>
+  </tr>
+  -->
+</table>
 
-- **No plan.** There is no subscription. You top up AI Gateway credits on your own Vercel account (or turn on auto top-up) and each request uses what that model costs. Every team also gets free monthly credits for a set of models.
-- **Every kind of model.** Text, image and video models from dozens of providers, all behind one connector.
-- **Free and open source.** I charge nothing and never see your money or keys. The code is MIT licensed. Version 1 means you run your own copy, so I made setup as short as I could: the goal is for everyone to use AI at the price providers actually set.
+## Get started in 3 steps
 
-## What you need
+You need a [Vercel](https://vercel.com) account and a GitHub, GitLab or Bitbucket account.
 
-- A [Vercel](https://vercel.com) account. Your copy of this project and your credits live there.
-- A GitHub, GitLab or Bitbucket account. The Deploy button copies the code into it.
-- AI Gateway credits for the models you use (free monthly credits cover a set of models).
+1. **Deploy.** Click the button below. Vercel copies this repo to your account, asks for a [`MCP_SECRET`](#mcp_secret) and sets up file storage for you.
 
-## Set up
+   <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Farmulee%2Fai-gateway-mcp&project-name=gateway-mcp&repository-name=gateway-mcp&env=MCP_SECRET&envDescription=A%20long%20random%20secret%20%28at%20least%2032%20characters%29.%20It%20becomes%20part%20of%20your%20connector%20URL%2C%20so%20keep%20it%20private.%20Generate%20one%20with%3A%20openssl%20rand%20-hex%2032&envLink=https%3A%2F%2Fgithub.com%2Farmulee%2Fai-gateway-mcp%23mcp_secret&stores=%5B%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22private%22%7D%5D"><img src="https://vercel.com/button" alt="Deploy with Vercel" height="32"></a>
 
-1. **Click Deploy.** Vercel copies this repo to your GitHub, GitLab or Bitbucket account and asks for `MCP_SECRET` (see [below](#mcp_secret)). It also creates a **private Vercel Blob store** and connects it to the project, so there is nothing else to configure.
-2. **Open your deployment** at `https://<your-project>.vercel.app`. Its home page is a step-by-step guide that checks your copy (secret, AI Gateway, Blob), shows which steps are done and tells you what to do next.
-3. **Paste your secret** there to build your connector URL, then click **Test connection**. The URL is assembled in your browser and has this form:
-   ```
-   https://<your-project>.vercel.app/mcp/<MCP_SECRET>
-   ```
-4. **Add it as a connector:**
-   - **Claude:** Settings → Connectors → Add custom connector. Paste the URL and leave authentication empty.
-   - **ChatGPT and other MCP clients:** add a custom MCP server (Streamable HTTP) using the same URL.
-5. **Set an AI Gateway budget** in the Vercel dashboard (AI Gateway → budgets). This budget is the real spending limit.
+2. **Open your copy** at `https://<your-project>.vercel.app`. Its home page walks you through the rest: it checks your setup, builds your link and tests it.
+3. **Add the link to your chat app.** In Claude: Settings → Connectors → Add custom connector, paste the link, leave authentication empty. ChatGPT and other apps take it as a custom MCP server (Streamable HTTP).
 
-### MCP_SECRET
+Then set a **spend budget** in the Vercel dashboard (AI Gateway → budgets). It is the real limit on what your link can spend.
 
-`MCP_SECRET` is a random value of at least 32 characters, for example the output of `openssl rand -hex 32`. Use URL-safe characters only; hex is ideal. The setup page can also generate one for you.
+### The setup page
 
-claude.ai custom connectors only support OAuth or no auth, and they can't send custom headers, so the secret goes in the URL path. If `MCP_SECRET` is missing or shorter than 32 characters, the MCP endpoint is disabled. A wrong secret gets the same 404 page as any unknown URL.
-
-## The setup page
-
-Every deployment's home page is a guide to its own setup. It checks your copy live, ticks off what is done and keeps only the step you are on open.
+Every copy's home page is a guide to its own setup. It checks your copy live, ticks off what is done and keeps only the step you are on open.
 
 <p align="center">
   <img src="docs/readme/intro.webp" width="100%" alt="The setup page loading: a ring of six steps draws itself in around the count of steps done.">
@@ -104,6 +109,25 @@ Every deployment's home page is a guide to its own setup. It checks your copy li
   </tr>
 </table>
 
+## What it costs
+
+There is no plan and no fee from this project. You pay each provider's list price through your own AI Gateway credits, and every Vercel team gets free monthly credits for a set of models. In Vercel's words ([AI Gateway pricing](https://vercel.com/docs/ai-gateway/pricing)):
+
+> AI Gateway charges no markup and no platform fee on tokens. You pay the provider's list price on a pay-as-you-go basis.
+
+Some list prices from the catalog (October 2026; ask `list_models` for today's):
+
+| You ask for | Model | Price |
+| --- | --- | --- |
+| A 500-word answer | `openai/gpt-5-mini` | about $0.002 |
+| A 500-word answer | `anthropic/claude-sonnet-4.5` | about $0.01 |
+| An image | `recraft/recraft-v4.1-flash` | $0.007 |
+| An image | `bfl/flux-pro-1.1` | $0.04 |
+| A 5-second 720p video | `bytedance/seedance-v1.0-pro-fast` | about $0.10 |
+| A 5-second 720p video | `google/veo-3.1-fast-generate-001` | $0.50 to $0.75 |
+
+This project is free and MIT licensed, and not made by or affiliated with Vercel. Version 1 means you run your own copy, so setup is as short as I could make it: the goal is for everyone to use AI at the price providers actually set.
+
 ## Tools
 
 | Tool | What it does |
@@ -116,7 +140,45 @@ Every deployment's home page is a guide to its own setup. It checks your copy li
 
 Errors are written to be readable and always name the model. They cover unknown models, missing credits, video not being available to your team, authentication failures and provider errors.
 
-## Configuration
+## Keep it safe
+
+- **Your link works like a password that spends money.** Anyone who has it can use your AI Gateway credits. Keep it private.
+- **Set an AI Gateway budget.** Only Vercel's budget limits your total spend.
+- **If the link leaks, change `MCP_SECRET`** in Project Settings → Environment Variables and redeploy. The old link stops working at once.
+
+<details>
+<summary><b>More on security and costs</b></summary>
+
+<br>
+
+- **Your connector URL works like a password that spends money.** Anyone who has it can use your AI Gateway credits and generate content under your Vercel account. Keep it private.
+- **Set an AI Gateway budget.** This server caps each call (`MAX_VIDEO_SECONDS`, `MAX_IMAGES_PER_CALL`, `ALLOWED_MODELS`), but only Vercel's budget limits your total spend.
+- **Rotate the secret if the URL leaks.** Change `MCP_SECRET` in Project Settings → Environment Variables and redeploy. The old URL stops working right away, and any unfinished video jobs are abandoned.
+- **Files are private, but links are not.** Images and videos are stored in a private Blob store. Anyone who holds one of the links returned in chat can open that file until the link expires (`SIGNED_URL_TTL_HOURS`).
+- **Logs:** this app never logs the secret or request URLs. However, Vercel's own request logs record request paths, so members of your Vercel team can see the secret there.
+- **Video costs more.** Video generation needs enough paid AI Gateway credits for the model you choose. Check prices with `list_models`.
+- Generated media is stored exactly as the provider returns it. Watermarks and metadata are never removed.
+
+</details>
+
+## Reference
+
+### MCP_SECRET
+
+Your connector link is your deployment's address plus the secret. The setup page builds it in your browser:
+
+```
+https://<your-project>.vercel.app/mcp/<MCP_SECRET>
+```
+
+`MCP_SECRET` is a random value of at least 32 characters, for example the output of `openssl rand -hex 32`. Use URL-safe characters only; hex is ideal. The setup page can also generate one for you.
+
+claude.ai custom connectors only support OAuth or no auth, and they can't send custom headers, so the secret goes in the URL path. If `MCP_SECRET` is missing or shorter than 32 characters, the MCP endpoint is disabled. A wrong secret gets the same 404 page as any unknown URL.
+
+<details>
+<summary><b>Configuration</b></summary>
+
+<br>
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
@@ -129,19 +191,12 @@ Errors are written to be readable and always name the model. They cover unknown 
 
 Vercel sets the Blob variables (`BLOB_STORE_ID`, plus `BLOB_READ_WRITE_TOKEN` as a fallback) and `VERCEL_OIDC_TOKEN` automatically when the store is connected. If your project has no Blob store (for example, you imported the repo yourself), text and images still work; for video and image links, create a private Blob store under the project's Storage tab, connect it and redeploy. The setup page links there.
 
-## Security and costs
+</details>
 
-**Read this before sharing anything.**
+<details>
+<summary><b>Local development</b></summary>
 
-- **Your connector URL works like a password that spends money.** Anyone who has it can use your AI Gateway credits and generate content under your Vercel account. Keep it private.
-- **Set an AI Gateway budget.** This server caps each call (`MAX_VIDEO_SECONDS`, `MAX_IMAGES_PER_CALL`, `ALLOWED_MODELS`), but only Vercel's budget limits your total spend.
-- **Rotate the secret if the URL leaks.** Change `MCP_SECRET` in Project Settings → Environment Variables and redeploy. The old URL stops working right away, and any unfinished video jobs are abandoned.
-- **Files are private, but links are not.** Images and videos are stored in a private Blob store. Anyone who holds one of the links returned in chat can open that file until the link expires (`SIGNED_URL_TTL_HOURS`).
-- **Logs:** this app never logs the secret or request URLs. However, Vercel's own request logs record request paths, so members of your Vercel team can see the secret there.
-- **Video costs more.** Video generation needs enough paid AI Gateway credits for the model you choose. Check prices with `list_models`.
-- Generated media is stored exactly as the provider returns it. Watermarks and metadata are never removed.
-
-## Local development
+<br>
 
 ```bash
 npm install
@@ -158,13 +213,20 @@ npx @modelcontextprotocol/inspector@latest
 
 Choose **Streamable HTTP** and connect to `http://localhost:3000/mcp/<MCP_SECRET>`.
 
-## How it works
+</details>
+
+<details>
+<summary><b>How it works inside</b></summary>
+
+<br>
 
 - **Setup page:** `/` is a guide for your deployment: live checks, one step open at a time, how to add the link to each chat app, and your usage. Black and white, drawn in code, with motion that rests finished under reduced motion. Dashboard links go straight to your project, using the team and project names in the deployment's OIDC token. `/setup` redirects there.
 - **Usage stats:** every call from this server carries AI Gateway tags (`ai-gateway-mcp`, `tool:<name>`, `client:<app>`, the app guessed from its User-Agent). The setup page reads AI Gateway's own spend report filtered by those tags, so there is no database. You unlock it with your secret, which is sent only to this deployment (`POST /api/stats`) and can be remembered in your browser. Credits shown are your whole team's balance.
 - **Stack:** Next.js (App Router) and TypeScript. MCP is served over Streamable HTTP using [`mcp-handler`](https://github.com/vercel/mcp-handler) v2, and model calls go through the [AI SDK](https://ai-sdk.dev) with the AI Gateway provider.
 - **Secret check:** `proxy.ts` rejects a wrong secret before routing by rewriting it to the standard 404 page. The route handler then checks the secret again, using a constant-time comparison.
 - **Video jobs:** jobs don't need a database. Each `job_id` holds the model and the AI Gateway job id, signed with a key derived from `MCP_SECRET` so it can't be forged.
+
+</details>
 
 ## License
 

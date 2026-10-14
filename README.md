@@ -135,8 +135,18 @@ This project is free and MIT licensed, and not made by or affiliated with Vercel
 | `list_models({ type?, query? })` | Lists the models in the AI Gateway catalog with their type, capabilities (`t2v`, `i2v`, …) and price. |
 | `generate_text({ model, prompt, system?, max_tokens? })` | Generates text. Returns the text plus its cost when AI Gateway reports one. |
 | `generate_image({ model, prompt, size_or_aspect?, n? })` | Works with image models (`bfl/flux-2-pro`, `openai/gpt-image-2`, …) and with image-capable LLMs (`google/gemini-3-pro-image`). Images come back inline. They are also saved to Blob and returned as expiring links. |
-| `start_video({ model, prompt, image_url?, duration?, aspect_ratio? })` | Starts an asynchronous AI Gateway video job and returns a `job_id` right away. |
-| `get_video({ job_id })` | Reports whether the job is still generating. When it finishes, the video is copied into your Blob store and you get an expiring link. Call it again later for a fresh link. |
+| `start_video({ model, prompt, image_url?, end_image_url?, reference_urls?, duration?, aspect_ratio?, sound? })` | Starts an asynchronous AI Gateway video job and returns a `job_id` right away. Text-to-video, image-to-video, first-to-last frame (`end_image_url`), and reference-to-video with up to 4 pictures or clips of your characters (`reference_urls`). |
+| `motion_control({ image_url, video_url, prompt?, orientation?, quality?, keep_sound? })` | Makes the character in a picture move like the person in a reference video (Kling motion control). |
+| `upscale_video({ video_url, resolution?, model? })` | Makes a video sharper and larger and cleans up noise (Topaz Proteus by default). |
+| `edit_video({ video_url, prompt })` | Changes an existing video from an instruction (Grok Imagine Video, up to 720p). |
+| `extend_video({ video_url, prompt, duration? })` | Continues a video from its last frame (Grok Imagine Video). |
+| `get_video({ job_id })` | For every video tool above: reports whether the job is still generating. When it finishes, the video is copied into your Blob store and you get an expiring link. Call it again later for a fresh link. |
+| `edit_image({ model, prompt, image_urls, mask_url?, size_or_aspect?, n? })` | Changes existing images from an instruction: remove a background, restyle, extend the canvas, combine several images. Works with edit-capable image models (`bfl/flux-kontext-pro`, `openai/gpt-image-2`, …) and image-capable LLMs. Takes https links; links this server returned work too, because the server downloads the inputs itself. |
+| `upscale_image({ image_url, model?, prompt? })` | Makes an image sharper and larger. Uses `topaz/wonder-3.5` unless you name another model. |
+| `generate_speech({ model, text, voice?, instructions?, speed?, language?, format? })` | Turns text into speech for narration and voice-overs (`openai/tts-1-hd`, `google/gemini-3.8-flash-tts`, `fish-audio/s2-pro`, …). The audio comes back inline and as an expiring link. |
+| `transcribe({ model, audio_url, timestamps? })` | Turns speech in an audio or video file (up to 25 MB) into text, optionally with timestamps. |
+| `check_credits()` | Shows the team's AI Gateway credits and what this connector spent in the last 30 days. |
+| `list_files({ kind?, limit? })` | Lists the pictures, videos and audio this connector made, newest first, with fresh expiring links. |
 
 Errors are written to be readable and always name the model. They cover unknown models, missing credits, video not being available to your team, authentication failures and provider errors.
 
@@ -152,7 +162,7 @@ Errors are written to be readable and always name the model. They cover unknown 
 <br>
 
 - **Your connector URL works like a password that spends money.** Anyone who has it can use your AI Gateway credits and generate content under your Vercel account. Keep it private.
-- **Set an AI Gateway budget.** This server caps each call (`MAX_VIDEO_SECONDS`, `MAX_IMAGES_PER_CALL`, `ALLOWED_MODELS`), but only Vercel's budget limits your total spend.
+- **Set an AI Gateway budget.** This server caps each call (`MAX_VIDEO_SECONDS`, `MAX_IMAGES_PER_CALL`, `MAX_SPEECH_CHARACTERS`, `ALLOWED_MODELS`), but only Vercel's budget limits your total spend.
 - **Rotate the secret if the URL leaks.** Change `MCP_SECRET` in Project Settings → Environment Variables and redeploy. The old URL stops working right away, and any unfinished video jobs are abandoned.
 - **Files are private, but links are not.** Images and videos are stored in a private Blob store. Anyone who holds one of the links returned in chat can open that file until the link expires (`SIGNED_URL_TTL_HOURS`).
 - **Logs:** this app never logs the secret or request URLs. However, Vercel's own request logs record request paths, so members of your Vercel team can see the secret there.
@@ -183,8 +193,9 @@ claude.ai custom connectors only support OAuth or no auth, and they can't send c
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `MCP_SECRET` | none (required) | Secret part of the connector URL. Must be at least 32 characters. |
-| `MAX_VIDEO_SECONDS` | `8` | Longest video `start_video` accepts. |
-| `MAX_IMAGES_PER_CALL` | `4` | Highest `n` that `generate_image` accepts. |
+| `MAX_VIDEO_SECONDS` | `8` | Longest video `start_video` and `extend_video` accept. Tools that start from your video (`motion_control`, `upscale_video`, `edit_video`) follow its length instead, so keep an AI Gateway budget set. |
+| `MAX_IMAGES_PER_CALL` | `4` | Highest `n` that `generate_image` and `edit_image` accept. |
+| `MAX_SPEECH_CHARACTERS` | `5000` | Longest text `generate_speech` accepts in one call. |
 | `ALLOWED_MODELS` | empty (all models) | Comma-separated allowlist of model ids. |
 | `SIGNED_URL_TTL_HOURS` | `24` | How long file links stay valid. The maximum is 168 (7 days). |
 | `AI_GATEWAY_API_KEY` | unset | Optional. Use it for local development. When set, it replaces the OIDC token. |

@@ -1,23 +1,20 @@
 import type { CallToolResult } from '@modelcontextprotocol/server';
 import { generateImage, generateText, type GeneratedFile } from 'ai';
 import { z } from 'zod';
-import { blobConfigured, extensionFor, randomPath, saveMedia, signedUrl } from '../blob';
 import { getConfig, isModelAllowed } from '../env';
 import { errorResult, toolError, type ToolContext } from '../gateway';
+import { readCost } from '../media';
 import { findModel, kindsOf } from '../models';
+import { imageResult } from './image-result';
 
 type Args = { model: string; prompt: string; size_or_aspect?: string; n?: number };
 
-function parseSize(value: string | undefined) {
+export function parseSize(value: string | undefined) {
   if (!value) return {};
   const v = value.trim();
   if (/^\d+:\d+$/.test(v)) return { aspectRatio: v as `${number}:${number}` };
   if (/^\d+x\d+$/.test(v)) return { size: v as `${number}x${number}` };
   return { invalid: true as const };
-}
-
-function readCost(providerMetadata: unknown): unknown {
-  return (providerMetadata as { gateway?: { cost?: unknown } } | undefined)?.gateway?.cost;
 }
 
 export const generateImageTool = {
@@ -69,33 +66,7 @@ export const generateImageTool = {
       }
       if (images.length === 0) return errorResult(`"${model}" returned no images. Try rephrasing the prompt.`);
 
-      const links: string[] = [];
-      if (blobConfigured()) {
-        try {
-          for (const image of images) {
-            const pathname = randomPath('images', extensionFor(image.mediaType));
-            await saveMedia(pathname, Buffer.from(image.uint8Array), image.mediaType);
-            const { url, expiresAt } = await signedUrl(pathname);
-            links.push(`${url} (expires ${expiresAt})`);
-          }
-        } catch {
-          notes.push('Saving to Blob failed, so only the inline images are available.');
-        }
-      } else {
-        notes.push('No Blob store connected, so images are inline only.');
-      }
-
-      const summary = [
-        `${images.length} image(s) from ${model}${cost != null ? `, cost: $${cost}` : ''}.`,
-        ...links.map((link, i) => `Image ${i + 1}: ${link}`),
-        ...notes,
-      ].join('\n');
-      return {
-        content: [
-          ...images.map((image) => ({ type: 'image' as const, data: image.base64, mimeType: image.mediaType })),
-          { type: 'text' as const, text: summary },
-        ],
-      };
+      return imageResult(model, images, cost, notes);
     } catch (error) {
       return toolError(error, model, 'image');
     }

@@ -1,19 +1,19 @@
 import { z } from 'zod';
 import { isModelAllowed } from '../env';
 import { errorResult, textResult, toolError, type ToolContext } from '../gateway';
-import { capabilitiesOf, fetchModels, kindsOf, priceOf } from '../models';
+import { capabilitiesOf, fetchModels, kindsOf, priceOf, type ModelKind } from '../models';
 
 const MAX_RESULTS = 80;
 
 export const listModels = {
   name: 'list_models',
   description:
-    'List AI Gateway models this server can call. Filter by type (text, image, video) and/or a search query. Returns one line per model: id | type | capabilities | price.',
+    'List AI Gateway models this server can call. Filter by type (text, image, video, speech for text-to-speech, transcription for speech-to-text) and/or a search query. Returns one line per model: id | type | capabilities | price.',
   inputSchema: z.object({
-    type: z.enum(['text', 'image', 'video']).optional().describe('Only models of this type'),
+    type: z.enum(['text', 'image', 'video', 'speech', 'transcription']).optional().describe('Only models of this type'),
     query: z.string().optional().describe('Case-insensitive match on model id or name, e.g. "veo" or "flux"'),
   }),
-  async run({ type, query }: { type?: 'text' | 'image' | 'video'; query?: string }, _ctx: ToolContext) {
+  async run({ type, query }: { type?: ModelKind; query?: string }, _ctx: ToolContext) {
     try {
       const needle = query?.toLowerCase();
       const rows = (await fetchModels())

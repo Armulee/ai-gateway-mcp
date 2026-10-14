@@ -1,10 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { pulse } from '../cosmos/store';
+import { forgetSecret, markConnected, restoreSecret, setRemember, setSecret, useSetup } from './setup-store';
 
-// Runs in the browser only. The secret is never sent anywhere except to this
-// deployment's own MCP endpoint when "Test connection" is used.
+// Runs in the browser only. The secret is only ever sent to this deployment:
+// to its MCP endpoint (Test connection) and to /api/stats (your usage).
 
 type RpcResult = Record<string, unknown>;
 type TestState =
@@ -24,7 +25,7 @@ async function rpc(url: string, body: object, protocolVersion?: string): Promise
     body: JSON.stringify(body),
   });
   if (res.status === 404) {
-    throw new Error('This secret does not match MCP_SECRET on this deployment, or the endpoint is disabled (see step 1).');
+    throw new Error('This secret does not match MCP_SECRET on this deployment, or the endpoint is off (see “Set MCP_SECRET”).');
   }
   if (!res.ok) throw new Error(`The endpoint answered HTTP ${res.status}.`);
   const text = await res.text();
@@ -59,10 +60,12 @@ function CopyButton({ value, label = 'Copy' }: { value: string; label?: string }
 }
 
 export function ConnectorPanel() {
-  const [secret, setSecret] = useState('');
+  const { secret, remember, connected } = useSetup();
   const [reveal, setReveal] = useState(false);
   const [test, setTest] = useState<TestState>({ state: 'idle' });
   const [generated, setGenerated] = useState('');
+
+  useEffect(restoreSecret, []);
 
   const url = useMemo(
     () => (secret.trim() && typeof window !== 'undefined' ? `${window.location.origin}/mcp/${encodeURIComponent(secret.trim())}` : ''),
@@ -83,6 +86,7 @@ export function ConnectorPanel() {
       const list = await rpc(url, { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} }, version);
       const tools = ((list.tools as { name: string }[] | undefined) ?? []).map((t) => t.name);
       setTest({ state: 'ok', tools });
+      markConnected();
       pulse();
     } catch (error) {
       setTest({ state: 'fail', message: error instanceof Error ? error.message : String(error) });
@@ -94,7 +98,7 @@ export function ConnectorPanel() {
       <div className="field">
         <label htmlFor="mcp-secret">Your MCP_SECRET</label>
         <p className="field-help" id="mcp-secret-help">
-          The value you set in Vercel. It is used in this browser only and never sent to the server.
+          The value you set in Vercel. It only goes to this deployment, to test your link and show your usage.
         </p>
         <input
           id="mcp-secret"
@@ -108,6 +112,24 @@ export function ConnectorPanel() {
             setTest({ state: 'idle' });
           }}
         />
+        <div className="field-row">
+          <label className="check-label">
+            <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+            Remember on this browser
+          </label>
+          {secret && (
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => {
+                forgetSecret();
+                setTest({ state: 'idle' });
+              }}
+            >
+              Forget it
+            </button>
+          )}
+        </div>
       </div>
 
       {url ? (
@@ -128,6 +150,11 @@ export function ConnectorPanel() {
             </button>
             <div className="test-result" role="status" aria-live="polite">
               {test.state === 'running' && <span className="skeleton" aria-label="Testing connection" />}
+              {test.state === 'idle' && connected && (
+                <p className="result-ok">
+                  <strong>Working.</strong> This secret opens your connector.
+                </p>
+              )}
               {test.state === 'ok' && (
                 <div className="result-ok">
                   <strong>Connected.</strong> {test.tools.length} tools ready:

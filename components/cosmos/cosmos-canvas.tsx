@@ -2,7 +2,8 @@
 
 import { gsap } from 'gsap';
 import { useEffect, useRef } from 'react';
-import type { KindCounts } from '@/lib/catalog-summary';
+/** Model counts by kind, for the optional field of model points. */
+export type KindCounts = { text: number; image: number; video: number };
 import {
   BODY_FRAGMENT,
   FULLSCREEN_VERTEX,

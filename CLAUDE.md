@@ -30,18 +30,17 @@ An open-source MCP server that lets people call any Vercel AI Gateway model (tex
 - Media storage: a **private** Vercel Blob store in the user's own team. Auth via OIDC (`BLOB_STORE_ID`), `BLOB_READ_WRITE_TOKEN` as fallback. Files are shared with presigned URLs that expire (`SIGNED_URL_TTL_HOURS`, default 24, max 168).
 - Video jobs are stateless: `job_id` = model + AI Gateway job id, HMAC-signed with a key derived from `MCP_SECRET`. No database.
 
-## Website (part of v1)
+## Website
 
-The same Next.js app serves a small website. It is free to host on Vercel.
+Two repos:
+- **This repo** is the app people deploy: the MCP server plus its setup page at `/` (`/setup` redirects there).
+- **`armulee/ai-gateway-mcp-landing`** is the project's own website (black-and-white scrollytelling story). Its setup buttons open Vercel's clone flow for this repo. The waitlist for the hosted version belongs there; its storage is not decided yet: ask before choosing.
 
-1. Setup page at `/setup` (every self-hoster uses this on their own deployment)
-   - Status checks: Gateway reachable via OIDC, Blob connected, `MCP_SECRET` set and long enough. Show pass/fail and a fix hint for each.
-   - Never render the secret or the full connector URL by default. Provide a field where the owner pastes their secret; build the connector URL in the browser only (nothing sent to the server) and offer a "Test connection" button that calls the MCP endpoint's tools list.
-   - Short how-to: add as a custom connector in Claude and ChatGPT, set a Gateway budget, rotate the secret.
-2. Landing page at `/` on every deployment: a black-and-white scrollytelling story (WebGL, GSAP, Lenis, all graphics drawn in code). `SITE_MODE=landing` (the author's site) makes its main button "Deploy to Vercel"; the default `instance` makes it "Set up this deployment" pointing to `/setup`.
-   - What it is, a demo GIF or video, Deploy button, GitHub link.
-   - Waitlist signup for the future hosted version. Storage for the waitlist is not decided yet: ask before choosing.
-   - Build this after the MCP server and setup page work.
+Setup page at `/` (every self-hoster lands here on their own deployment):
+- A guide in steps, each with a code-drawn motion graphic: deploy, `MCP_SECRET`, AI Gateway via OIDC, Blob, credits + budget (checked on the server), then test the link and add it to a chat app (confirmed in the owner's browser). Shows what is done and what is next.
+- Never render the secret or the full connector URL by default. The owner pastes the secret into a field; the URL is built in the browser, "Test connection" calls the MCP endpoint's tools list, and the secret may be remembered in that browser (localStorage) with a way to forget it.
+- Usage stats, unlocked with the secret via `POST /api/stats` (constant-time check, 404 when wrong): team credits, and this connector's spend per day, per model and per chat app from AI Gateway's spend report filtered by the tags every call carries. No database.
+- How-to for Claude, ChatGPT and other MCP apps; set a Gateway budget; rotate the secret.
 
 ## Security
 
@@ -93,12 +92,14 @@ Verified (Oct 2026):
 Still unverified (check on a real deployment):
 - Whether providers can fetch Blob presigned URLs for image-to-video.
 - Exact Gateway error shape for "out of credits" and "video not on plan" (matched by status/message today).
+- Whether the deployment's OIDC token may call AI Gateway's spend report (`getSpendReport`), and whether image and video calls honour request `tags` like text calls do.
+- Which User-Agent each chat app sends (used to name the app in usage; unknown apps count as "other").
 
 ## Deploy experience (README)
 
 - Deploy button that clones the repo and prompts for `MCP_SECRET` (suggest a long random value).
 - The Deploy button creates and connects a private Blob store itself (`stores=[{"type":"blob","access":"private"}]`).
-- Steps: deploy → open `/setup` → copy `https://<app>.vercel.app/mcp/<MCP_SECRET>` → add as a custom connector in Claude or ChatGPT.
+- Steps: deploy → open `https://<app>.vercel.app` → copy `https://<app>.vercel.app/mcp/<MCP_SECRET>` → add as a custom connector in Claude or ChatGPT.
 - Warnings: anyone with the URL can spend your credits, so keep it private. Set an AI Gateway budget. Video needs enough paid Gateway credits (whether the free monthly credit covers video is unverified, so the README does not claim it).
 - License: MIT.
 
@@ -110,7 +111,7 @@ Still unverified (check on a real deployment):
 - Wrong secret returns 404; a short or missing secret disables the endpoint.
 - Setup page shows correct status checks and never exposes the secret.
 - README is complete and the Deploy button works from a clean account.
-- Landing page at `/` and setup page at `/setup` both work, including reduced motion and without WebGL.
+- Setup page at `/` works, including reduced motion and without WebGL; the landing site (separate repo) works the same way.
 
 ## v2 notes (do not build yet)
 

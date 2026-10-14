@@ -1,16 +1,12 @@
-import { Landing } from '@/components/landing/landing';
-import { getCatalogSummary } from '@/lib/catalog-summary';
+import type { Metadata } from 'next';
+import { Setup } from '@/components/setup/setup';
 import { getConfig } from '@/lib/env';
+import { getSetupSteps } from '@/lib/status';
 
 export const dynamic = 'force-dynamic';
 
+export const metadata: Metadata = { title: 'Set up · AI Gateway MCP' };
+
 export default async function Home() {
-  const { siteMode, signedUrlTtlHours } = getConfig();
-  return (
-    <Landing
-      catalog={await getCatalogSummary()}
-      linkTtlHours={signedUrlTtlHours}
-      mode={siteMode === 'landing' ? 'author' : 'instance'}
-    />
-  );
+  return <Setup steps={await getSetupSteps()} linkTtlHours={getConfig().signedUrlTtlHours} />;
 }

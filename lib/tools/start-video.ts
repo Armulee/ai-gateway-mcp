@@ -40,6 +40,7 @@ export const startVideoTool = {
         n: 1,
         duration: duration ?? Math.min(maxVideoSeconds, 8),
         aspectRatio: aspect_ratio as `${number}:${number}` | undefined,
+        providerOptions: ctx.gatewayOptions('start_video'),
       });
       const gatewayJobId = (providerMetadata?.gateway as { asyncJob?: { jobId?: unknown } } | undefined)?.asyncJob?.jobId;
       if (typeof gatewayJobId !== 'string') {

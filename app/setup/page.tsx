@@ -1,12 +1,6 @@
-import type { Metadata } from 'next';
-import { Setup } from '@/components/setup/setup';
-import { getConfig } from '@/lib/env';
-import { getStatusChecks } from '@/lib/status';
+import { redirect } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
-
-export const metadata: Metadata = { title: 'Set up · AI Gateway MCP' };
-
-export default async function SetupPage() {
-  return <Setup checks={await getStatusChecks()} linkTtlHours={getConfig().signedUrlTtlHours} />;
+// The setup page moved to the home page; old links still land there.
+export default function SetupPage() {
+  redirect('/');
 }

@@ -28,6 +28,7 @@ export const generateTextTool = {
         prompt,
         instructions: system,
         maxOutputTokens: max_tokens,
+        providerOptions: ctx.gatewayOptions('generate_text'),
       });
       const cost = result.providerMetadata?.gateway?.cost;
       const footer = `\n\n— model: ${model}${cost != null ? `, cost: $${cost}` : ''}`;

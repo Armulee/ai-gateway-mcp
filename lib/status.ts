@@ -40,7 +40,7 @@ function checkSecret(): ServerStep {
     detail:
       status === 'ok'
         ? `Set and at least ${MIN_SECRET_LENGTH} characters long. The MCP endpoint is on.`
-        : `${status === 'missing' ? 'MCP_SECRET is not set' : `MCP_SECRET is shorter than ${MIN_SECRET_LENGTH} characters`}, so the MCP endpoint is off. Generate one below, save it in Environment Variables, then redeploy.`,
+        : `${status === 'missing' ? 'Not set yet' : `Shorter than ${MIN_SECRET_LENGTH} characters`}, so your MCP endpoint is off. It takes three clicks.`,
   };
 }
 
@@ -69,7 +69,7 @@ async function checkBlob(): Promise<ServerStep> {
     return {
       ...step,
       state: 'todo',
-      detail: 'Text and images already work. Videos and download links for images need a private Blob store: create one, connect it to this project, then redeploy.',
+      detail: 'Text and images work without it. Video needs it.',
     };
   }
   try {

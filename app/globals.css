@@ -959,34 +959,46 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   font-size: 0.9375rem;
 }
 
-/* Under "Set MCP_SECRET": generate, save in Vercel, redeploy. */
-.guide-copy > .secret-panel,
-.guide-copy > .blob-panel,
+/* Under "Set MCP_SECRET" and "Connect file storage": buttons done left to right. */
+.guide-copy > .action-steps,
 .guide-copy > .generator {
   margin-top: 1.5rem;
 }
 
-.secret-steps {
+.action-steps {
   display: grid;
-  gap: 18px;
+  gap: 12px;
   max-width: 58ch;
-  margin: 0;
-  padding-left: 1.25em;
-  color: var(--muted);
 }
 
-.secret-steps p {
-  margin: 0 0 8px;
+.generator .action-steps {
+  margin-top: 12px;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.action-row .btn {
+  gap: 0.6em;
+}
+
+.action-num {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.action-hint {
+  margin: 0;
+  color: var(--muted);
   font-size: 0.9375rem;
 }
 
-.secret-steps code,
-.secret-steps strong {
+.action-hint code {
   color: var(--text);
-}
-
-.secret-steps strong {
-  font-weight: 500;
 }
 
 /* Safety facts and footer */

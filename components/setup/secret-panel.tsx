@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { DEPLOYMENTS_URL, ENV_VARS_URL } from '@/lib/site';
-import { CopyButton } from './copy-button';
+import { ActionSteps } from './action-steps';
+import { adoptGeneratedSecret } from './setup-store';
 
 // Makes a secret in the browser and points to where it goes in Vercel. The
 // value never leaves this page: the owner pastes it into Vercel themselves,
@@ -14,40 +15,44 @@ function randomSecret(): string {
 }
 
 function Steps() {
-  const [generated, setGenerated] = useState('');
+  const [secret, setSecret] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  async function makeAndCopy() {
+    const value = randomSecret();
+    setSecret(value);
+    adoptGeneratedSecret(value);
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }
+
   return (
-    <div className="secret-panel">
-      <ol className="secret-steps">
-        <li>
-          <p>Generate 64 random characters. They are made in your browser and never sent anywhere.</p>
-          <div className="url-row">
-            <button type="button" className="btn btn-ghost btn-small" onClick={() => setGenerated(randomSecret())}>
-              {generated ? 'Generate again' : 'Generate'}
-            </button>
-            {generated && (
-              <>
-                <code className="url-value">{generated}</code>
-                <CopyButton value={generated} />
-              </>
-            )}
-          </div>
-        </li>
-        <li>
-          <p>
-            Open Environment Variables, pick this project, and save the value as <code>MCP_SECRET</code>.
-          </p>
-          <a className="btn btn-primary btn-small" href={ENV_VARS_URL} target="_blank" rel="noopener noreferrer">
-            Open Environment Variables
-          </a>
-        </li>
-        <li>
-          <p>Redeploy so the new value takes effect, then come back to this page.</p>
-          <a className="btn btn-ghost btn-small" href={DEPLOYMENTS_URL} target="_blank" rel="noopener noreferrer">
-            Open Deployments
-          </a>
-        </li>
-      </ol>
-    </div>
+    <ActionSteps
+      actions={[
+        { label: 'Copy a new secret', run: makeAndCopy },
+        { label: 'Add it in Vercel', href: ENV_VARS_URL },
+        { label: 'Redeploy', href: DEPLOYMENTS_URL },
+      ]}
+      hints={[
+        'Makes a random 64-character secret in your browser and copies it.',
+        copied ? (
+          <>
+            Copied <code>{`${secret.slice(0, 6)}…${secret.slice(-4)}`}</code>. Pick this project and paste it as <code>MCP_SECRET</code>.
+          </>
+        ) : (
+          <>
+            Copy it below, then pick this project and paste it as <code>MCP_SECRET</code>.
+          </>
+        ),
+        'Redeploy, then reload this page. Your link below is already filled in.',
+      ]}
+    >
+      {secret && !copied && <code className="url-value">{secret}</code>}
+    </ActionSteps>
   );
 }
 
@@ -56,8 +61,8 @@ export function SecretPanel({ isSet }: { isSet: boolean }) {
   if (!isSet) return <Steps />;
   return (
     <details className="generator">
-      <summary>Make a new secret (rotate)</summary>
-      <p>The old link stops working once you save the new value and redeploy. Update your chat apps with the new link.</p>
+      <summary>Make a new secret</summary>
+      <p>Your old link stops working after the redeploy. Update it in your chat apps.</p>
       <Steps />
     </details>
   );

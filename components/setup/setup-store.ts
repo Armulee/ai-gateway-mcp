@@ -64,6 +64,12 @@ export function setSecret(secret: string) {
   set({ secret, connected: false, stats: { state: 'locked' } });
 }
 
+/** A secret just made under "Set MCP_SECRET": fill it in, and keep it (if allowed) so it is still there after the redeploy. */
+export function adoptGeneratedSecret(secret: string) {
+  setSecret(secret);
+  if (state.remember) storage()?.setItem(KEY, secret);
+}
+
 export function setRemember(remember: boolean) {
   set({ remember });
   if (!remember) storage()?.removeItem(KEY);

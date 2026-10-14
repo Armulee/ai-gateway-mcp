@@ -18,3 +18,9 @@ export function VercelBadge({ kind }: { kind: keyof typeof BADGES }) {
     </a>
   );
 }
+
+/** The Vercel triangle on its own, for buttons that lead to Vercel or to this deployment's setup. */
+export function VercelMark() {
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img className="btn-icon" src={assetUrl(vercelIcon)} alt="" width={16} height={16} />;
+}

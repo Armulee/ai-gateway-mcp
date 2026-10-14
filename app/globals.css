@@ -1274,6 +1274,13 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   border-color: rgba(255, 255, 255, 0.4);
 }
 
+.btn-icon {
+  width: 0.95em;
+  height: 0.95em;
+  margin-right: 0.5em;
+  vertical-align: -0.1em;
+}
+
 .badge-icon {
   width: 0.9em;
   height: 0.9em;
@@ -1286,7 +1293,7 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
    travels along it (--ship, 0 to 1, set from scroll); the line behind it is
    lit, chapters already read glow, the rest wait dim. */
 .orbit {
-  --rail: min(56vh, 460px);
+  --rail: min(50vh, 420px);
   position: fixed;
   right: 10px;
   top: 50%;
@@ -1623,6 +1630,74 @@ html:not(.motion-ok) .orbit-ring i {
 
   .orbit-pct {
     display: none;
+  }
+}
+
+/* "Scroll", running up the right edge on the rail's axis, below it. */
+.scroll-hint {
+  position: fixed;
+  z-index: 15;
+  right: 22px;
+  bottom: 24px;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  translate: 50% 12px;
+  opacity: 0;
+  pointer-events: none;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: opacity 0.6s, translate 0.8s var(--ease-out);
+}
+
+.scroll-hint.is-visible {
+  opacity: 1;
+  translate: 50% 0;
+}
+
+.scroll-hint span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.scroll-hint i {
+  position: relative;
+  width: 1px;
+  height: 44px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.scroll-hint i::after {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: -12px;
+  width: 3px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--text);
+  animation: cue 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+html:not(.motion-ok) .scroll-hint i::after {
+  animation: none;
+  top: 16px;
+}
+
+@keyframes cue {
+  to {
+    transform: translateY(56px);
+  }
+}
+
+@media (max-width: 899px) {
+  .scroll-hint {
+    right: 13px;
+    bottom: 18px;
   }
 }
 

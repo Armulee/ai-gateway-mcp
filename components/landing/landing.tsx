@@ -5,7 +5,7 @@ import { CosmosCanvas } from '../cosmos/cosmos-canvas';
 import { Requirements } from '../requirements';
 import { SiteNav } from '../site-nav';
 import { SplitText } from '../split-text';
-import { VercelBadge } from '../vercel-badge';
+import { VercelBadge, VercelMark } from '../vercel-badge';
 import { WordReveal } from '../word-reveal';
 import { LandingMotion } from './landing-motion';
 import { HowArt } from './film/how-art';
@@ -16,6 +16,7 @@ import { SafetyArt } from './film/safety-art';
 import { StarDefs } from './film/star-defs';
 import { ToolsArt } from './film/tools-art';
 import { KindLogos } from './provider-logos';
+import { ScrollHint } from './scroll-hint';
 
 /** "author": the project's own site. "instance": someone's self-hosted deployment. */
 const KINDS = ['text', 'image', 'video'] as const;
@@ -63,6 +64,7 @@ export function Landing({
       <CosmosCanvas counts={catalog?.counts ?? FALLBACK_COUNTS} />
       <StarDefs />
       <LandingMotion />
+      <ScrollHint />
 
       <SiteNav
         home="#top"
@@ -76,6 +78,7 @@ export function Landing({
         }
         action={
           <a className="btn btn-primary btn-small" href={primary.href}>
+            <VercelMark />
             {primary.label}
           </a>
         }
@@ -131,7 +134,8 @@ export function Landing({
               </p>
               <div className="ctas" data-hero-fade>
                 <a className="btn btn-primary" href={primary.href} data-magnetic>
-                  {primary.label}
+                  <VercelMark />
+            {primary.label}
                 </a>
                 <a className="btn btn-ghost" href={REPO_URL}>
                   View source
@@ -404,7 +408,8 @@ export function Landing({
           </ol>
           <div className="finale-cta" data-reveal>
             <a className="btn btn-primary btn-large" href={primary.href} data-magnetic>
-              {primary.label}
+              <VercelMark />
+            {primary.label}
             </a>
             {mode === 'author' ? (
               <p className="note">

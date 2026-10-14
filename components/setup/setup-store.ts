@@ -9,6 +9,7 @@ import type { Stats } from '@/lib/stats';
 // to its MCP endpoint (Test connection) and to /api/stats (usage).
 
 const KEY = 'ai-gateway-mcp:secret';
+const CHAT_KEY = 'ai-gateway-mcp:chat-added';
 
 export type StatsState =
   | { state: 'locked' }
@@ -20,10 +21,12 @@ type SetupState = {
   secret: string;
   remember: boolean;
   connected: boolean;
+  /** The owner said they added the link to a chat app (for when usage can't confirm it). */
+  chatAdded: boolean;
   stats: StatsState;
 };
 
-let state: SetupState = { secret: '', remember: true, connected: false, stats: { state: 'locked' } };
+let state: SetupState = { secret: '', remember: true, connected: false, chatAdded: false, stats: { state: 'locked' } };
 const listeners = new Set<() => void>();
 const SERVER_STATE = state;
 
@@ -110,6 +113,16 @@ export async function loadStats() {
   } catch (error) {
     set({ stats: { state: 'fail', message: `Could not load usage (${error instanceof Error ? error.message : 'network error'}).` } });
   }
+}
+
+export function restoreChatAdded() {
+  if (storage()?.getItem(CHAT_KEY)) set({ chatAdded: true });
+}
+
+export function setChatAdded(chatAdded: boolean) {
+  set({ chatAdded });
+  if (chatAdded) storage()?.setItem(CHAT_KEY, '1');
+  else storage()?.removeItem(CHAT_KEY);
 }
 
 /** The chat apps that have used this connector in the last 30 days. */

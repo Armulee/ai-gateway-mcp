@@ -1001,6 +1001,10 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   color: var(--text);
 }
 
+.chat-check {
+  margin-bottom: 20px;
+}
+
 /* Safety facts and footer */
 .facts {
   display: grid;

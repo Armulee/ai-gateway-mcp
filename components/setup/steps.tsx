@@ -9,14 +9,15 @@ export type LiveState = 'done' | 'next' | 'todo';
 
 /**
  * Server checks cover the first four steps; this browser confirms the last
- * two (a link that tested fine, a chat app that has used it). The first step
+ * two (a link that tested fine; a chat app that has used it, or the owner
+ * saying they added it). The first step
  * not done, skipping optional ones, is "next".
  */
 export function useStepStates(steps: StepView[]): LiveState[] {
-  const { connected, stats } = useSetup();
+  const { connected, chatAdded, stats } = useSetup();
   const done = steps.map((step) => {
     if (step.id === 'connect') return connected;
-    if (step.id === 'chat') return appsInUse(stats).length > 0;
+    if (step.id === 'chat') return chatAdded || appsInUse(stats).length > 0;
     return step.state === 'done';
   });
   const next = done.findIndex((isDone, i) => !isDone && !steps[i].optional);

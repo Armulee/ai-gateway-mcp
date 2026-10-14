@@ -1,10 +1,26 @@
-# Gateway MCP
+# AI Gateway MCP
 
-Gateway MCP is an open-source MCP server that lets Claude, ChatGPT and other MCP clients call any model on [Vercel AI Gateway](https://vercel.com/docs/ai-gateway), for text, images and video.
+AI Gateway MCP is an open-source MCP server that lets Claude, ChatGPT and other MCP clients call any model on [Vercel AI Gateway](https://vercel.com/docs/ai-gateway), for text, images and video.
 
 You deploy your own copy to your Vercel account, so every call is billed to **your own AI Gateway credits**. The deployment authenticates to AI Gateway with its OIDC token, so you don't need an API key, and nobody else ever holds your money or keys.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Farmulee%2Fai-gateway-mcp&project-name=gateway-mcp&repository-name=gateway-mcp&env=MCP_SECRET&envDescription=A%20long%20random%20secret%20%28at%20least%2032%20characters%29.%20It%20becomes%20part%20of%20your%20connector%20URL%2C%20so%20keep%20it%20private.%20Generate%20one%20with%3A%20openssl%20rand%20-hex%2032&envLink=https%3A%2F%2Fgithub.com%2Farmulee%2Fai-gateway-mcp%23mcp_secret&stores=%5B%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22private%22%7D%5D)
+
+## Why Vercel AI Gateway
+
+This project is not made by or affiliated with Vercel. It uses AI Gateway because of how it prices models. In Vercel's own words ([AI Gateway pricing](https://vercel.com/docs/ai-gateway/pricing)):
+
+> AI Gateway charges no markup and no platform fee on tokens. You pay the provider's list price on a pay-as-you-go basis.
+
+- **No plan.** There is no subscription. You top up AI Gateway credits on your own Vercel account (or turn on auto top-up) and each request uses what that model costs. Every team also gets free monthly credits for a set of models.
+- **Every kind of model.** Text, image and video models from dozens of providers, all behind one connector.
+- **Free and open source.** I charge nothing and never see your money or keys. The code is MIT licensed. Version 1 means you run your own copy, so I made setup as short as I could: the goal is for everyone to use AI at the price providers actually set.
+
+## What you need
+
+- A [Vercel](https://vercel.com) account. Your copy of this project and your credits live there.
+- A GitHub, GitLab or Bitbucket account. The Deploy button copies the code into it.
+- AI Gateway credits for the models you use (free monthly credits cover a set of models).
 
 ## Set up
 

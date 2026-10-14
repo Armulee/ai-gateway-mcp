@@ -5,7 +5,7 @@ import { getStatusChecks } from '@/lib/status';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = { title: 'Set up · Gateway MCP' };
+export const metadata: Metadata = { title: 'Set up · AI Gateway MCP' };
 
 export default async function SetupPage() {
   return <Setup checks={await getStatusChecks()} linkTtlHours={getConfig().signedUrlTtlHours} />;

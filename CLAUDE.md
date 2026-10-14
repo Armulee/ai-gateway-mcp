@@ -1,4 +1,4 @@
-# Gateway MCP — project brief
+# AI Gateway MCP — project brief
 
 An open-source MCP server that lets people call any Vercel AI Gateway model (text, image, video) from Claude, ChatGPT and other MCP clients. Every call is billed to the user's own Vercel AI Gateway credits. The author never holds anyone's money or keys.
 

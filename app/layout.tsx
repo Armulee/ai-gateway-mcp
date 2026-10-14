@@ -9,7 +9,7 @@ const sans = Geist({ subsets: ['latin'], variable: '--font-sans', display: 'swap
 const mono = Geist_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'Gateway MCP',
+  title: 'AI Gateway MCP',
   description: 'Call any Vercel AI Gateway model from Claude, ChatGPT and other MCP clients.',
   robots: { index: false, follow: false },
 };

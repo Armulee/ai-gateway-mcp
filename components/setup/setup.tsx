@@ -1,7 +1,9 @@
 import { REPO_URL } from '@/lib/site';
 import type { Check } from '@/lib/status';
-import { BrandMark } from '../brand-mark';
 import { CosmosCanvas } from '../cosmos/cosmos-canvas';
+import { Requirements } from '../requirements';
+import { SiteNav } from '../site-nav';
+import { VercelBadge } from '../vercel-badge';
 import { ConnectorPanel } from './connector-panel';
 import { SetupMotion } from './setup-motion';
 
@@ -9,29 +11,38 @@ export function Setup({ checks, linkTtlHours }: { checks: Check[]; linkTtlHours:
   const failing = checks.filter((c) => !c.ok).length;
   return (
     <>
-      <CosmosCanvas calm initial={{ eclipse: 0, horizon: 0, flash: 0, points: 0, stars: 0.6, dust: 0.7, travel: 0 }} />
+      <CosmosCanvas
+        calm
+        initial={{ eclipse: 1, eclipseScale: 0.62, eclipseY: 0.27, horizon: 0, flash: 0, points: 0, stars: 0.7, dust: 0.8, travel: 0 }}
+      />
       <SetupMotion />
+      <SiteNav
+        home="/"
+        links={
+          <>
+            <a href="/">About</a>
+            <a href={REPO_URL}>GitHub</a>
+          </>
+        }
+      />
 
       <div className="setup">
-        <header className="setup-bar">
-          <a className="nav-brand" href="/">
-            <BrandMark />
-            <span>Gateway MCP</span>
-          </a>
-          <a className="setup-bar-link" href={REPO_URL}>
-            GitHub
-          </a>
-        </header>
-
         <div className="setup-intro" data-reveal data-intro>
-          <h1 className="setup-title">Set up your deployment</h1>
-          <p className="setup-lead">Four steps. Everything stays in your own Vercel account, and every call is billed to its AI Gateway credits.</p>
+          <h1 className="setup-title">Set up your deployment.</h1>
+          <p className="setup-lead">
+            Four steps to connect Claude or ChatGPT to every model on <VercelBadge kind="gateway" />, through your own copy running
+            on <VercelBadge kind="vercel" />.
+          </p>
           <p className={`summary ${failing ? 'is-fail' : 'is-ok'}`}>
             <span className="summary-icon" aria-hidden="true">
               {failing ? '!' : '✓'}
             </span>
             {failing ? `${failing} ${failing === 1 ? 'thing needs' : 'things need'} attention in step 1` : 'Everything checks out. Ready to connect.'}
           </p>
+        </div>
+
+        <div className="setup-needs" data-reveal>
+          <Requirements title="Before you start" />
         </div>
 
         <ol className="timeline">
@@ -103,7 +114,9 @@ export function Setup({ checks, linkTtlHours }: { checks: Check[]; linkTtlHours:
               </div>
               <div>
                 <dt>Set a budget</dt>
-                <dd>In the Vercel dashboard, open AI Gateway and set a spend budget. That is the real limit.</dd>
+                <dd>
+                  In the Vercel dashboard, open <VercelBadge kind="gateway" /> and set a spend budget. That is the real limit.
+                </dd>
               </div>
               <div>
                 <dt>Rotate if it leaks</dt>
@@ -118,7 +131,7 @@ export function Setup({ checks, linkTtlHours }: { checks: Check[]; linkTtlHours:
         </ol>
 
         <footer className="setup-footer">
-          <span>Gateway MCP, MIT license.</span>
+          <span>AI Gateway MCP, MIT license. Not affiliated with Vercel.</span>
           <a href="/">About this project</a>
         </footer>
       </div>

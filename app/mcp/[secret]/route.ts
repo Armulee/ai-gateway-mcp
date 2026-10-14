@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { instanceContext } from '@/lib/gateway';
+import { clientFromUserAgent, instanceContext, withClient } from '@/lib/gateway';
 import { createGatewayMcpHandler } from '@/lib/mcp';
 import { matchesSecret } from '@/lib/secret';
 
@@ -17,7 +17,8 @@ type Params = { params: Promise<{ secret: string }> };
 async function handle(request: Request, { params }: Params) {
   const { secret } = await params;
   if (!matchesSecret(secret)) notFound();
-  return handler(request);
+  // Remember which chat app is calling, so its spend can be shown on the setup page.
+  return withClient(clientFromUserAgent(request.headers.get('user-agent')), () => handler(request));
 }
 
 export { handle as DELETE, handle as GET, handle as POST };

@@ -46,7 +46,13 @@ export const generateImageTool = {
       let cost: unknown;
       const notes: string[] = [];
       if (info.type === 'image') {
-        const result = await generateImage({ model: ctx.gateway.imageModel(model), prompt, n, ...size });
+        const result = await generateImage({
+          model: ctx.gateway.imageModel(model),
+          prompt,
+          n,
+          ...size,
+          providerOptions: ctx.gatewayOptions('generate_image'),
+        });
         images = result.images;
         cost = readCost(result.providerMetadata);
       } else {
@@ -55,6 +61,7 @@ export const generateImageTool = {
         const result = await generateText({
           model: ctx.gateway.languageModel(model),
           prompt: size_or_aspect ? `${prompt}\n\nAspect ratio / size: ${size_or_aspect}` : prompt,
+          providerOptions: ctx.gatewayOptions('generate_image'),
         });
         images = result.files.filter((file) => file.mediaType.startsWith('image/'));
         cost = readCost(result.providerMetadata);

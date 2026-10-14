@@ -22,7 +22,6 @@ export function getConfig() {
       positiveInt('SIGNED_URL_TTL_HOURS', 24),
       MAX_SIGNED_URL_TTL_HOURS,
     ),
-    siteMode: process.env.SITE_MODE === 'landing' ? 'landing' : 'instance',
   } as const;
 }
 

@@ -6,6 +6,7 @@ import {
   type GatewayProvider,
 } from '@ai-sdk/gateway';
 import type { CallToolResult } from '@modelcontextprotocol/server';
+import { AsyncLocalStorage } from 'node:async_hooks';
 
 /**
  * Everything a tool needs that depends on *who* is calling. In v1 there is a
@@ -18,10 +19,41 @@ export type ToolContext = {
   gateway: GatewayProvider;
   /** Namespaces derived keys and Blob paths per owner. */
   keyPrefix: string;
+  /** AI Gateway request options that tag a call for the usage stats. */
+  gatewayOptions: (tool: string) => { gateway: { tags: string[] } };
 };
 
+/** Every call from this MCP carries this tag, so its spend can be reported on its own. */
+export const STATS_TAG = 'ai-gateway-mcp';
+
+/** The chat app making the current MCP request, set per request by the route. */
+const requestClient = new AsyncLocalStorage<string>();
+
+export function withClient<T>(client: string, run: () => T): T {
+  return requestClient.run(client, run);
+}
+
+/**
+ * Names the chat app from its User-Agent. A stateless MCP request carries no
+ * client info of its own (that only comes with `initialize`), so this is a
+ * best guess; anything unrecognised is grouped as "other".
+ */
+export function clientFromUserAgent(userAgent: string | null): string {
+  const ua = (userAgent ?? '').toLowerCase();
+  if (/claude|anthropic/.test(ua)) return 'claude';
+  if (/openai|chatgpt/.test(ua)) return 'chatgpt';
+  if (/cursor/.test(ua)) return 'cursor';
+  if (/vscode|visual studio code|copilot/.test(ua)) return 'vscode';
+  return 'other';
+}
+
 export function instanceContext(): ToolContext {
-  return { gateway, keyPrefix: 'instance' };
+  const client = requestClient.getStore() ?? 'other';
+  return {
+    gateway,
+    keyPrefix: 'instance',
+    gatewayOptions: (tool) => ({ gateway: { tags: [STATS_TAG, `tool:${tool}`, `client:${client}`] } }),
+  };
 }
 
 export function textResult(text: string): CallToolResult {

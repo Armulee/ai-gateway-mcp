@@ -1,159 +1,1564 @@
-:root {
-  --bg: #fafafa;
-  --card: #ffffff;
-  --text: #171717;
-  --muted: #666666;
-  --border: #e5e5e5;
-  --pass: #15803d;
-  --fail: #b91c1c;
-  --accent: #171717;
-  --accent-text: #ffffff;
-  color-scheme: light dark;
-}
+/* Gateway MCP: black and white, one theme.
+   Red appears only for real errors on the setup page.
+   Shapes: buttons and chips are pills, cards 12-20px, inputs 10px. */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0a0a0a;
-    --card: #141414;
-    --text: #ededed;
-    --muted: #a1a1a1;
-    --border: #2e2e2e;
-    --pass: #4ade80;
-    --fail: #f87171;
-    --accent: #ededed;
-    --accent-text: #0a0a0a;
-  }
+:root {
+  --bg: #000;
+  --surface: #0a0a0a;
+  --surface-2: #111;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --text: #ededed;
+  --muted: #a1a1a1;
+  --dim: #8a8a8a;
+  --error: #ff4d4f;
+
+  --gutter: clamp(20px, 4vw, 56px);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  color-scheme: dark;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 15px/1.55 system-ui, -apple-system, 'Segoe UI', sans-serif;
-}
-
-main {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 40px 16px 64px;
-}
-
-h1 {
-  margin: 0 0 4px;
-  font-size: 28px;
-}
-
-h2 {
-  margin: 0 0 8px;
-  font-size: 17px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
   color: inherit;
 }
 
-code,
-.mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 13px;
+code {
+  font-family: var(--font-mono), ui-monospace, monospace;
 }
 
-.muted {
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+p,
+dd {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.eyebrow {
+  margin: 0 0 1.75rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--muted);
-  margin: 4px 0;
 }
 
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
+/* ---------- Cosmos canvas ---------- */
+
+.cosmos-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.4s var(--ease-out);
+}
+
+.cosmos-canvas.is-ready {
+  opacity: 1;
+}
+
+/* Without motion the page is plain: the sky stays behind the overview only. */
+html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
+  position: absolute;
+  height: 100svh;
+}
+
+.no-webgl body {
+  background:
+    radial-gradient(40vmax 30vmax at 50% 28%, rgba(255, 255, 255, 0.08), transparent 60%),
+    var(--bg);
+}
+
+.no-webgl .cosmos-canvas {
+  display: none;
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 1.5em;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background: var(--text);
+  color: #0a0a0a;
+}
+
+.btn-primary:hover {
+  background: #fff;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.btn-ghost {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.btn-small {
+  min-height: 36px;
+  padding: 0 1em;
+  font-size: 0.875rem;
+}
+
+.btn-large {
+  min-height: 56px;
+  padding: 0 2em;
+  font-size: 1.0625rem;
+}
+
+/* ---------- Brand + nav ---------- */
+
+.nav-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+
+.brand-mark {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+
+.brand-mark-ring {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid var(--text);
+  border-radius: 50%;
+}
+
+.brand-mark-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: var(--text);
+}
+
+.nav {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 20;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 var(--gutter);
+}
+
+.nav-links {
+  display: flex;
+  gap: clamp(18px, 2.4vw, 32px);
+  font-size: 0.875rem;
+}
+
+.nav-links a {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover {
+  color: var(--text);
+}
+
+@media (max-width: 760px) {
+  .nav-links {
+    display: none;
+  }
+}
+
+
+/* ---------- Setup page ----------
+   The home page of every deployment: an overview ring, then one step per
+   row (badge, drawing, what to do), then usage and safety. */
+
+.setup {
+  position: relative;
+  z-index: 1;
+  max-width: 1120px;
+  margin: 0 auto;
+  /* Room on the right for the rail. */
+  padding: 0 calc(var(--gutter) + 36px) 0 var(--gutter);
+}
+
+/* Overview */
+.setup-hero {
+  min-height: 100svh;
+  display: grid;
+  align-items: center;
+  padding: 96px 0 56px;
+}
+
+.progress-block {
+  display: grid;
+  grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(28px, 5vw, 80px);
+}
+
+.progress-ring {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+}
+
+.ring-arc {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.16);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.ring-arc.is-done {
+  stroke: var(--text);
+  filter: url(#glow);
+}
+
+.ring-arc.is-next {
+  stroke: rgba(255, 255, 255, 0.6);
+  animation: ring-wait 1.8s ease-in-out infinite;
+}
+
+@keyframes ring-wait {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.film .ring-count {
+  font-family: var(--font-sans), sans-serif;
+  font-size: 54px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+
+.setup-title {
+  font-size: clamp(2.4rem, 1.2rem + 4vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.setup-lead {
+  max-width: 46ch;
+  margin-top: 1.25rem;
+  font-size: clamp(1.0625rem, 0.95rem + 0.45vw, 1.3rem);
+  color: var(--muted);
+}
+
+.progress-copy .btn {
+  margin-top: 2rem;
+}
+
+/* Steps: a badge on a vertical line, the step's drawing, then what to do. */
+.guide {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: clamp(64px, 12vh, 128px);
+}
+
+.guide::before {
+  content: '';
+  position: absolute;
+  left: 21.5px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--line-strong) 4%, var(--line-strong) 96%, transparent);
+}
+
+.guide-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 0.8fr) minmax(0, 1.2fr);
+  grid-template-areas:
+    'badge art copy'
+    'badge extra extra';
+  align-items: start;
+  gap: clamp(16px, 3vw, 44px);
+  scroll-margin-top: 88px;
+}
+
+.guide-badge {
+  grid-area: badge;
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: #000;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.guide-badge svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.guide-step.is-done .guide-badge {
+  border-color: var(--text);
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.35);
+}
+
+.guide-step.is-next .guide-badge {
+  border-color: var(--text);
+  background: var(--text);
+  color: #000;
+}
+
+.guide-step.is-next .guide-badge::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  animation: badge-ping 2.2s ease-out infinite;
+}
+
+@keyframes badge-ping {
+  from {
+    transform: scale(0.85);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+
+.guide-art {
+  grid-area: art;
+}
+
+.step-art {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.guide-step.is-todo .guide-art {
+  opacity: 0.5;
+}
+
+.guide-copy {
+  grid-area: copy;
+  min-width: 0;
+}
+
+.guide-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  font-size: clamp(1.6rem, 1rem + 1.8vw, 2.4rem);
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+}
+
+.step-tag {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.step-tag.is-done {
+  border-color: rgba(255, 255, 255, 0.5);
+  color: var(--text);
+}
+
+.step-tag.is-next {
+  border-color: var(--text);
+  background: var(--text);
+  color: #000;
+}
+
+.guide-detail,
+.guide-note {
+  max-width: 58ch;
+  margin-top: 0.9rem;
+  color: var(--muted);
+}
+
+.guide-detail {
+  font-size: 1.0625rem;
+}
+
+.guide-note {
+  font-size: 0.9375rem;
+}
+
+/* The link panel and the chat-app guides get the full width under their step. */
+.guide-extra {
+  grid-area: extra;
+  min-width: 0;
+}
+
+.guide-extra:empty {
+  display: none;
+}
+
+/* How to add the link in each chat app. */
+.guides {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.guide-card {
+  padding: 18px 18px 20px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(10, 10, 10, 0.82);
+}
+
+.guide-card.is-live {
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 0 24px rgba(255, 255, 255, 0.08);
+}
+
+.guide-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.0625rem;
+}
+
+.guide-card .step-tag {
+  margin-left: auto;
+}
+
+.guide-icon {
+  width: 18px;
+  height: 18px;
+  filter: invert(1);
+}
+
+.guide-card ol {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding-left: 1.1em;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+
+/* Usage and safety */
+.setup-section {
+  margin-top: clamp(104px, 16vh, 168px);
+  scroll-margin-top: 88px;
+}
+
+.section-title {
+  font-size: clamp(2rem, 1rem + 3vw, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+}
+
+.section-lead {
+  max-width: 56ch;
+  margin-top: 0.9rem;
+  color: var(--muted);
+}
+
+.stats,
+.stats-locked {
+  margin-top: 2rem;
+}
+
+.stats-locked {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px dashed var(--line-strong);
+  color: var(--muted);
+}
+
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.stat {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(10, 10, 10, 0.82);
+}
+
+.stat-label {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.stat strong {
+  font-size: clamp(1.6rem, 1.1rem + 1.2vw, 2.2rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-note {
+  font-size: 0.8125rem;
+  color: var(--dim);
+}
+
+.stat-block {
+  margin-top: 12px;
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(10, 10, 10, 0.82);
+}
+
+.stat-block h3 {
+  margin-bottom: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.stat-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 12px;
+}
+
+.chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.chart .chart-line {
+  stroke-width: 2;
+  filter: url(#glow);
+}
+
+.chart figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  color: var(--dim);
+}
+
+.bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.bars li {
+  display: grid;
+  grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.bar-label {
+  overflow: hidden;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.8125rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--text);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+}
+
+.bar-value {
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bar-value small {
+  margin-left: 4px;
+  color: var(--dim);
+}
+
+.stat-problem {
+  margin-top: 16px;
+  color: var(--muted);
+}
+
+.stat-footnote {
+  margin-top: 16px;
+  font-size: 0.875rem;
+  color: var(--dim);
+}
+
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.field-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 0.9375rem;
+  color: var(--muted);
+}
+
+.check-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.check-label input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #fff;
+}
+
+@media (max-width: 899px) {
+  .guide-step {
+    grid-template-columns: 44px minmax(0, 1fr);
+    grid-template-areas:
+      'badge art'
+      'badge copy'
+      'badge extra';
+  }
+
+  .guide-art {
+    max-width: 320px;
+  }
+
+  .guides {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .progress-block {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .progress-ring {
+    max-width: 220px;
+  }
+
+  .setup-lead {
+    margin-inline: auto;
+  }
+
+  .stat-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stat-pair {
+    grid-template-columns: 1fr;
+  }
+
+  .bars li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .bar-track {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+}
+
+/* Connector */
+.connector {
+  display: grid;
+  gap: 20px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field label {
+  font-weight: 500;
+}
+
+.field-help {
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.field input:not([type='checkbox']) {
+  width: 100%;
+  height: 50px;
+  margin-top: 4px;
+  padding: 0 14px;
   border-radius: 10px;
-  padding: 18px 20px;
-  margin: 20px 0;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.9375rem;
 }
 
-.checks {
+.field input:not([type='checkbox']):focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.url-box {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(10, 10, 10, 0.88);
+}
+
+.url-label {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.url-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.url-value {
+  flex: 1 1 260px;
+  min-width: 0;
+  padding: 11px 13px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #000;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.url-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.test-row {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  margin-top: 4px;
+}
+
+.test-result:empty {
+  display: none;
+}
+
+.skeleton {
+  display: block;
+  width: 260px;
+  max-width: 100%;
+  height: 16px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--line) 20%, var(--line-strong) 50%, var(--line) 80%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.result-ok strong,
+.result-fail strong {
+  font-weight: 600;
+}
+
+.result-fail {
+  color: var(--error);
+}
+
+.chips {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chips li {
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.8125rem;
+}
+
+.empty-hint {
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px dashed var(--line-strong);
+  color: var(--muted);
+}
+
+.generator {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+
+.generator summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.generator summary:hover {
+  color: var(--text);
+}
+
+.generator p {
+  margin: 10px 0;
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+/* Safety facts and footer */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 2rem;
+}
+
+.facts > div {
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(10, 10, 10, 0.82);
+}
+
+.facts dt {
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.facts dd {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+}
+
+.setup-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 24px;
+  margin-top: clamp(80px, 14vh, 140px);
+  padding: 28px 0 40px;
+  border-top: 1px solid var(--line);
+  color: var(--dim);
+  font-size: 0.875rem;
+}
+
+.setup-footer a {
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .facts {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- Badges ---------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.12em 0.55em 0.12em 0.42em;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font-size: 0.86em;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-decoration: none;
+  vertical-align: 0.06em;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.badge:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.btn-icon {
+  width: 0.95em;
+  height: 0.95em;
+  margin-right: 0.5em;
+  vertical-align: -0.1em;
+}
+
+.badge-icon {
+  width: 0.9em;
+  height: 0.9em;
+  filter: invert(1);
+}
+
+/* ---------- Chapter orbit, scroll cue ---------- */
+
+/* A line of stars down the right edge, one per chapter. A small eclipse
+   travels along it (--ship, 0 to 1, set from scroll); the line behind it is
+   lit, chapters already read glow, the rest wait dim. */
+.orbit {
+  --rail: min(50vh, 420px);
+  position: fixed;
+  right: 10px;
+  top: 50%;
+  z-index: 15;
+  display: grid;
+  justify-items: center;
+  gap: 22px;
+  transform: translateY(-50%);
+}
+
+.orbit-rail {
+  position: relative;
+  width: 24px;
+  height: var(--rail);
+}
+
+.orbit-track,
+.orbit-fill {
+  position: absolute;
+  left: 50%;
+  width: 1px;
+  margin-left: -0.5px;
+}
+
+.orbit-track {
+  top: -36px;
+  bottom: -36px;
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.16) 18%, rgba(255, 255, 255, 0.16) 82%, transparent);
+}
+
+.orbit-fill {
+  top: 0;
+  height: 100%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.85));
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.35);
+  transform-origin: top;
+  transform: scaleY(var(--ship, 0));
+}
+
+.orbit ol {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.checks li {
-  display: flex;
-  gap: 12px;
-  padding: 8px 0;
+.orbit li {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--i) / var(--last) * 100%);
 }
 
-.checks li + li {
-  border-top: 1px solid var(--border);
-}
-
-.pass {
-  color: var(--pass);
-  font-weight: 600;
-}
-
-.fail {
-  color: var(--fail);
-  font-weight: 600;
-}
-
-.field {
+.orbit a {
+  position: absolute;
+  left: -12px;
+  top: -12px;
+  width: 24px;
+  height: 24px;
   display: grid;
-  gap: 4px;
-  margin: 12px 0;
+  place-items: center;
+  text-decoration: none;
+  border-radius: 50%;
 }
 
-.row {
+.orbit a:focus-visible {
+  outline: 1px solid var(--text);
+  outline-offset: 2px;
+}
+
+/* A star: a point of light with a faint four-point glint. */
+.orbit-star {
+  position: relative;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.28);
+  transition: background-color 0.5s, box-shadow 0.5s, transform 0.5s var(--ease-out);
+}
+
+.orbit-star::before,
+.orbit-star::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 13px;
+  height: 1px;
+  margin: -0.5px 0 0 -6.5px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.9), transparent);
+  opacity: 0;
+  transform: scaleX(0.3);
+  transition: opacity 0.5s, transform 0.5s var(--ease-out);
+}
+
+.orbit-star::after {
+  transform: rotate(90deg) scaleX(0.3);
+}
+
+.is-past .orbit-star {
+  background: var(--text);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.7);
+}
+
+.is-past .orbit-star::before {
+  opacity: 0.55;
+  transform: scaleX(0.7);
+}
+
+.is-past .orbit-star::after {
+  opacity: 0.55;
+  transform: rotate(90deg) scaleX(0.7);
+}
+
+.orbit a:hover .orbit-star,
+.orbit a:focus-visible .orbit-star {
+  background: var(--text);
+  transform: scale(1.6);
+}
+
+.orbit a:hover .orbit-star::before,
+.orbit a:focus-visible .orbit-star::before {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.orbit a:hover .orbit-star::after,
+.orbit a:focus-visible .orbit-star::after {
+  opacity: 1;
+  transform: rotate(90deg) scaleX(1);
+}
+
+/* Other chapters' names, on hover. */
+.orbit-name {
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(6px, -50%);
+  pointer-events: none;
+  transition: opacity 0.3s, transform 0.4s var(--ease-out);
+}
+
+.orbit a:not(.is-active):hover .orbit-name,
+.orbit a:not(.is-active):focus-visible .orbit-name {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+/* The traveller. Its wrapper is as tall as the rail, so a percentage
+   translate moves it along the whole line. */
+.orbit-ship {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform: translateY(calc(var(--ship, 0) * 100%));
+}
+
+.orbit-ring {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 13px;
+  height: 13px;
+  margin: -6.5px 0 0 -6.5px;
+  border-radius: 50%;
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 0 6px rgba(255, 255, 255, 0.6),
+    0 0 18px rgba(255, 255, 255, 0.22),
+    inset 0 0 3px rgba(255, 255, 255, 0.5);
+}
+
+/* A moon on a slow orbit around it. */
+.orbit-ring i {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  animation: orbit 6s linear infinite;
+}
+
+.orbit-ring i::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -1.5px;
+  width: 3px;
+  height: 3px;
+  margin-left: -1.5px;
+  border-radius: 50%;
+  background: var(--text);
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.9);
+}
+
+/* The current chapter, always shown beside the ring, turned to run along
+   the line (read from bottom to top) so it never reaches into the page. */
+.orbit-tag {
+  position: absolute;
+  right: 20px;
+  top: 0;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin: 10px 0;
+  writing-mode: vertical-rl;
+  transform: translateY(-50%) rotate(180deg);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  line-height: 1.1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text);
+  white-space: nowrap;
+  transition: opacity 0.3s;
 }
 
-input {
-  flex: 1 1 260px;
-  min-width: 0;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg);
+.orbit-tag b {
+  font-weight: 400;
+  color: var(--dim);
+}
+
+.orbit:hover .orbit-tag {
+  opacity: 0.3;
+}
+
+.orbit-count {
+  margin: 0;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.orbit-count [data-orbit-count] {
   color: var(--text);
 }
 
-button {
-  padding: 8px 14px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--card);
-  color: var(--text);
+.orbit-pct {
+  margin-inline-start: 0.9em;
+  color: var(--dim);
+}
+
+/* The rail is the scrollbar: click the line to fly, drag the ring to scrub. */
+.orbit-rail {
   cursor: pointer;
 }
 
-button.primary {
-  background: var(--accent);
-  color: var(--accent-text);
-  border-color: var(--accent);
+.orbit-rail::before {
+  content: '';
+  position: absolute;
+  inset: -24px -12px;
 }
 
-button:disabled {
-  opacity: 0.6;
-  cursor: default;
+.orbit .orbit-ring {
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+  transition: transform 0.3s var(--ease-out);
 }
 
-ol {
-  padding-left: 20px;
+.orbit .orbit-ring::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
 }
 
-ol li {
-  margin: 8px 0;
+.orbit.is-dragging .orbit-ring {
+  cursor: grabbing;
+  transform: scale(1.4);
 }
 
-footer {
-  margin-top: 32px;
+.orbit.is-dragging .orbit-tag {
+  opacity: 1;
+}
+
+html:not(.motion-ok) .orbit-ring i {
+  animation: none;
+}
+
+/* Phones: the same rail, slimmer, on the right edge. Only the ring takes
+   touches, so a thumb scrolling near the edge still scrolls the page. */
+@media (max-width: 899px) {
+  :root:has(.setup) {
+    --gutter: 28px;
+  }
+
+  .orbit {
+    --rail: min(46vh, 380px);
+    right: 4px;
+    gap: 14px;
+  }
+
+  .orbit-rail {
+    width: 18px;
+    cursor: default;
+  }
+
+  .orbit-rail::before {
+    display: none;
+  }
+
+  .orbit a {
+    pointer-events: none;
+  }
+
+  .orbit-name,
+  .orbit-tag {
+    display: none;
+  }
+
+  .orbit-ring {
+    width: 11px;
+    height: 11px;
+    margin: -5.5px 0 0 -5.5px;
+  }
+
+  .orbit .orbit-ring::before {
+    inset: -16px;
+  }
+
+  .orbit-count {
+    font-size: 0.5625rem;
+    letter-spacing: 0.08em;
+  }
+
+  .orbit-pct {
+    display: none;
+  }
+}
+
+/* Drawing styles: white hairlines and points of light, nothing else. */
+.film .ln {
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.film .ln.dim {
+  stroke: rgba(255, 255, 255, 0.3);
+}
+
+.film .ln.thick {
+  stroke-width: 4;
+}
+
+.film .ln.code {
+  stroke-width: 7;
+}
+
+.film .ln.slash {
+  stroke-width: 3;
+  filter: url(#glow-strong);
+}
+
+.film .ln.scan {
+  stroke-width: 2;
+  filter: url(#glow-strong);
+}
+
+.film .ln.budget {
+  stroke-width: 2.5;
+}
+
+.film .ln.node,
+.film .ln.pill,
+.film .ln.bubble,
+.film .ln.coin,
+.film .ln.planet {
+  fill: rgba(0, 0, 0, 0.85);
+}
+
+.film .route {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.4);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.film .fill {
+  fill: var(--text);
+}
+
+.film .fill.dim {
+  fill: rgba(255, 255, 255, 0.32);
+}
+
+.film .bar {
+  fill: var(--text);
+}
+
+.film .bar.dust,
+.film .meter-fill.dim {
+  fill: url(#stardust);
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 1;
+}
+
+.film .meter-fill {
+  fill: rgba(255, 255, 255, 0.85);
+}
+
+.film .shard {
+  fill: #fff;
+  opacity: 0;
+}
+
+.film .extra {
+  opacity: 0.35;
+}
+
+.film text {
+  fill: var(--text);
+}
+
+.film .mono {
+  font-family: var(--font-mono), monospace;
+}
+
+.film .label {
   font-size: 13px;
+  letter-spacing: 0.2em;
+}
+
+.film .small {
+  font-size: 13px;
+}
+
+.film .tiny {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.film text.dim,
+.film tspan.dim {
+  fill: var(--dim);
+}
+
+.film .display-num {
+  font-family: var(--font-sans), sans-serif;
+  font-size: 92px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.film .stamp-big {
+  font-family: var(--font-sans), sans-serif;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.film .logo {
+  filter: invert(1);
+}
+
+/* Without motion the drawings rest finished: no travelling stars, no
+   in-between states. */
+html:not(.motion-ok) .film .head {
+  display: none;
+}
+
+.star-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* ---------- Scrollbar ---------- */
+
+/* The orbit rail is the page's scrollbar. */
+html:has(.setup) {
+  scrollbar-width: none;
+}
+
+html:has(.setup)::-webkit-scrollbar {
+  display: none;
+}
+
+/* The setup page is for reading: its transparent bar scrolls away instead of floating over the steps. */
+.nav:has(~ .setup) {
+  position: absolute;
+}
+
+@media (max-width: 420px) {
+  .nav .btn-small {
+    padding: 0 0.8em;
+    font-size: 0.8125rem;
+  }
 }

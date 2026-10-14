@@ -58,28 +58,42 @@ export function LandingMotion() {
       // Scripts are running, so the CSS fallback that reveals the hero after 3s
       // must not take over (animations beat inline styles in the cascade).
       gsap.set('[data-hero-char], [data-hero-fade]', { animation: 'none' });
-      gsap.fromTo(cosmos, { eclipseScale: 0.7, stars: 0 }, { eclipseScale: 1, stars: 1, duration: 2.8, ease: 'expo.out' });
-      gsap.fromTo(
-        '[data-hero-char]',
-        {
-          opacity: 0,
-          x: () => gsap.utils.random(-320, 320),
-          y: () => gsap.utils.random(-220, 220),
-          rotation: () => gsap.utils.random(-120, 120),
-          scale: () => gsap.utils.random(0.2, 2.4),
-          filter: 'blur(14px)',
-        },
-        { opacity: 1, x: 0, y: 0, rotation: 0, scale: 1, filter: 'blur(0px)', duration: 1.8, ease: 'expo.out', stagger: { each: 0.03, from: 'random' }, delay: 0.3 },
-      );
-      gsap.fromTo('[data-hero-fade]', { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 1.1, ease: 'expo.out', stagger: 0.12, delay: 1.4 });
-      gsap.fromTo('[data-scroll-cue]', { opacity: 0 }, { opacity: 1, duration: 1, delay: 2.2 });
-      gsap.fromTo('[data-orbit]', { opacity: 0 }, { opacity: 1, duration: 1.4, delay: 1.6 });
+      const assembled = { opacity: 1, x: 0, y: 0, rotation: 0, scale: 1, filter: 'blur(0px)' };
+      const intro = gsap
+        .timeline()
+        .fromTo(cosmos, { eclipseScale: 0.7, stars: 0 }, { eclipseScale: 1, stars: 1, duration: 2.8, ease: 'expo.out' }, 0)
+        .fromTo(
+          '[data-hero-char]',
+          {
+            opacity: 0,
+            x: () => gsap.utils.random(-320, 320),
+            y: () => gsap.utils.random(-220, 220),
+            rotation: () => gsap.utils.random(-120, 120),
+            scale: () => gsap.utils.random(0.2, 2.4),
+            filter: 'blur(14px)',
+          },
+          { ...assembled, duration: 1.8, ease: 'expo.out', stagger: { each: 0.03, from: 'random' } },
+          0.3,
+        )
+        .fromTo('[data-hero-fade]', { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 1.1, ease: 'expo.out', stagger: 0.12 }, 1.4)
+        .fromTo('[data-orbit]', { opacity: 0 }, { opacity: 1, duration: 1.4 }, 1.6)
+        .fromTo('[data-scroll-cue]', { opacity: 0 }, { opacity: 1, duration: 1 }, 2.2);
+      // The intro is time-based and the exit is scroll-based; they share the
+      // letters. The moment the reader scrolls, the intro jumps to its end so
+      // the two never fight, and scrolling back up always lands on a whole headline.
+      if (window.scrollY > 0) intro.progress(1);
+      ScrollTrigger.create({ start: 1, end: 'max', onEnter: () => intro.progress(1) });
 
       // Intro → into the ring: the headline scatters back into dust as the eclipse grows past the screen.
       pinned('hero', '130%')
-        .to('[data-scroll-cue]', { opacity: 0, duration: 0.1 }, 0)
-        .to('[data-hero-char]', { y: () => gsap.utils.random(-160, -40), opacity: 0, filter: 'blur(8px)', duration: 0.4, stagger: { each: 0.008, from: 'center' } }, 0)
-        .to('[data-hero-fade]', { opacity: 0, y: -40, duration: 0.3 }, 0)
+        .fromTo('[data-scroll-cue]', { opacity: 1 }, { opacity: 0, duration: 0.1, immediateRender: false }, 0)
+        .fromTo(
+          '[data-hero-char]',
+          assembled,
+          { y: () => gsap.utils.random(-160, -40), opacity: 0, filter: 'blur(8px)', duration: 0.4, stagger: { each: 0.008, from: 'center' }, immediateRender: false },
+          0,
+        )
+        .fromTo('[data-hero-fade]', { opacity: 1, y: 0 }, { opacity: 0, y: -40, duration: 0.3, immediateRender: false }, 0)
         .fromTo(cosmos, { eclipseScale: 1, travel: 0 }, { eclipseScale: 16, travel: 3, duration: 1, ease: 'power2.in', immediateRender: false }, 0)
         .fromTo(cosmos, { flash: 0 }, { flash: 0.45, duration: 0.16, immediateRender: false }, 0.72)
         .to(cosmos, { flash: 0, eclipse: 0, duration: 0.2 }, 0.88);

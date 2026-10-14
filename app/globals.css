@@ -562,9 +562,12 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
 
 .tool {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
   align-items: center;
   gap: clamp(28px, 5vw, 80px);
+}
+
+.motion-ok .tool {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
 }
 
 .tool-text h3 {
@@ -594,18 +597,14 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   overflow-wrap: anywhere;
 }
 
+/* Empty: the star swarm draws each tool's picture over this spot. */
 .tool-visual {
-  border-radius: 20px;
-  border: 1px solid var(--line);
-  background: rgba(5, 5, 5, 0.9);
-  padding: 10px;
+  display: none;
+  aspect-ratio: 4 / 3;
 }
 
-.tool-art {
+.motion-ok .tool-visual {
   display: block;
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  border-radius: 12px;
 }
 
 .ticks {
@@ -649,9 +648,9 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
 }
 
 @media (max-width: 899px) {
-  .tool {
+  .motion-ok .tool {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 12px;
   }
 
   .motion-ok .tools-stage {
@@ -663,12 +662,10 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   }
 
   .tool-visual {
-    max-width: 420px;
-    padding: 6px;
-  }
-
-  .tool-art {
+    order: -1;
+    width: min(100%, 420px);
     aspect-ratio: 16 / 9;
+    margin: 0 auto;
   }
 
   .tool-text p {
@@ -693,7 +690,12 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
 .motion-ok .scene-keys .scene-pin {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-end;
+  padding-bottom: clamp(40px, 10vh, 120px);
+}
+
+.motion-ok .scene-keys .keys-text {
+  font-size: clamp(1.4rem, 0.9rem + 1.7vw, 2.5rem);
 }
 
 .keys-text {
@@ -1663,108 +1665,86 @@ html:not(.motion-ok) .orbit-ring i {
   color: var(--muted);
 }
 
-.motion-ok [data-scene='price'] .beat {
-  top: 0;
-  bottom: 0;
-  height: max-content;
-  margin: auto;
+/* ---------- Star formations ---------- */
+
+/* An empty square the star swarm draws its shape into. The canvas reads its
+   position; it has no look of its own. */
+.formation {
+  display: none;
 }
 
-/* ---------- Paying (columns) and Open source (split) ---------- */
-
-.cols-title,
-.open-title {
-  font-size: clamp(2.2rem, 1rem + 4vw, 4.75rem);
-  line-height: 1.02;
-  letter-spacing: -0.05em;
+.motion-ok .formation {
+  --slot: min(34vh, 62vw);
+  display: block;
+  position: absolute;
+  top: 13vh;
+  left: calc(50% - var(--slot) / 2);
+  width: var(--slot);
+  height: var(--slot);
+  pointer-events: none;
 }
 
-.cols-title {
+.motion-ok [data-scene='how'] .formation {
+  --slot: min(40vh, 64vw);
+  top: 11vh;
+}
+
+.motion-ok .scene-formed .formation {
+  --slot: min(30vh, 56vw);
+  top: calc(clamp(72px, 11vh, 120px) + clamp(3.5rem, 2rem + 4vw, 6rem));
+}
+
+.motion-ok .scene-keys .formation {
+  --slot: min(28vh, 52vw);
+  top: 12vh;
+}
+
+/* Paying and Open source: a standing headline, then one point at a time. */
+.scene-heading {
+  max-width: 1000px;
+  margin: 0 auto 8vh;
   text-align: center;
+  font-size: clamp(1.6rem, 1rem + 2vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
 }
 
-.cols {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(16px, 2.5vw, 32px);
-  max-width: 1100px;
-  margin: clamp(40px, 8vh, 80px) auto 0;
+.scene-heading .dim {
+  color: var(--dim);
 }
 
-.col,
-.open-list li {
-  padding: 26px 26px 28px;
-  border-radius: 20px;
-  border: 1px solid var(--line);
-  background: rgba(10, 10, 10, 0.82);
+.motion-ok .scene-heading {
+  position: absolute;
+  top: clamp(72px, 11vh, 120px);
+  left: 0;
+  right: 0;
 }
 
-.col h3,
-.open-list h3 {
-  font-size: clamp(1.25rem, 1.05rem + 0.6vw, 1.6rem);
-  letter-spacing: -0.03em;
-}
-
-.col p,
-.open-list p {
-  margin-top: 0.6rem;
-  color: var(--muted);
-}
-
-.open-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-  gap: clamp(32px, 6vw, 96px);
-  align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.open-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 14px;
-}
-
-.open-note {
-  margin: clamp(28px, 6vh, 56px) auto 0;
-  text-align: center;
-  color: var(--muted);
-  font-size: 0.9375rem;
-}
-
-.motion-ok .scene-cols .scene-pin,
-.motion-ok .scene-open .scene-pin {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding-top: 64px;
+.beat-note {
+  margin-top: 1.25rem;
+  font-size: 0.875rem;
+  color: var(--dim);
 }
 
 @media (max-width: 899px) {
-  .cols,
-  .open-grid {
-    grid-template-columns: 1fr;
+  .motion-ok .formation {
+    --slot: min(30vh, 72vw);
+    top: 12vh;
   }
 
-  .cols {
-    gap: 10px;
-    margin-top: 28px;
+  .motion-ok [data-scene='how'] .formation {
+    --slot: min(30vh, 72vw);
+    top: 12vh;
   }
 
-  .col,
-  .open-list li {
-    padding: 18px 20px;
+  .motion-ok .scene-formed .formation {
+    --slot: min(24vh, 60vw);
+    top: calc(76px + 5.5rem);
   }
 
-  .open-grid {
-    gap: 24px;
-  }
-
-  .open-title {
-    text-align: center;
+  .motion-ok .scene-keys .formation {
+    --slot: min(22vh, 56vw);
+    top: 11vh;
   }
 }
 

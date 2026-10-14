@@ -288,3 +288,64 @@ void main() {
   outColor = vec4(vec3(vShade) * (halo * 0.8 + core * 0.75) * vAlpha, 0.0);
 }
 `;
+
+// The story's star swarm. Every shape is a row of a float texture (x, y,
+// brightness per star); uForm moves between neighbouring rows. On the way the
+// stars swirl out and come back together, each leaving at its own moment.
+export const SWARM_VERTEX = /* glsl */ `#version 300 es
+precision highp float;
+precision highp sampler2D;
+
+layout(location = 0) in vec4 aRand;
+
+uniform sampler2D uShapes;
+uniform float uForm;
+uniform float uShapeCount;
+uniform float uTime;
+uniform float uAspect;
+uniform float uScale;
+uniform vec2 uOffset;
+uniform float uAlpha;
+uniform float uDpr;
+uniform float uPointSize;
+
+out float vAlpha;
+out float vShade;
+
+vec3 shape(float s) {
+  return texelFetch(uShapes, ivec2(gl_VertexID, int(s)), 0).xyz;
+}
+
+void main() {
+  float f = clamp(uForm, 0.0, uShapeCount - 1.0);
+  float a = floor(f);
+  float b = min(a + 1.0, uShapeCount - 1.0);
+  float t = clamp((f - a - aRand.y * 0.4) / 0.6, 0.0, 1.0);
+  t = t * t * (3.0 - 2.0 * t);
+  vec3 from = shape(a);
+  vec3 to = shape(b);
+  vec2 p = mix(from.xy, to.xy, t);
+  float bright = mix(from.z, to.z, t);
+
+  // In transit: swirl around the centre and drift outward a little.
+  float lift = sin(t * 3.14159265);
+  float turn = lift * (0.6 + aRand.w * 0.9) * (aRand.x < 0.5 ? -1.0 : 1.0);
+  float c = cos(turn), s = sin(turn);
+  p = mat2(c, s, -s, c) * p;
+  float ang = aRand.x * 6.2831853 + uTime * 0.5;
+  p += vec2(cos(ang), sin(ang)) * lift * (0.12 + 0.3 * aRand.z);
+
+  // At rest: a slow breath so the shape never freezes.
+  p += vec2(sin(uTime * 0.8 + aRand.x * 40.0), cos(uTime * 0.7 + aRand.y * 40.0)) * 0.008;
+
+  vec2 ndc = p * uScale;
+  ndc.x /= uAspect;
+  ndc += uOffset;
+  gl_Position = vec4(ndc, 0.0, 1.0);
+
+  vShade = 1.0;
+  gl_PointSize = uPointSize * uDpr * (0.55 + aRand.z * 0.9) * (0.6 + 0.4 * bright) * (1.0 + lift * 0.5);
+  float twinkle = 0.7 + 0.3 * sin(uTime * 1.9 + aRand.x * 60.0);
+  vAlpha = uAlpha * twinkle * bright * (1.0 - lift * 0.3);
+}
+`;

@@ -9,7 +9,6 @@ import { VercelBadge } from '../vercel-badge';
 import { WordReveal } from '../word-reveal';
 import { LandingMotion } from './landing-motion';
 import { KindLogos } from './provider-logos';
-import { ToolArt, type ToolArtVariant } from './tool-art';
 
 /** "author": the project's own site. "instance": someone's self-hosted deployment. */
 const KINDS = ['text', 'image', 'video'] as const;
@@ -29,12 +28,12 @@ export const CHAPTERS = [
   { id: 'start', label: 'Get started' },
 ] as const;
 
-const TOOLS: { label: string; name: string; signature: string; text: string; art: ToolArtVariant }[] = [
-  { label: 'Find a model', name: 'list_models', signature: 'list_models({ type?, query? })', text: 'Search every model by type or name, with its price.', art: 'catalog' },
-  { label: 'Write', name: 'generate_text', signature: 'generate_text({ model, prompt })', text: 'Answers, drafts and code from any language model, with what each reply cost.', art: 'text' },
-  { label: 'Make images', name: 'generate_image', signature: 'generate_image({ model, prompt })', text: 'Pictures show up right in the chat, with a private download link.', art: 'image' },
-  { label: 'Make videos', name: 'start_video', signature: 'start_video({ model, prompt })', text: 'Video takes minutes, so you get a ticket right away instead of waiting.', art: 'video' },
-  { label: 'Get your video', name: 'get_video', signature: 'get_video({ job_id })', text: 'Checks on the ticket. When the video is ready, you get the file.', art: 'reel' },
+const TOOLS: { label: string; name: string; signature: string; text: string }[] = [
+  { label: 'Find a model', name: 'list_models', signature: 'list_models({ type?, query? })', text: 'Search every model by type or name, with its price.' },
+  { label: 'Write', name: 'generate_text', signature: 'generate_text({ model, prompt })', text: 'Answers, drafts and code from any language model, with what each reply cost.' },
+  { label: 'Make images', name: 'generate_image', signature: 'generate_image({ model, prompt })', text: 'Pictures show up right in the chat, with a private download link.' },
+  { label: 'Make videos', name: 'start_video', signature: 'start_video({ model, prompt })', text: 'Video takes minutes, so you get a ticket right away instead of waiting.' },
+  { label: 'Get your video', name: 'get_video', signature: 'get_video({ job_id })', text: 'Checks on the ticket. When the video is ready, you get the file.' },
 ];
 
 const fmt = (n: number) => n.toLocaleString('en-US');
@@ -54,7 +53,7 @@ export function Landing({
 
   return (
     <>
-      <CosmosCanvas counts={catalog?.counts ?? FALLBACK_COUNTS} />
+      <CosmosCanvas counts={catalog?.counts ?? FALLBACK_COUNTS} formations />
       <LandingMotion />
 
       <SiteNav
@@ -158,6 +157,7 @@ export function Landing({
             <h2 id="price-title" className="sr-only">
               Price
             </h2>
+            <div className="formation" data-formation aria-hidden="true" />
             <div className="beat" data-beat>
               <h3 className="beat-title">
                 Many AI apps add a margin.
@@ -234,6 +234,7 @@ export function Landing({
             <h2 id="how-title" className="sr-only">
               How it works
             </h2>
+            <div className="formation" data-formation aria-hidden="true" />
             <div className="beat" data-beat>
               <h3 className="beat-title">
                 <WordReveal text="Claude and ChatGPT can plug in extra tools." />
@@ -273,7 +274,7 @@ export function Landing({
               What your chat can do with it
             </h2>
             <div className="tools-stage">
-              {TOOLS.map((tool) => (
+              {TOOLS.map((tool, i) => (
                 <article key={tool.name} className="tool" data-tool>
                   <div className="tool-text">
                     <h3>{tool.label}</h3>
@@ -281,9 +282,8 @@ export function Landing({
                     <p>{tool.text}</p>
                     <code>{tool.signature}</code>
                   </div>
-                  <div className="tool-visual">
-                    <ToolArt variant={tool.art} />
-                  </div>
+                  {/* The swarm draws each tool's picture here; the first one marks the spot. */}
+                  <div className="tool-visual" aria-hidden="true" data-formation={i === 0 ? '' : undefined} />
                 </article>
               ))}
             </div>
@@ -296,69 +296,60 @@ export function Landing({
         </section>
 
         {/* Paying: usage, not plans. */}
-        <section id="paying" className="scene scene-cols" data-scene="paying" data-chapter="paying" aria-labelledby="paying-title">
+        <section id="paying" className="scene scene-formed" data-scene="paying" data-chapter="paying" aria-labelledby="paying-title">
           <div className="scene-pin">
-            <h2 id="paying-title" className="cols-title" data-col-title>
+            <h2 id="paying-title" className="scene-heading" data-heading>
               Pay only for what you use.
             </h2>
-            <div className="cols">
-              <div className="col" data-col>
-                <h3>No plan</h3>
-                <p>No subscription and no monthly fee. Each request costs what that model costs, nothing more.</p>
-              </div>
-              <div className="col" data-col>
-                <h3>Your own credits</h3>
-                <p>
-                  Top up <VercelBadge kind="gateway" /> credits on your Vercel account, or turn on auto top-up. Every team also gets
-                  free monthly credits for a set of models.
-                </p>
-              </div>
-              <div className="col" data-col>
-                <h3>Your own limit</h3>
-                <p>Set a spend budget in AI Gateway to cap what your link can ever spend.</p>
-              </div>
+            <div className="formation" data-formation aria-hidden="true" />
+            <div className="beat" data-beat>
+              <h3 className="beat-title">No plan.</h3>
+              <p className="beat-sub">No subscription and no monthly fee. Each request costs what that model costs, nothing more.</p>
+            </div>
+            <div className="beat" data-beat>
+              <h3 className="beat-title">Your own credits.</h3>
+              <p className="beat-sub">
+                Top up <VercelBadge kind="gateway" /> credits on your Vercel account, or turn on auto top-up. Every team also gets free
+                monthly credits for a set of models.
+              </p>
+            </div>
+            <div className="beat" data-beat>
+              <h3 className="beat-title">Your own limit.</h3>
+              <p className="beat-sub">Set a spend budget in AI Gateway to cap what your link can ever spend.</p>
             </div>
           </div>
         </section>
 
         {/* Open source and independent. */}
-        <section id="open" className="scene scene-open" data-scene="open" data-chapter="open" aria-labelledby="open-title">
+        <section id="open" className="scene scene-formed" data-scene="open" data-chapter="open" aria-labelledby="open-title">
           <div className="scene-pin">
-            <div className="open-grid">
-              <h2 id="open-title" className="open-title" data-col-title>
-                Free.
-                <br />
-                Open source.
-                <br />
-                <span className="dim">Yours to run.</span>
-              </h2>
-              <ul className="open-list">
-                <li data-col>
-                  <h3>I charge nothing.</h3>
-                  <p>No fee, no markup, no sign-up with me. The code is MIT licensed, so anyone can use it, change it or share it.</p>
-                </li>
-                <li data-col>
-                  <h3>You run your own copy.</h3>
-                  <p>
-                    Version 1 runs on your own <VercelBadge kind="vercel" /> account. It takes a few clicks, and the setup page walks
-                    you through each one.
-                  </p>
-                </li>
-                <li data-col>
-                  <h3>Why I made it.</h3>
-                  <p>So everyone can use AI at the price providers actually set, from the chat app they already use.</p>
-                </li>
-              </ul>
+            <h2 id="open-title" className="scene-heading" data-heading>
+              Free. Open source. <span className="dim">Yours to run.</span>
+            </h2>
+            <div className="formation" data-formation aria-hidden="true" />
+            <div className="beat" data-beat>
+              <h3 className="beat-title">I charge nothing.</h3>
+              <p className="beat-sub">No fee, no markup, no sign-up with me. The code is MIT licensed, so anyone can use it, change it or share it.</p>
             </div>
-            <p className="open-note" data-col>
-              Built independently. Not made by or affiliated with Vercel.
-            </p>
+            <div className="beat" data-beat>
+              <h3 className="beat-title">You run your own copy.</h3>
+              <p className="beat-sub">
+                Version 1 runs on your own <VercelBadge kind="vercel" /> account. It takes a few clicks, and the setup page walks you
+                through each one.
+              </p>
+            </div>
+            <div className="beat" data-beat>
+              <h3 className="beat-title">Why I made it.</h3>
+              <p className="beat-sub">So everyone can use AI at the price providers actually set, from the chat app they already use.</p>
+              <p className="beat-note">Built independently. Not made by or affiliated with Vercel.</p>
+            </div>
           </div>
         </section>
 
         {/* Safety: one paragraph that lights up word by word. */}
         <section id="safety" className="scene scene-keys" data-scene="keys" data-chapter="safety" aria-labelledby="keys-title">
           <div className="scene-pin">
+            <div className="formation" data-formation aria-hidden="true" />
             <h2 id="keys-title" className="eyebrow">
               Your keys, your credits
             </h2>

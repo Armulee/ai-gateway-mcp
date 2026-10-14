@@ -9,7 +9,7 @@ You deploy your own copy to your Vercel account, so every call is billed to **yo
 ## Set up
 
 1. **Click Deploy.** Vercel copies this repo to your GitHub, GitLab or Bitbucket account and asks for `MCP_SECRET` (see [below](#mcp_secret)). It also creates a **private Vercel Blob store** and connects it to the project, so there is nothing else to configure.
-2. **Open your deployment** (`https://<your-project>.vercel.app`). The setup page checks that AI Gateway, Blob and the secret all work.
+2. **Open the setup page** at `https://<your-project>.vercel.app/setup` (the home page links to it). It checks that AI Gateway, Blob and the secret all work.
 3. **Paste your secret** into the setup page to build your connector URL, then click **Test connection**. The URL is assembled in your browser and has this form:
    ```
    https://<your-project>.vercel.app/mcp/<MCP_SECRET>
@@ -47,7 +47,7 @@ Errors are written to be readable and always name the model. They cover unknown 
 | `ALLOWED_MODELS` | empty (all models) | Comma-separated allowlist of model ids. |
 | `SIGNED_URL_TTL_HOURS` | `24` | How long file links stay valid. The maximum is 168 (7 days). |
 | `AI_GATEWAY_API_KEY` | unset | Optional. Use it for local development. When set, it replaces the OIDC token. |
-| `SITE_MODE` | `instance` | Set to `landing` to show the project landing page instead of the setup page. |
+| `SITE_MODE` | `instance` | Only changes the home page's main button. `instance` points to `/setup`; `landing` (the project's own site) points to the Deploy button. |
 
 Vercel sets the Blob variables (`BLOB_STORE_ID`, plus `BLOB_READ_WRITE_TOKEN` as a fallback) and `VERCEL_OIDC_TOKEN` automatically when the store is connected.
 
@@ -82,6 +82,7 @@ Choose **Streamable HTTP** and connect to `http://localhost:3000/mcp/<MCP_SECRET
 
 ## How it works
 
+- **Website:** `/` tells the story of the project as a scroll-driven WebGL scene (black and white, drawn entirely in code). `/setup` is the setup page for your deployment.
 - **Stack:** Next.js (App Router) and TypeScript. MCP is served over Streamable HTTP using [`mcp-handler`](https://github.com/vercel/mcp-handler) v2, and model calls go through the [AI SDK](https://ai-sdk.dev) with the AI Gateway provider.
 - **Secret check:** `proxy.ts` rejects a wrong secret before routing by rewriting it to the standard 404 page. The route handler then checks the secret again, using a constant-time comparison.
 - **Video jobs:** jobs don't need a database. Each `job_id` holds the model and the AI Gateway job id, signed with a key derived from `MCP_SECRET` so it can't be forged.

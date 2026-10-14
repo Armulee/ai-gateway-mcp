@@ -25,7 +25,7 @@ async function checkGateway(): Promise<Check> {
       ok: false,
       detail: process.env.VERCEL
         ? 'Could not authenticate with the OIDC token. Check that AI Gateway is enabled for this team, then redeploy.'
-        : 'Running outside Vercel: run `vercel link` and `vercel env pull` (OIDC token, lasts 12 hours) or set AI_GATEWAY_API_KEY.',
+        : 'Running outside Vercel. Run vercel link, then vercel env pull (the OIDC token lasts 12 hours), or set AI_GATEWAY_API_KEY.',
     };
   }
 }
@@ -36,7 +36,7 @@ async function checkBlob(): Promise<Check> {
     return {
       label,
       ok: false,
-      detail: 'No Blob store found. Project → Storage → Create a Blob store (private) and connect it, then redeploy. Needed for video and for image download links.',
+      detail: 'No Blob store found. In your Vercel project open Storage, create a private Blob store, connect it, then redeploy. Video and image download links need it.',
     };
   }
   try {

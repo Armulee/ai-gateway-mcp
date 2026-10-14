@@ -5,6 +5,8 @@ export type KindCounts = { text: number; image: number; video: number };
 export type CatalogSummary = {
   counts: KindCounts;
   total: number;
+  /** Number of distinct providers (the part of the id before the slash). */
+  providers: number;
   /** A spread of real model ids across providers, for the marquee. */
   sampleIds: string[];
 };
@@ -27,7 +29,8 @@ export async function getCatalogSummary(): Promise<CatalogSummary | null> {
     for (const model of models) counts[primaryKind(model)!]++;
     const step = Math.max(1, Math.floor(models.length / 48));
     const sampleIds = models.filter((_, i) => i % step === 0).map((m) => m.id);
-    return { counts, total: models.length, sampleIds };
+    const providers = new Set(models.map((m) => m.id.split('/')[0])).size;
+    return { counts, total: models.length, providers, sampleIds };
   } catch {
     return null;
   }

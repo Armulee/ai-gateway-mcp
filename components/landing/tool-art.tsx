@@ -8,8 +8,8 @@ import { useEffect, useRef } from 'react';
 
 export type ToolArtVariant = 'catalog' | 'text' | 'image' | 'video' | 'reel';
 
-const FG = '236, 235, 230';
-const ACCENT = '#ff5b2e';
+const FG = '237, 237, 237';
+const ACCENT = '#ffffff';
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
 
 const hash = (n: number) => {

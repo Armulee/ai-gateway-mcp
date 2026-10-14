@@ -6,8 +6,8 @@ import { useEffect } from 'react';
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Setup page motion stays quiet: panels ease in once, and the step rail
-// highlights the section being read. No pinning, no scroll hijack.
+// The setup page is for reading: steps ease in once as they arrive and the
+// timeline line fills as you go. No pinning, no scroll hijack.
 export function SetupMotion() {
   useEffect(() => {
     const mm = gsap.matchMedia();
@@ -15,35 +15,24 @@ export function SetupMotion() {
       gsap.utils.toArray<HTMLElement>('[data-reveal]').forEach((el, i) => {
         gsap.fromTo(
           el,
-          { y: 36, opacity: 0 },
+          { y: 32, opacity: 0 },
           {
             y: 0,
             opacity: 1,
             duration: 0.9,
             ease: 'expo.out',
-            delay: i < 3 ? i * 0.08 : 0,
+            delay: i < 2 ? i * 0.1 : 0,
             scrollTrigger: { trigger: el, start: 'top 92%', once: true },
           },
         );
       });
+      gsap.fromTo(
+        '.timeline',
+        { '--progress': 0 },
+        { '--progress': 1, ease: 'none', scrollTrigger: { trigger: '.timeline', start: 'top 60%', end: 'bottom 60%', scrub: true } },
+      );
     });
-
-    // The rail works with or without motion.
-    const triggers = gsap.utils.toArray<HTMLElement>('[data-step]').map((step) =>
-      ScrollTrigger.create({
-        trigger: step,
-        start: 'top 45%',
-        end: 'bottom 45%',
-        onToggle: ({ isActive }) => {
-          document.querySelector(`[data-rail="${step.id}"]`)?.classList.toggle('is-active', isActive);
-        },
-      }),
-    );
-
-    return () => {
-      mm.revert();
-      triggers.forEach((t) => t.kill());
-    };
+    return () => mm.revert();
   }, []);
 
   return null;

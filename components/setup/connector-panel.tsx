@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { pulse } from '../gate/store';
+import { pulse } from '../cosmos/store';
 
 // Runs in the browser only. The secret is never sent anywhere except to this
 // deployment's own MCP endpoint when "Test connection" is used.
@@ -24,7 +24,7 @@ async function rpc(url: string, body: object, protocolVersion?: string): Promise
     body: JSON.stringify(body),
   });
   if (res.status === 404) {
-    throw new Error('This secret does not match MCP_SECRET on this deployment, or the endpoint is disabled (see Check above).');
+    throw new Error('This secret does not match MCP_SECRET on this deployment, or the endpoint is disabled (see step 1).');
   }
   if (!res.ok) throw new Error(`The endpoint answered HTTP ${res.status}.`);
   const text = await res.text();

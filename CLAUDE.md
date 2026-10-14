@@ -34,11 +34,11 @@ An open-source MCP server that lets people call any Vercel AI Gateway model (tex
 
 The same Next.js app serves a small website. It is free to host on Vercel.
 
-1. Instance setup page at `/` (every self-hoster sees this on their own deployment)
+1. Setup page at `/setup` (every self-hoster uses this on their own deployment)
    - Status checks: Gateway reachable via OIDC, Blob connected, `MCP_SECRET` set and long enough. Show pass/fail and a fix hint for each.
    - Never render the secret or the full connector URL by default. Provide a field where the owner pastes their secret; build the connector URL in the browser only (nothing sent to the server) and offer a "Test connection" button that calls the MCP endpoint's tools list.
    - Short how-to: add as a custom connector in Claude and ChatGPT, set a Gateway budget, rotate the secret.
-2. Project landing page (only on the author's own deployment, enabled with env `SITE_MODE=landing`; default is `instance`)
+2. Landing page at `/` on every deployment: a black-and-white scrollytelling story (WebGL, GSAP, Lenis, all graphics drawn in code). `SITE_MODE=landing` (the author's site) makes its main button "Deploy to Vercel"; the default `instance` makes it "Set up this deployment" pointing to `/setup`.
    - What it is, a demo GIF or video, Deploy button, GitHub link.
    - Waitlist signup for the future hosted version. Storage for the waitlist is not decided yet: ask before choosing.
    - Build this after the MCP server and setup page work.
@@ -98,7 +98,7 @@ Still unverified (check on a real deployment):
 
 - Deploy button that clones the repo and prompts for `MCP_SECRET` (suggest a long random value).
 - The Deploy button creates and connects a private Blob store itself (`stores=[{"type":"blob","access":"private"}]`).
-- Steps: deploy → open the setup page → copy `https://<app>.vercel.app/mcp/<MCP_SECRET>` → add as a custom connector in Claude or ChatGPT.
+- Steps: deploy → open `/setup` → copy `https://<app>.vercel.app/mcp/<MCP_SECRET>` → add as a custom connector in Claude or ChatGPT.
 - Warnings: anyone with the URL can spend your credits, so keep it private. Set an AI Gateway budget. Video needs enough paid Gateway credits (whether the free monthly credit covers video is unverified, so the README does not claim it).
 - License: MIT.
 
@@ -110,7 +110,7 @@ Still unverified (check on a real deployment):
 - Wrong secret returns 404; a short or missing secret disables the endpoint.
 - Setup page shows correct status checks and never exposes the secret.
 - README is complete and the Deploy button works from a clean account.
-- Landing page (`SITE_MODE=landing`) comes after all of the above.
+- Landing page at `/` and setup page at `/setup` both work, including reduced motion and without WebGL.
 
 ## v2 notes (do not build yet)
 

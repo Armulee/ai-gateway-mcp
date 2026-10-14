@@ -8,10 +8,12 @@ import { SplitText } from '../split-text';
 import { VercelBadge } from '../vercel-badge';
 import { WordReveal } from '../word-reveal';
 import { LandingMotion } from './landing-motion';
-import { ProviderLogos } from './provider-logos';
+import { KindLogos } from './provider-logos';
 import { ToolArt, type ToolArtVariant } from './tool-art';
 
 /** "author": the project's own site. "instance": someone's self-hosted deployment. */
+const KINDS = ['text', 'image', 'video'] as const;
+
 export type LandingMode = 'author' | 'instance';
 
 /** Chapters of the story, in order. Also drives the progress rail. */
@@ -36,6 +38,7 @@ const TOOLS: { label: string; name: string; signature: string; text: string; art
 ];
 
 const fmt = (n: number) => n.toLocaleString('en-US');
+const pad = (n: number) => String(n).padStart(2, '0');
 
 export function Landing({
   catalog,
@@ -71,19 +74,54 @@ export function Landing({
         }
       />
 
-      <nav className="rail" aria-label="Chapters">
-        <ol>
-          {CHAPTERS.map((chapter) => (
-            <li key={chapter.id}>
-              <a href={`#${chapter.id}`} data-rail={chapter.id}>
-                <span className="rail-label">{chapter.label}</span>
-              </a>
-            </li>
-          ))}
-        </ol>
+      <nav className="orbit" aria-label="Chapters" data-orbit>
+        <div className="orbit-rail" style={{ '--last': CHAPTERS.length - 1 } as React.CSSProperties}>
+          <span className="orbit-track" aria-hidden="true" />
+          <span className="orbit-fill" aria-hidden="true" />
+          <ol>
+            {CHAPTERS.map((chapter, i) => (
+              <li key={chapter.id} style={{ '--i': i } as React.CSSProperties}>
+                <a
+                  href={`#${chapter.id}`}
+                  data-rail={chapter.id}
+                  className={i === 0 ? 'is-active' : undefined}
+                  aria-current={i === 0 ? 'step' : undefined}
+                >
+                  <span className="orbit-star" aria-hidden="true" />
+                  <span className="orbit-name">{chapter.label}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+          <div className="orbit-ship" aria-hidden="true">
+            <span className="orbit-ring">
+              <i />
+            </span>
+            <span className="orbit-tag" data-orbit-tag>
+              <b data-orbit-num>01</b>
+              <span data-orbit-label>{CHAPTERS[0].label}</span>
+            </span>
+          </div>
+        </div>
+        <p className="orbit-count" aria-hidden="true">
+          <span data-orbit-count>01</span> / {pad(CHAPTERS.length)}
+        </p>
       </nav>
-      <div className="progress" aria-hidden="true">
-        <span data-progress />
+      <div className="orbit-mobile" aria-hidden="true" data-orbit>
+        <div className="orbit-rail" style={{ '--last': CHAPTERS.length - 1 } as React.CSSProperties}>
+          <span className="orbit-track" />
+          <span className="orbit-fill" />
+          <ol>
+            {CHAPTERS.map((chapter, i) => (
+              <li key={chapter.id} style={{ '--i': i } as React.CSSProperties} data-rail-dot={chapter.id}>
+                <span className="orbit-star" />
+              </li>
+            ))}
+          </ol>
+          <div className="orbit-ship">
+            <span className="orbit-ring" />
+          </div>
+        </div>
       </div>
 
       <main className="story">
@@ -168,12 +206,6 @@ export function Landing({
                   : 'Read live from AI Gateway. New models appear on their own.'}
               </p>
             </div>
-            {catalog && (
-              <div className="beat beat-logos" data-beat>
-                <ProviderLogos providerIds={catalog.providerIds} />
-                <h3 className="beat-title">From the labs you already know.</h3>
-              </div>
-            )}
             <div className="beat" data-beat>
               <h3 className="beat-title">
                 Text, image and video.
@@ -182,17 +214,16 @@ export function Landing({
               </h3>
             </div>
             {catalog && (
-              <div className="kinds" data-kinds aria-hidden="true">
-                <span style={{ left: '25%' }}>
-                  <b>{fmt(catalog.counts.text)}</b> text
-                </span>
-                <span style={{ left: '50%' }}>
-                  <b>{fmt(catalog.counts.image)}</b> image
-                </span>
-                <span style={{ left: '75%' }}>
-                  <b>{fmt(catalog.counts.video)}</b> video
-                </span>
-              </div>
+              <ul className="kinds" data-kinds aria-label="Models by kind">
+                {KINDS.map((kind, i) => (
+                  <li key={kind} className="kind" style={{ '--x': `${25 + i * 25}%` } as React.CSSProperties} data-kind>
+                    <p className="kind-label">
+                      <b>{fmt(catalog.counts[kind])}</b> {kind}
+                    </p>
+                    <KindLogos providerIds={catalog.kindProviders[kind]} max={8} />
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </section>

@@ -11,6 +11,8 @@ export type CatalogSummary = {
   providerIds: string[];
   /** A spread of real model ids across providers, for the marquee. */
   sampleIds: string[];
+  /** Providers with models of each kind, the ones with the most models first. */
+  kindProviders: Record<keyof KindCounts, string[]>;
 };
 
 /** Each model counts once: video before image before text. */
@@ -32,7 +34,15 @@ export async function getCatalogSummary(): Promise<CatalogSummary | null> {
     const step = Math.max(1, Math.floor(models.length / 48));
     const sampleIds = models.filter((_, i) => i % step === 0).map((m) => m.id);
     const providerIds = [...new Set(models.map((m) => m.id.split('/')[0]))];
-    return { counts, total: models.length, providers: providerIds.length, providerIds, sampleIds };
+    const perKind = { text: new Map(), image: new Map(), video: new Map() } as Record<keyof KindCounts, Map<string, number>>;
+    for (const model of models) {
+      const tally = perKind[primaryKind(model)!];
+      const provider = model.id.split('/')[0];
+      tally.set(provider, (tally.get(provider) ?? 0) + 1);
+    }
+    const ranked = (tally: Map<string, number>) => [...tally].sort((a, b) => b[1] - a[1]).map(([id]) => id);
+    const kindProviders = { text: ranked(perKind.text), image: ranked(perKind.image), video: ranked(perKind.video) };
+    return { counts, total: models.length, providers: providerIds.length, providerIds, sampleIds, kindProviders };
   } catch {
     return null;
   }

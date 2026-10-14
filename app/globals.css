@@ -380,8 +380,21 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   color: var(--muted);
 }
 
+/* Models by kind. Without motion they sit in a row under the text; with
+   motion each column hangs beneath its cluster of points. */
 .kinds {
-  display: none;
+  list-style: none;
+  margin: 2.5rem auto 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  gap: clamp(20px, 6vw, 72px);
+}
+
+.kind {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
 }
 
 .motion-ok .scene:not(.finale) {
@@ -402,31 +415,133 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
 }
 
 .motion-ok .kinds {
-  display: block;
   position: absolute;
   inset: 0 calc(-1 * var(--gutter));
+  margin: 0;
+  display: block;
   pointer-events: none;
 }
 
-.kinds span {
+.motion-ok .kind {
   position: absolute;
+  left: var(--x);
   top: 23%;
   transform: translateX(-50%);
+}
+
+.kind-label {
+  margin: 0;
   font-size: 0.9375rem;
   color: var(--muted);
   white-space: nowrap;
 }
 
-.kinds b {
+.kind-label b {
   color: var(--text);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
+/* The labs behind each kind: a small constellation of marks. */
+.kind-logos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  --size: 34px;
+  --gap: 10px;
+  --cols: 5;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--gap);
+  width: calc(var(--cols) * var(--size) + (var(--cols) - 1) * var(--gap));
+}
+
+.motion-ok .kind-logos {
+  /* Hang below the cluster, which fills the space under the label. */
+  margin-top: min(34vh, 30vw);
+}
+
+.kind-logos li {
+  position: relative;
+  width: var(--size);
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.85) 70%);
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.06);
+}
+
+.kind-logos img {
+  width: 50%;
+  height: 50%;
+  filter: invert(1);
+}
+
+/* Each mark bobs on its own slow orbit once it has arrived. */
+.motion-ok .kind-logos img,
+.motion-ok .kind-more {
+  animation: bob 5.5s ease-in-out infinite;
+  animation-delay: calc(var(--i, 8) * -0.7s);
+}
+
+.kind-logos li::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  border-top-color: rgba(255, 255, 255, 0.55);
+  opacity: 0;
+}
+
+.motion-ok .kind-logos li::after {
+  opacity: 1;
+  animation: orbit 7s linear infinite;
+  animation-delay: calc(var(--i, 8) * -0.9s);
+}
+
+.kind-more {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  color: var(--muted);
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(-1.5px);
+  }
+  50% {
+    transform: translateY(1.5px);
+  }
+}
+
+@keyframes orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 899px) {
-  .kinds span {
+  .motion-ok .kind {
     top: 26%;
+  }
+
+  .kind-label {
     font-size: 0.8125rem;
+  }
+
+  .kind-logos {
+    --size: 25px;
+    --gap: 6px;
+    --cols: 3;
+  }
+
+  .motion-ok .kind-logos {
+    margin-top: 31svh;
   }
 }
 
@@ -1144,98 +1259,334 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   filter: invert(1);
 }
 
-/* ---------- Chapter rail, progress bar, scroll cue ---------- */
+/* ---------- Chapter orbit, scroll cue ---------- */
 
-.rail {
+/* A line of stars down the right edge, one per chapter. A small eclipse
+   travels along it (--ship, 0 to 1, set from scroll); the line behind it is
+   lit, chapters already read glow, the rest wait dim. */
+.orbit {
+  --rail: min(56vh, 460px);
   position: fixed;
-  right: clamp(12px, 2vw, 28px);
+  right: clamp(16px, 2.4vw, 36px);
   top: 50%;
   z-index: 15;
+  display: grid;
+  justify-items: center;
+  gap: 22px;
   transform: translateY(-50%);
 }
 
-.rail ol {
+.orbit-rail {
+  position: relative;
+  width: 24px;
+  height: var(--rail);
+}
+
+.orbit-track,
+.orbit-fill {
+  position: absolute;
+  left: 50%;
+  width: 1px;
+  margin-left: -0.5px;
+}
+
+.orbit-track {
+  top: -36px;
+  bottom: -36px;
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.16) 18%, rgba(255, 255, 255, 0.16) 82%, transparent);
+}
+
+.orbit-fill {
+  top: 0;
+  height: 100%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.85));
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.35);
+  transform-origin: top;
+  transform: scaleY(var(--ship, 0));
+}
+
+.orbit ol,
+.orbit-mobile ol {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  gap: 10px;
-  justify-items: end;
 }
 
-.rail a {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  height: 14px;
-  text-decoration: none;
-}
-
-.rail a::after {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.3);
-  transition: width 0.35s var(--ease-out), background-color 0.35s;
-}
-
-.rail a:hover::after {
-  background: rgba(255, 255, 255, 0.7);
-}
-
-.rail a.is-active::after {
-  width: 22px;
-  background: var(--text);
-}
-
-.rail-label {
+.orbit li {
   position: absolute;
-  right: calc(100% + 12px);
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.7);
-  border: 1px solid var(--line);
-  font-size: 0.75rem;
-  color: var(--text);
+  left: 50%;
+  top: calc(var(--i) / var(--last) * 100%);
+}
+
+.orbit a {
+  position: absolute;
+  left: -12px;
+  top: -12px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+  border-radius: 50%;
+}
+
+.orbit a:focus-visible {
+  outline: 1px solid var(--text);
+  outline-offset: 2px;
+}
+
+/* A star: a point of light with a faint four-point glint. */
+.orbit-star {
+  position: relative;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.28);
+  transition: background-color 0.5s, box-shadow 0.5s, transform 0.5s var(--ease-out);
+}
+
+.orbit-star::before,
+.orbit-star::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 13px;
+  height: 1px;
+  margin: -0.5px 0 0 -6.5px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.9), transparent);
+  opacity: 0;
+  transform: scaleX(0.3);
+  transition: opacity 0.5s, transform 0.5s var(--ease-out);
+}
+
+.orbit-star::after {
+  transform: rotate(90deg) scaleX(0.3);
+}
+
+.is-past .orbit-star {
+  background: var(--text);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.7);
+}
+
+.is-past .orbit-star::before {
+  opacity: 0.55;
+  transform: scaleX(0.7);
+}
+
+.is-past .orbit-star::after {
+  opacity: 0.55;
+  transform: rotate(90deg) scaleX(0.7);
+}
+
+.orbit a:hover .orbit-star,
+.orbit a:focus-visible .orbit-star {
+  background: var(--text);
+  transform: scale(1.6);
+}
+
+.orbit a:hover .orbit-star::before,
+.orbit a:focus-visible .orbit-star::before {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.orbit a:hover .orbit-star::after,
+.orbit a:focus-visible .orbit-star::after {
+  opacity: 1;
+  transform: rotate(90deg) scaleX(1);
+}
+
+/* Other chapters' names, on hover. */
+.orbit-name {
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
   white-space: nowrap;
   opacity: 0;
-  transform: translateX(6px);
+  transform: translate(6px, -50%);
   pointer-events: none;
-  transition: opacity 0.25s, transform 0.25s var(--ease-out);
+  transition: opacity 0.3s, transform 0.4s var(--ease-out);
 }
 
-.rail a:hover .rail-label,
-.rail a:focus-visible .rail-label {
+.orbit a:not(.is-active):hover .orbit-name,
+.orbit a:not(.is-active):focus-visible .orbit-name {
   opacity: 1;
-  transform: none;
+  transform: translate(0, -50%);
 }
 
-.progress {
+/* The traveller. Its wrapper is as tall as the rail, so a percentage
+   translate moves it along the whole line. */
+.orbit-ship {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform: translateY(calc(var(--ship, 0) * 100%));
+}
+
+.orbit-ring {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 13px;
+  height: 13px;
+  margin: -6.5px 0 0 -6.5px;
+  border-radius: 50%;
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 0 6px rgba(255, 255, 255, 0.6),
+    0 0 18px rgba(255, 255, 255, 0.22),
+    inset 0 0 3px rgba(255, 255, 255, 0.5);
+}
+
+/* A moon on a slow orbit around it. */
+.orbit-ring i {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  animation: orbit 6s linear infinite;
+}
+
+.orbit-ring i::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -1.5px;
+  width: 3px;
+  height: 3px;
+  margin-left: -1.5px;
+  border-radius: 50%;
+  background: var(--text);
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.9);
+}
+
+/* The current chapter, always shown beside the ring. */
+.orbit-tag {
+  position: absolute;
+  right: 26px;
+  top: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: -0.55em;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  line-height: 1.1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text);
+  white-space: nowrap;
+  transition: opacity 0.3s;
+}
+
+.orbit-tag b {
+  font-weight: 400;
+  color: var(--dim);
+}
+
+.orbit:hover .orbit-tag {
+  opacity: 0.3;
+}
+
+.orbit-count {
+  margin: 0;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.orbit-count span {
+  color: var(--text);
+}
+
+.orbit-mobile {
   display: none;
 }
 
+html:not(.motion-ok) .orbit-ring i {
+  animation: none;
+}
+
+/* Beside narrower columns the tag would touch the text; the stars stay. */
+@media (max-width: 1180px) {
+  .orbit-tag {
+    display: none;
+  }
+}
+
+/* Phones: the same line of stars runs across the top edge. */
 @media (max-width: 899px) {
-  .rail {
+  .orbit {
     display: none;
   }
 
-  .progress {
+  .orbit-mobile {
     display: block;
     position: fixed;
     inset: 0 0 auto;
     z-index: 25;
-    height: 2px;
-    background: rgba(255, 255, 255, 0.08);
+    height: 12px;
+    padding: 0 14px;
+    pointer-events: none;
   }
 
-  .progress span {
-    display: block;
-    height: 100%;
-    background: var(--text);
-    transform: scaleX(0);
+  .orbit-mobile .orbit-rail {
+    width: 100%;
+    height: 12px;
+  }
+
+  .orbit-mobile .orbit-track,
+  .orbit-mobile .orbit-fill {
+    left: 0;
+    top: 50%;
+    width: auto;
+    height: 1px;
+    margin: -0.5px 0 0;
+  }
+
+  .orbit-mobile .orbit-track {
+    left: -14px;
+    right: -14px;
+    bottom: auto;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.16) 8%, rgba(255, 255, 255, 0.16) 92%, transparent);
+  }
+
+  .orbit-mobile .orbit-fill {
+    width: 100%;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.85));
     transform-origin: left;
+    transform: scaleX(var(--ship, 0));
+  }
+
+  .orbit-mobile li {
+    position: absolute;
+    top: 50%;
+    left: calc(var(--i) / var(--last) * 100%);
+  }
+
+  .orbit-mobile .orbit-star {
+    margin: -1.5px 0 0 -1.5px;
+  }
+
+  .orbit-mobile .orbit-ship {
+    transform: translateX(calc(var(--ship, 0) * 100%));
+  }
+
+  .orbit-mobile .orbit-ring {
+    left: 0;
+    top: 50%;
+    width: 9px;
+    height: 9px;
+    margin: -4.5px 0 0 -4.5px;
   }
 }
 
@@ -1317,98 +1668,6 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   bottom: 0;
   height: max-content;
   margin: auto;
-}
-
-/* ---------- Provider logos ---------- */
-
-.logos-ring {
-  list-style: none;
-  margin: 0 auto 2rem;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 72px));
-  justify-content: center;
-  gap: 18px;
-}
-
-.logos-ring li {
-  display: grid;
-  place-items: center;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  border: 1px solid var(--line);
-  background: rgba(10, 10, 10, 0.8);
-}
-
-.logos-ring img {
-  width: 44%;
-  height: 44%;
-  filter: invert(1);
-}
-
-.logos-more {
-  margin-bottom: 1.5rem;
-  color: var(--muted);
-  font-size: 0.9375rem;
-}
-
-@media (min-width: 900px) {
-  .logos-ring {
-    grid-template-columns: repeat(8, 72px);
-  }
-
-  /* With motion on wide screens, the logos orbit the galaxy. */
-  .motion-ok .beat-logos {
-    top: 0;
-    bottom: clamp(40px, 11vh, 130px);
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-  }
-
-  .motion-ok .logos {
-    position: absolute;
-    left: 50%;
-    top: 42%;
-    width: min(72vh, 72vw);
-    aspect-ratio: 1;
-    transform: translate(-50%, -50%);
-  }
-
-  .motion-ok .logos-ring {
-    position: absolute;
-    inset: 0;
-    display: block;
-    margin: 0;
-    animation: orbit 160s linear infinite;
-  }
-
-  .motion-ok .logos-ring li {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 64px;
-    margin: -32px 0 0 -32px;
-    transform: rotate(calc(360deg / var(--n) * var(--i))) translateY(calc(min(72vh, 72vw) / -2)) rotate(calc(-360deg / var(--n) * var(--i)));
-  }
-
-  .motion-ok .logos-ring img {
-    animation: orbit 160s linear infinite reverse;
-  }
-
-  .motion-ok .logos-more {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -3.5rem;
-    margin: 0;
-  }
-}
-
-@keyframes orbit {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 /* ---------- Paying (columns) and Open source (split) ---------- */

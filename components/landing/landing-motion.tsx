@@ -30,26 +30,61 @@ function pinned(name: string, length: string) {
   });
 }
 
-/** Chapter rail and top progress bar. Created after the pins so positions include pin spacing. */
-function setupRail() {
-  gsap.utils.toArray<HTMLElement>('[data-chapter]').forEach((section) => {
+/**
+ * Chapter orbit. The ring sits on a chapter's star when that chapter starts
+ * and drifts toward the next one as you read, so the line it draws is how far
+ * through the story you are. Created after the pins so positions include pin
+ * spacing.
+ */
+function setupRail(motion: boolean) {
+  const sections = gsap.utils.toArray<HTMLElement>('[data-chapter]');
+  const chapters = sections.map((section) => {
     const trigger = section.parentElement?.classList.contains('pin-spacer') ? section.parentElement : section;
-    const link = document.querySelector(`[data-rail="${section.dataset.chapter}"]`);
-    ScrollTrigger.create({
-      trigger,
-      start: 'top center',
-      end: 'bottom center',
-      onToggle: ({ isActive }) => link?.classList.toggle('is-active', isActive),
-    });
+    return {
+      link: document.querySelector<HTMLElement>(`[data-rail="${section.dataset.chapter}"]`),
+      dot: document.querySelector<HTMLElement>(`[data-rail-dot="${section.dataset.chapter}"]`),
+      st: ScrollTrigger.create({ trigger, start: 'top center', end: 'bottom center' }),
+    };
   });
-  const bar = document.querySelector<HTMLElement>('[data-progress]');
+  const orbits = gsap.utils.toArray<HTMLElement>('[data-orbit]');
+  const tag = document.querySelector<HTMLElement>('[data-orbit-tag]');
+  const num = document.querySelector<HTMLElement>('[data-orbit-num]');
+  const label = document.querySelector<HTMLElement>('[data-orbit-label]');
+  const count = document.querySelector<HTMLElement>('[data-orbit-count]');
+  const last = Math.max(chapters.length - 1, 1);
+  let active = -1;
+
+  const update = (y: number) => {
+    let index = 0;
+    while (index < chapters.length - 1 && y >= chapters[index + 1].st.start) index++;
+    const { start, end } = chapters[index].st;
+    const within = gsap.utils.clamp(0, 1, (y - start) / Math.max(end - start, 1));
+    const ship = gsap.utils.clamp(0, 1, (index + within) / last);
+    orbits.forEach((orbit) => orbit.style.setProperty('--ship', ship.toFixed(4)));
+    if (index === active) return;
+    active = index;
+    chapters.forEach(({ link, dot }, i) => {
+      for (const el of [link, dot]) {
+        el?.classList.toggle('is-active', i === index);
+        el?.classList.toggle('is-past', i < index);
+      }
+      if (i === index) link?.setAttribute('aria-current', 'step');
+      else link?.removeAttribute('aria-current');
+    });
+    const text = String(index + 1).padStart(2, '0');
+    if (num) num.textContent = text;
+    if (count) count.textContent = text;
+    if (label) label.textContent = chapters[index].link?.textContent ?? '';
+    if (motion && tag) gsap.fromTo(tag, { yPercent: 70, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.6, ease: 'expo.out', overwrite: true });
+  };
+
   ScrollTrigger.create({
     start: 0,
     end: 'max',
-    onUpdate: (self) => {
-      if (bar) bar.style.transform = `scaleX(${self.progress})`;
-    },
+    onUpdate: (self) => update(self.scroll()),
+    onRefresh: (self) => update(self.scroll()),
   });
+  update(window.scrollY);
 }
 
 export function LandingMotion() {
@@ -77,7 +112,7 @@ export function LandingMotion() {
         pointsScale: baseScale,
       });
       if (!motion) {
-        setupRail();
+        setupRail(false);
         return;
       }
 
@@ -86,6 +121,7 @@ export function LandingMotion() {
       gsap.fromTo('[data-hero-char]', { yPercent: 115 }, { yPercent: 0, duration: 1.2, ease: 'expo.out', stagger: 0.03, delay: 0.35 });
       gsap.fromTo('[data-hero-fade]', { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 1.1, ease: 'expo.out', stagger: 0.12, delay: 0.85 });
       gsap.fromTo('[data-scroll-cue]', { opacity: 0 }, { opacity: 1, duration: 1, delay: 1.8 });
+      gsap.fromTo('[data-orbit]', { opacity: 0 }, { opacity: 1, duration: 1.4, delay: 1.6 });
 
       // Intro → into the ring: the eclipse grows past the screen, a flash, and we are through.
       pinned('hero', '130%')
@@ -104,32 +140,30 @@ export function LandingMotion() {
         .to(priceBeats[0], hide, 0.95)
         .to(priceBeats[1], show, 1.05);
 
-      // Models: warp into a galaxy of real models, show the providers, then sort by kind.
+      // Models: warp into a galaxy of real models, then sort it by kind. As each
+      // cluster forms, the labs behind it drift out of it and settle beneath.
       const modelBeats = within('catalog', '[data-beat]');
-      const hasLogos = !!document.querySelector('[data-logos]');
+      const kinds = gsap.utils.toArray<HTMLElement>('[data-kind]');
       gsap.set(modelBeats, { opacity: 0, y: 36 });
-      gsap.set('[data-kinds]', { opacity: 0 });
-      gsap.set('[data-logo]', { opacity: 0, scale: 0.6 });
-      const models = pinned('catalog', hasLogos ? '400%' : '280%')
+      gsap.set('[data-kinds]', { opacity: 1 });
+      gsap.set('.kind-label', { opacity: 0, y: 12 });
+      gsap.set('[data-kind-logo]', { opacity: 0, y: desktop ? -150 : -110, scale: 0.2 });
+      const models = pinned('catalog', kinds.length ? '330%' : '280%')
         .fromTo(cosmos, { stars: 0.55, travel: 4 }, { stars: 1, travel: 13, duration: 1, ease: 'power2.inOut', immediateRender: false }, START)
         .fromTo(cosmos, { points: 0 }, { points: 1, duration: 0.4, immediateRender: false }, 0.6)
         .to(modelBeats[0], show, 0.85)
-        .to(modelBeats[0], hide, 1.45);
-      let sortAt = 1.5;
-      if (hasLogos) {
-        models
-          .fromTo(cosmos, { pointsScale: baseScale }, { pointsScale: baseScale * 0.7, duration: 0.4, immediateRender: false }, 1.45)
-          .to(modelBeats[1], show, 1.55)
-          .to('[data-logo]', { opacity: 1, scale: 1, duration: 0.12, stagger: 0.03 }, 1.6)
-          .to(modelBeats[1], hide, 2.45)
-          .to(cosmos, { pointsScale: baseScale, duration: 0.4 }, 2.45);
-        sortAt = 2.5;
-      }
-      models
-        .fromTo(cosmos, { morph: 0, pointsY: 0.15 }, { morph: 2, pointsY: sortedY, duration: 0.8, immediateRender: false }, sortAt)
-        .to(modelBeats[modelBeats.length - 1], show, sortAt + 0.6)
-        .to('[data-kinds]', { opacity: 1, duration: 0.15 }, sortAt + 0.65)
-        .to({}, { duration: 0.5 });
+        .to(modelBeats[0], hide, 1.45)
+        .fromTo(cosmos, { morph: 0, pointsY: 0.15 }, { morph: 2, pointsY: sortedY, duration: 0.8, immediateRender: false }, 1.5)
+        .to('.kind-label', { opacity: 1, y: 0, duration: 0.2, stagger: 0.08 }, 2.05)
+        .to(modelBeats[modelBeats.length - 1], show, 2.1);
+      kinds.forEach((kind, k) => {
+        models.to(
+          kind.querySelectorAll('[data-kind-logo]'),
+          { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: 'back.out(1.6)', stagger: 0.035 },
+          2.15 + k * 0.12,
+        );
+      });
+      models.to({}, { duration: 0.6 });
 
       // How it works: four sentences light up word by word over a stream through the ring.
       const howBeats = within('how', '[data-beat]');
@@ -207,7 +241,7 @@ export function LandingMotion() {
         );
       });
 
-      setupRail();
+      setupRail(true);
 
       // Primary buttons lean toward the cursor.
       const cleanups: (() => void)[] = [];

@@ -195,28 +195,10 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
 }
 
 .brand-mark {
-  position: relative;
   width: 22px;
   height: 22px;
   flex: none;
-}
-
-.brand-mark-ring {
-  position: absolute;
-  inset: 0;
-  border: 1.5px solid var(--text);
-  border-radius: 50%;
-}
-
-.brand-mark-dot {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 12px;
-  height: 12px;
-  margin: -6px 0 0 -6px;
-  border-radius: 50%;
-  background: var(--text);
+  color: var(--text);
 }
 
 .nav {
@@ -311,6 +293,16 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   }
 }
 
+/* The intro starts hidden when it will animate (MOTION_FLAG in layout.tsx), so
+   the finished ring never flashes first. GSAP's inline styles take over. */
+html.motion-ok .progress-ring [data-arc] {
+  stroke-dasharray: 0 1000;
+}
+
+html.motion-ok .progress-copy > * {
+  opacity: 0;
+}
+
 .film .ring-count {
   font-family: var(--font-sans), sans-serif;
   font-size: 54px;
@@ -335,52 +327,71 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   margin-top: 2rem;
 }
 
-/* Steps: a badge on a vertical line, the step's drawing, then what to do. */
+/* Steps, in focus mode: a badge on the timeline and a card that stays one
+   line until it opens. One card is open at a time (steps.tsx). */
+@property --spin {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
 .guide {
   position: relative;
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: clamp(64px, 12vh, 128px);
-}
-
-.guide::before {
-  content: '';
-  position: absolute;
-  left: 21.5px;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: linear-gradient(to bottom, transparent, var(--line-strong) 4%, var(--line-strong) 96%, transparent);
+  gap: 12px;
 }
 
 .guide-step {
   position: relative;
   display: grid;
-  grid-template-columns: 44px minmax(0, 0.8fr) minmax(0, 1.2fr);
-  grid-template-areas:
-    'badge art copy'
-    'badge extra extra';
+  grid-template-columns: 44px minmax(0, 1fr);
   align-items: start;
-  gap: clamp(16px, 3vw, 44px);
+  gap: clamp(12px, 2vw, 20px);
   scroll-margin-top: 88px;
 }
 
+/* The timeline: a segment from each badge down to the next, lit once the step is done. */
+.guide-step::before {
+  content: '';
+  position: absolute;
+  left: 21.5px;
+  top: 58px;
+  bottom: -26px;
+  width: 1px;
+  background: var(--line-strong);
+}
+
+.guide-step:last-child::before {
+  display: none;
+}
+
+.guide-step.is-done::before {
+  left: 21px;
+  width: 2px;
+  background: linear-gradient(to bottom, #fff, rgba(255, 255, 255, 0.6));
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.45);
+}
+
 .guide-badge {
-  grid-area: badge;
   position: relative;
   z-index: 1;
   display: grid;
   place-items: center;
   width: 44px;
   height: 44px;
+  margin-top: 14px;
   border-radius: 50%;
   border: 1px solid var(--line-strong);
   background: #000;
   font-family: var(--font-mono), monospace;
   font-size: 0.75rem;
   color: var(--muted);
+  transition:
+    border-color 0.4s,
+    box-shadow 0.4s;
 }
 
 .guide-badge svg {
@@ -424,33 +435,109 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   }
 }
 
-.guide-art {
-  grid-area: art;
-}
-
-.step-art {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.guide-step.is-todo .guide-art {
-  opacity: 0.5;
-}
-
-.guide-copy {
-  grid-area: copy;
+.step-card {
+  position: relative;
   min-width: 0;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: rgba(10, 10, 12, 0.78);
+  backdrop-filter: blur(6px);
+  transition:
+    border-color 0.4s,
+    background-color 0.4s,
+    box-shadow 0.6s;
 }
 
-.guide-title {
+.step-card:hover {
+  border-color: var(--line-strong);
+}
+
+/* The open card: the one place to look. A light runs round its edge. */
+.guide-step.is-open .step-card {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(14, 14, 16, 0.94);
+  box-shadow: 0 40px 100px -50px rgba(255, 255, 255, 0.28);
+}
+
+.guide-step.is-open .step-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  padding: 1.5px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--spin), transparent 0deg 230deg, rgba(255, 255, 255, 0.95) 320deg, transparent 360deg);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: card-spin 4.5s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes card-spin {
+  to {
+    --spin: 360deg;
+  }
+}
+
+.step-heading {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.step-head {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 10px 14px;
-  font-size: clamp(1.6rem, 1rem + 1.8vw, 2.4rem);
-  line-height: 1.1;
-  letter-spacing: -0.04em;
+  gap: 12px;
+  width: 100%;
+  min-height: 72px;
+  padding: 18px 22px;
+  border: 0;
+  border-radius: 20px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.step-head:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -2px;
+}
+
+.step-title {
+  font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.guide-step.is-todo:not(.is-open) .step-title {
+  color: var(--muted);
+}
+
+.step-head .step-tag {
+  flex: none;
+}
+
+.step-chevron {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-left: auto;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.5s var(--ease-out);
+}
+
+.guide-step.is-open .step-chevron {
+  transform: rotate(180deg);
 }
 
 .step-tag {
@@ -476,10 +563,70 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   color: #000;
 }
 
+/* Opening: the row grows from 0fr to 1fr, then the content settles in. */
+.step-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.6s var(--ease-out);
+}
+
+.guide-step.is-open .step-body {
+  grid-template-rows: 1fr;
+}
+
+.step-body-inner {
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.6fr);
+  grid-template-areas:
+    'copy art'
+    'extra extra';
+  column-gap: 40px;
+  padding: 0 22px;
+  opacity: 0;
+  transform: translateY(10px);
+  filter: blur(6px);
+  transition:
+    opacity 0.25s,
+    transform 0.5s var(--ease-out),
+    filter 0.4s,
+    padding 0.6s var(--ease-out);
+}
+
+.guide-step.is-open .step-body-inner {
+  padding: 0 22px 26px;
+  opacity: 1;
+  transform: none;
+  filter: none;
+  transition-delay: 0.12s;
+}
+
+.guide-art {
+  grid-area: art;
+  min-width: 0;
+}
+
+.step-art {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 150px;
+}
+
+.guide-step.is-todo .guide-art {
+  opacity: 0.5;
+}
+
+.guide-copy {
+  grid-area: copy;
+  min-width: 0;
+}
+
 .guide-detail,
 .guide-note {
   max-width: 58ch;
-  margin-top: 0.9rem;
+  margin: 0;
   color: var(--muted);
 }
 
@@ -488,26 +635,104 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
 }
 
 .guide-note {
+  margin-top: 0.8rem;
   font-size: 0.9375rem;
 }
 
-/* The link panel and the chat-app guides get the full width under their step. */
+.step-cta {
+  gap: 0.6em;
+  margin-top: 1.25rem;
+}
+
+/* The link panel and the chat-app guides get the card's full width. */
 .guide-extra {
   grid-area: extra;
   min-width: 0;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
 }
 
 .guide-extra:empty {
   display: none;
 }
 
-/* How to add the link in each chat app. */
-.guides {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+/* Chat apps: one tab per app. */
+.app-tabs {
+  display: flex;
+  gap: 4px;
+  width: max-content;
+  max-width: 100%;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #000;
+  overflow-x: auto;
 }
 
+.app-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.25s,
+    color 0.25s;
+}
+
+.app-tab:hover {
+  color: var(--text);
+}
+
+.app-tab.is-active {
+  background: var(--text);
+  color: #000;
+}
+
+.app-tab.is-active .guide-icon {
+  filter: none;
+}
+
+.app-live {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.guide-extra .guide-card {
+  margin-top: 12px;
+  animation: tab-in 0.45s var(--ease-out);
+}
+
+@keyframes tab-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+html:not(.motion-ok) .guide-step.is-open .step-card::before,
+html:not(.motion-ok) .guide-extra .guide-card {
+  animation: none;
+}
+
+html:not(.motion-ok) .step-body,
+html:not(.motion-ok) .step-body-inner {
+  transition: none;
+}
+
+/* How to add the link in each chat app. */
 .guide-card {
   padding: 18px 18px 20px;
   border-radius: 16px;
@@ -752,24 +977,78 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
 }
 
 @media (max-width: 899px) {
-  .guide-step {
-    grid-template-columns: 44px minmax(0, 1fr);
+  .step-body-inner {
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
-      'badge art'
-      'badge copy'
-      'badge extra';
+      'copy'
+      'extra';
   }
 
+  /* On narrow screens the words carry the step; the drawings stay on the wide layout. */
   .guide-art {
-    max-width: 320px;
-  }
-
-  .guides {
-    grid-template-columns: 1fr;
+    display: none;
   }
 }
 
 @media (max-width: 760px) {
+  .guide-step {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .guide-step::before {
+    left: 15.5px;
+    top: 48px;
+    bottom: -28px;
+  }
+
+  .guide-step.is-done::before {
+    left: 15px;
+  }
+
+  .guide-badge {
+    width: 32px;
+    height: 32px;
+    margin-top: 16px;
+    font-size: 0.6875rem;
+  }
+
+  .guide-badge svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .step-head {
+    min-height: 64px;
+    padding: 14px 16px;
+    gap: 10px;
+  }
+
+  .step-body-inner,
+  .guide-step.is-open .step-body-inner {
+    padding-inline: 16px;
+  }
+
+  .app-tabs {
+    width: 100%;
+  }
+
+  .app-tab {
+    flex: 1 1 auto;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 10px;
+  }
+
+  .app-tab .guide-icon {
+    display: none;
+  }
+
+  /* The stacked overview is centred, so give back the rail's room from .setup. */
+  .setup-hero {
+    margin-right: -36px;
+  }
+
   .progress-block {
     grid-template-columns: 1fr;
     justify-items: center;
@@ -805,7 +1084,119 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
 /* Connector */
 .connector {
   display: grid;
-  gap: 20px;
+  gap: 14px;
+}
+
+/* The link field: this site's /mcp/ address on top, the secret that completes it below. */
+.link-field {
+  display: grid;
+  gap: 2px;
+  padding: 10px 6px 6px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--line-strong);
+  background: #000;
+  transition:
+    border-color 0.25s,
+    box-shadow 0.25s;
+}
+
+.link-field:focus-within {
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.06);
+}
+
+.link-prefix {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  color: var(--dim);
+  overflow-wrap: anywhere;
+  cursor: text;
+}
+
+.link-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.link-input input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.9375rem;
+  outline: none;
+}
+
+.link-input input::placeholder {
+  color: var(--dim);
+  opacity: 0.7;
+}
+
+.link-eye {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    background-color 0.2s;
+}
+
+.link-eye:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.link-eye:focus-visible {
+  outline: 2px solid #fff;
+}
+
+.link-eye svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.link-actions .check-label {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.link-actions .link-button {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn:disabled:active {
+  transform: none;
 }
 
 .field {
@@ -938,25 +1329,101 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   color: var(--muted);
 }
 
-.generator {
+/* Under "Set MCP_SECRET": a button that makes a secret and opens the steps. */
+.generator.is-set {
   border-top: 1px solid var(--line);
-  padding-top: 16px;
+  padding-top: 20px;
 }
 
-.generator summary {
-  cursor: pointer;
-  color: var(--muted);
-  font-weight: 500;
+.gen-trigger {
+  gap: 0.55em;
 }
 
-.generator summary:hover {
-  color: var(--text);
+.gen-icon {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+  transition: transform 0.6s var(--ease-out);
 }
 
-.generator p {
-  margin: 10px 0;
+.gen-trigger:hover .gen-icon {
+  transform: rotate(90deg) scale(1.15);
+}
+
+.gen-panel {
+  overflow: hidden;
+}
+
+.gen-inner {
+  display: grid;
+  gap: 16px;
+  padding-top: 18px;
+}
+
+.gen-warn {
+  margin: 0;
   color: var(--muted);
   font-size: 0.9375rem;
+}
+
+.secret-block {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 14px 16px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--line-strong);
+  background: rgba(10, 10, 10, 0.88);
+  overflow: hidden;
+}
+
+.secret-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.secret-value {
+  min-height: 2.8em;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* Drawn around the block once as the secret decodes. */
+.secret-trace {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.secret-trace rect {
+  width: calc(100% - 1.5px);
+  height: calc(100% - 1.5px);
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.5;
+  opacity: 0;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.7));
+}
+
+.secret-sweep {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.09), transparent);
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Under "Set MCP_SECRET" and "Connect file storage": buttons done left to right. */
@@ -1002,7 +1469,7 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
 }
 
 .chat-check {
-  margin-bottom: 20px;
+  margin-top: 24px;
 }
 
 /* Safety facts and footer */
@@ -1566,6 +2033,11 @@ html:not(.motion-ok) .orbit-ring i {
 
 /* Without motion the drawings rest finished: no travelling stars, no
    in-between states. */
+/* The travelling star: hidden until a route animates it in (drawings without a route keep it hidden). */
+.film .head {
+  opacity: 0;
+}
+
 html:not(.motion-ok) .film .head {
   display: none;
 }

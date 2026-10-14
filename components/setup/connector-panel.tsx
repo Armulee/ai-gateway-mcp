@@ -43,13 +43,15 @@ export function ConnectorPanel() {
   const [reveal, setReveal] = useState(false);
   const [test, setTest] = useState<TestState>({ state: 'idle' });
 
+  const [host, setHost] = useState('');
+
   useEffect(restoreSecret, []);
+  useEffect(() => setHost(window.location.host), []);
 
   const url = useMemo(
     () => (secret.trim() && typeof window !== 'undefined' ? `${window.location.origin}/mcp/${encodeURIComponent(secret.trim())}` : ''),
     [secret],
   );
-  const masked = url.replace(/\/mcp\/.*/, '/mcp/' + '•'.repeat(12));
 
   async function runTest() {
     setTest({ state: 'running' });
@@ -73,90 +75,85 @@ export function ConnectorPanel() {
 
   return (
     <div className="connector">
-      <div className="field">
-        <label htmlFor="mcp-secret">Your MCP_SECRET</label>
-        <p className="field-help" id="mcp-secret-help">
-          The value you set in Vercel. It only goes to this deployment, to test your link and show your usage.
-        </p>
-        <input
-          id="mcp-secret"
-          type="password"
-          autoComplete="off"
-          spellCheck={false}
-          aria-describedby="mcp-secret-help"
-          value={secret}
-          onChange={(e) => {
-            setSecret(e.target.value);
-            setTest({ state: 'idle' });
-          }}
-        />
-        <div className="field-row">
-          <label className="check-label">
-            <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
-            Remember on this browser
-          </label>
-          {secret && (
-            <button
-              type="button"
-              className="link-button"
-              onClick={() => {
-                forgetSecret();
-                setTest({ state: 'idle' });
-              }}
-            >
-              Forget it
-            </button>
-          )}
+      {/* The field reads as the link itself: this site's /mcp/ address, completed by the secret. */}
+      <div className={`link-field${secret ? ' is-filled' : ''}`}>
+        <label className="link-prefix" htmlFor="mcp-secret">
+          {host}/mcp/
+          <span className="sr-only"> followed by your MCP_SECRET</span>
+        </label>
+        <div className="link-input">
+          <input
+            id="mcp-secret"
+            type={reveal ? 'text' : 'password'}
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="paste your MCP_SECRET"
+            aria-describedby="mcp-secret-help"
+            value={secret}
+            onChange={(e) => {
+              setSecret(e.target.value);
+              setTest({ state: 'idle' });
+            }}
+          />
+          <button type="button" className="link-eye" aria-label={reveal ? 'Hide secret' : 'Show secret'} aria-pressed={reveal} onClick={() => setReveal((r) => !r)}>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
+              <circle cx="12" cy="12" r="3" />
+              {reveal && <path d="M4 4l16 16" />}
+            </svg>
+          </button>
         </div>
       </div>
 
-      {url ? (
-        <div className="url-box">
-          <p className="url-label">Connector URL</p>
-          <div className="url-row">
-            <code className="url-value">{reveal ? url : masked}</code>
-            <div className="url-actions">
-              <button type="button" className="btn btn-ghost btn-small" onClick={() => setReveal((r) => !r)}>
-                {reveal ? 'Hide' : 'Show'}
-              </button>
-              <CopyButton value={url} />
-            </div>
-          </div>
-          <div className="test-row">
-            <button type="button" className="btn btn-primary" disabled={test.state === 'running'} onClick={runTest}>
-              {test.state === 'running' ? 'Testing' : 'Test connection'}
-            </button>
-            <div className="test-result" role="status" aria-live="polite">
-              {test.state === 'running' && <span className="skeleton" aria-label="Testing connection" />}
-              {test.state === 'idle' && connected && (
-                <p className="result-ok">
-                  <strong>Working.</strong> This secret opens your connector.
-                </p>
-              )}
-              {test.state === 'ok' && (
-                <div className="result-ok">
-                  <strong>Connected.</strong> {test.tools.length} tools ready:
-                  <ul className="chips">
-                    {test.tools.map((name) => (
-                      <li key={name}>{name}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {test.state === 'fail' && (
-                <p className="result-fail">
-                  <strong>Not connected.</strong> {test.message}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <p className="empty-hint">Paste your secret above to build the URL you will add to Claude or ChatGPT.</p>
-      )}
+      <div className="link-actions">
+        <button type="button" className="btn btn-primary btn-small" disabled={!url || test.state === 'running'} onClick={runTest}>
+          {test.state === 'running' ? 'Testing' : 'Test connection'}
+        </button>
+        {url ? <CopyButton value={url} label="Copy link" /> : <button type="button" className="btn btn-ghost btn-small" disabled>Copy link</button>}
+        <label className="check-label">
+          <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+          Remember
+        </label>
+        {secret && (
+          <button
+            type="button"
+            className="link-button"
+            onClick={() => {
+              forgetSecret();
+              setTest({ state: 'idle' });
+            }}
+          >
+            Forget
+          </button>
+        )}
+      </div>
 
-      <p className="field-help">
-        No secret yet, or lost it? Make one in <a href="#secret">Set MCP_SECRET</a>.
+      <div className="test-result" role="status" aria-live="polite">
+        {test.state === 'running' && <span className="skeleton" aria-label="Testing connection" />}
+        {test.state === 'idle' && connected && (
+          <p className="result-ok">
+            <strong>Working.</strong> This secret opens your connector.
+          </p>
+        )}
+        {test.state === 'ok' && (
+          <div className="result-ok">
+            <strong>Connected.</strong> {test.tools.length} tools ready:
+            <ul className="chips">
+              {test.tools.map((name) => (
+                <li key={name}>{name}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {test.state === 'fail' && (
+          <p className="result-fail">
+            <strong>Not connected.</strong> {test.message}
+          </p>
+        )}
+      </div>
+
+      <p className="field-help" id="mcp-secret-help">
+        Sent only to this deployment. No secret yet, or lost it? <a href="#secret">Make one</a>.
       </p>
     </div>
   );

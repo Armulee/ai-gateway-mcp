@@ -8,9 +8,18 @@ export const DEPLOY_URL =
 // repo until the site has its own address.
 export const LANDING_URL = 'https://github.com/armulee/ai-gateway-mcp-landing';
 
-// A page of the owner's project in the Vercel dashboard. The app does not know
-// the team or project slug, so Vercel's "/d?to=" link asks which one to open.
-const dashboardUrl = (path: string) => `https://vercel.com/d?to=${encodeURIComponent(`/[team]/[project]/${path}`)}`;
-export const ENV_VARS_URL = dashboardUrl('settings/environment-variables');
-export const DEPLOYMENTS_URL = dashboardUrl('deployments');
-export const STORAGE_URL = dashboardUrl('stores');
+export type VercelProject = { owner: string; name: string };
+export type DashboardLinks = { envVars: string; deployments: string; storage: string; direct: boolean };
+
+/**
+ * Pages of the owner's project in the Vercel dashboard. With the team and
+ * project known (see lib/project.ts) they open it directly; otherwise
+ * Vercel's "/d?to=" link asks which project to open.
+ */
+export function dashboardLinks(project?: VercelProject): DashboardLinks {
+  const at = (path: string) =>
+    project
+      ? `https://vercel.com/${encodeURIComponent(project.owner)}/${encodeURIComponent(project.name)}/${path}`
+      : `https://vercel.com/d?to=${encodeURIComponent(`/[team]/[project]/${path}`)}`;
+  return { envVars: at('settings/environment-variables'), deployments: at('deployments'), storage: at('stores'), direct: Boolean(project) };
+}

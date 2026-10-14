@@ -25,7 +25,8 @@ const MOTION_FLAG = `try{if(!matchMedia('(prefers-reduced-motion: reduce)').matc
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
+    // MOTION_FLAG adds a class before hydration, so the className differs by design.
+    <html lang="en" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: MOTION_FLAG }} />
       </head>

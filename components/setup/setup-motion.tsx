@@ -24,9 +24,9 @@ export function SetupMotion() {
 
       // Each step: its copy rises, its drawing draws itself, its star travels.
       gsap.utils.toArray<HTMLElement>('.guide-step').forEach((step) => {
-        const art = step.querySelector('svg');
-        const tl = gsap.timeline({ scrollTrigger: { trigger: step, start: 'top 80%', once: true } });
-        tl.fromTo(step.querySelector('[data-guide-copy]'), { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out' }, 0);
+        const art = step.querySelector<SVGSVGElement>('.step-art');
+        const tl = gsap.timeline({ scrollTrigger: { trigger: step, start: 'top 80%', toggleActions: 'play none none none' } });
+        tl.fromTo(step.querySelector('.step-card'), { y: 40, opacity: 0, scale: 0.97 }, { y: 0, opacity: 1, scale: 1, duration: 1, ease: 'expo.out', clearProps: 'transform' }, 0);
         tl.fromTo(step.querySelector('.guide-badge'), { scale: 0.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: 'back.out(2.4)' }, 0);
         tl.fromTo(step.querySelectorAll('[data-tick]'), { drawSVG: '0%' }, { drawSVG: '100%', duration: 0.5, ease: 'power2.out' }, 0.35);
         if (!art) return;
@@ -56,7 +56,7 @@ export function SetupMotion() {
         duration: 1,
         ease: 'expo.out',
         stagger: 0.1,
-        scrollTrigger: { trigger: '.setup-section', start: 'top 85%', once: true },
+        scrollTrigger: { trigger: '.setup-section', start: 'top 85%', toggleActions: 'play none none none' },
       });
       return setupOrbitRail(true);
     });

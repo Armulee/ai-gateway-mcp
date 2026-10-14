@@ -51,15 +51,18 @@ const ART: Record<StepId, React.ReactNode> = {
       </g>
     </>
   ),
-  // Your link: a comet runs through it and it lights up.
+  // Your link, and a comet that runs from it to a tick: the test passed.
   connect: (
     <>
-      <path className="ln" data-draw d="M42,62 H198 A18,18 0 0 1 198,98 H42 A18,18 0 0 1 42,62 Z" />
-      <text className="mono tiny" x={120} y={84} textAnchor="middle">
+      <path className="ln" data-draw d="M32,36 H188 A20,20 0 0 1 188,76 H32 A20,20 0 0 1 32,36 Z" />
+      <text className="mono tiny" x={110} y={60} textAnchor="middle">
         you.vercel.app/mcp/••••
       </text>
-      <path className="route" data-route d="M14,80 C30,80 30,80 46,80 H226" />
-      <path className="ln dim" data-draw d="M60,124 H180" />
+      <circle className="ln" data-draw cx={212} cy={122} r={18} />
+      <path className="ln" data-draw d="M204,122 L210,128 L221,115" />
+      <path className="route" data-route d="M110,76 C110,118 150,126 194,123" />
+      <circle className="fill dim" cx={34} cy={130} r={1.6} />
+      <circle className="fill" cx={226} cy={20} r={1.4} />
     </>
   ),
   // A chat window, and the connector clicking into it.

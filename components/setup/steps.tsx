@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { StepId, StepState } from '@/lib/status';
+import { scrollToHash } from '../motion/smooth-scroll';
 import { appsInUse, useSetup } from './setup-store';
 
 export type StepView = { id: StepId; title: string; state: StepState; optional?: boolean };
@@ -24,17 +25,62 @@ export function useStepStates(steps: StepView[]): LiveState[] {
   return done.map((isDone, i) => (isDone ? 'done' : i === next ? 'next' : 'todo'));
 }
 
-/** One step of the guide; its look follows the live state, and so does its star on the rail. */
+const FocusContext = createContext<{ open: StepId | null; toggle: (id: StepId) => void }>({ open: null, toggle: () => {} });
+
+/** Brings a step's header into view once the cards have finished moving. */
+function revealLater(id: StepId) {
+  setTimeout(() => {
+    const top = document.getElementById(id)?.getBoundingClientRect().top ?? 0;
+    if (top < 72 || top > window.innerHeight * 0.6) scrollToHash(`#${id}`);
+  }, 650);
+}
+
+/**
+ * The guide in focus mode: one step open at a time, the next one by default.
+ * When the open step gets done, it folds and the step after it opens.
+ */
+export function GuideFocus({ steps, children }: { steps: StepView[]; children: React.ReactNode }) {
+  const states = useStepStates(steps);
+  const next = steps[states.indexOf('next')]?.id ?? null;
+  const [open, setOpen] = useState<StepId | null>(next);
+  const seen = useRef(states);
+  const key = states.join();
+
+  useEffect(() => {
+    const i = steps.findIndex((step) => step.id === open);
+    if (i !== -1 && states[i] === 'done' && seen.current[i] !== 'done') {
+      setOpen(next);
+      if (next) revealLater(next);
+    }
+    seen.current = states;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+
+  function toggle(id: StepId) {
+    setOpen((current) => (current === id ? null : id));
+    revealLater(id);
+  }
+
+  return (
+    <FocusContext.Provider value={{ open, toggle }}>
+      <ol className="guide">{children}</ol>
+    </FocusContext.Provider>
+  );
+}
+
+/** One step: a one-line header that opens to what to do. Its look follows the live state, and so does its star on the rail. */
 export function GuideStep({ steps, index, children }: { steps: StepView[]; index: number; children: React.ReactNode }) {
   const state = useStepStates(steps)[index];
-  const { id, optional } = steps[index];
+  const { id, title, optional } = steps[index];
+  const focus = useContext(FocusContext);
+  const open = focus.open === id;
 
   useEffect(() => {
     document.querySelector(`[data-rail="${id}"]`)?.classList.toggle('is-done', state === 'done');
   }, [id, state]);
 
   return (
-    <li className={`guide-step is-${state}`} id={id} data-chapter={id} data-step-state={state}>
+    <li className={`guide-step is-${state}${open ? ' is-open' : ''}`} id={id} data-chapter={id} data-step-state={state}>
       <span className="guide-badge" aria-hidden="true">
         {state === 'done' ? (
           <svg viewBox="0 0 24 24">
@@ -44,8 +90,21 @@ export function GuideStep({ steps, index, children }: { steps: StepView[]; index
           String(index + 1).padStart(2, '0')
         )}
       </span>
-      <span className="sr-only">{state === 'done' ? 'Done: ' : state === 'next' ? 'Next step: ' : optional ? 'Optional: ' : 'To do: '}</span>
-      {children}
+      <div className="step-card">
+        <h2 className="step-heading">
+          <button type="button" className="step-head" aria-expanded={open} aria-controls={`${id}-body`} onClick={() => focus.toggle(id)}>
+            <span className="sr-only">{state === 'done' ? 'Done: ' : state === 'next' ? 'Next step: ' : optional ? 'Optional: ' : 'To do: '}</span>
+            <span className="step-title">{title}</span>
+            <StepTag steps={steps} index={index} />
+            <svg className="step-chevron" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M4 6 8 10 12 6" />
+            </svg>
+          </button>
+        </h2>
+        <div className="step-body" id={`${id}-body`} inert={!open}>
+          <div className="step-body-inner">{children}</div>
+        </div>
+      </div>
     </li>
   );
 }

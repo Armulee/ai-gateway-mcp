@@ -1,10 +1,10 @@
-import { LANDING_URL, REPO_URL } from '@/lib/site';
+import { DEPLOY_URL, LANDING_URL, REPO_URL, type DashboardLinks } from '@/lib/site';
 import type { ServerStep, StepId } from '@/lib/status';
 import { CosmosCanvas } from '../cosmos/cosmos-canvas';
 import { StarDefs } from '../motion/star-defs';
 import { OrbitNav } from '../orbit/orbit-nav';
 import { SiteNav } from '../site-nav';
-import { VercelBadge } from '../vercel-badge';
+import { VercelBadge, VercelMark } from '../vercel-badge';
 import { ChatGuides } from './chat-guides';
 import { ConnectorPanel } from './connector-panel';
 import { BlobPanel } from './blob-panel';
@@ -12,7 +12,7 @@ import { SecretPanel } from './secret-panel';
 import { SetupMotion } from './setup-motion';
 import { StatsPanel } from './stats-panel';
 import { StepArt } from './step-art';
-import { GuideStep, Progress, StepTag, type StepView } from './steps';
+import { GuideFocus, GuideStep, Progress, type StepView } from './steps';
 
 // The home page of every deployment: where you are in the setup, what to do
 // next, how to add the link to a chat app, and (once unlocked with your
@@ -46,7 +46,7 @@ function StepExtra({ id }: { id: StepId }) {
   }
 }
 
-export function Setup({ steps, linkTtlHours }: { steps: ServerStep[]; linkTtlHours: number }) {
+export function Setup({ steps, linkTtlHours, links }: { steps: ServerStep[]; linkTtlHours: number; links: DashboardLinks }) {
   const views: StepView[] = steps.map(({ id, title, state, optional }) => ({ id, title, state, optional }));
   const chapters = [
     { id: 'overview', label: 'Overview' },
@@ -76,21 +76,24 @@ export function Setup({ steps, linkTtlHours }: { steps: ServerStep[]; linkTtlHou
           <Progress steps={views} />
         </section>
 
-        <ol className="guide">
+        <GuideFocus steps={views}>
           {steps.map((step, i) => (
             <GuideStep key={step.id} steps={views} index={i}>
               <div className="guide-art">
                 <StepArt id={step.id} />
               </div>
               <div className="guide-copy" data-guide-copy>
-                <h2 className="guide-title">
-                  {step.title}
-                  <StepTag steps={views} index={i} />
-                </h2>
                 <p className="guide-detail">{step.detail}</p>
+                {step.id === 'deploy' && step.state !== 'done' && (
+                  <a className="btn btn-primary step-cta" href={DEPLOY_URL} target="_blank" rel="noopener noreferrer">
+                    <VercelMark />
+                    Deploy to Vercel
+                    <span className="sr-only"> (opens Vercel in a new tab)</span>
+                  </a>
+                )}
                 {step.id === 'gateway' && <StepExtra id={step.id} />}
-                {step.id === 'secret' && <SecretPanel isSet={step.state === 'done'} />}
-                {step.id === 'blob' && step.state !== 'done' && <BlobPanel />}
+                {step.id === 'secret' && <SecretPanel isSet={step.state === 'done'} links={links} />}
+                {step.id === 'blob' && step.state !== 'done' && <BlobPanel links={links} />}
               </div>
               {(step.id === 'connect' || step.id === 'chat') && (
                 <div className="guide-extra" data-guide-copy>
@@ -99,7 +102,7 @@ export function Setup({ steps, linkTtlHours }: { steps: ServerStep[]; linkTtlHou
               )}
             </GuideStep>
           ))}
-        </ol>
+        </GuideFocus>
 
         <section className="setup-section" id="usage" data-chapter="usage">
           <h2 className="section-title">Your usage</h2>

@@ -15,7 +15,6 @@ import { PriceArt } from './film/price-art';
 import { SafetyArt } from './film/safety-art';
 import { StarDefs } from './film/star-defs';
 import { ToolsArt } from './film/tools-art';
-import { IdleHint } from './idle-hint';
 import { KindLogos } from './provider-logos';
 
 /** "author": the project's own site. "instance": someone's self-hosted deployment. */
@@ -64,7 +63,6 @@ export function Landing({
       <CosmosCanvas counts={catalog?.counts ?? FALLBACK_COUNTS} />
       <StarDefs />
       <LandingMotion />
-      <IdleHint />
 
       <SiteNav
         home="#top"
@@ -139,10 +137,6 @@ export function Landing({
                   View source
                 </a>
               </div>
-            </div>
-            <div className="scroll-cue" data-scroll-cue aria-hidden="true">
-              <span>Scroll</span>
-              <i />
             </div>
           </div>
         </section>

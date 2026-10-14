@@ -76,8 +76,7 @@ export function LandingMotion() {
           0.3,
         )
         .fromTo('[data-hero-fade]', { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 1.1, ease: 'expo.out', stagger: 0.12 }, 1.4)
-        .fromTo('[data-orbit]', { opacity: 0 }, { opacity: 1, duration: 1.4 }, 1.6)
-        .fromTo('[data-scroll-cue]', { opacity: 0 }, { opacity: 1, duration: 1 }, 2.2);
+        .fromTo('[data-orbit]', { opacity: 0 }, { opacity: 1, duration: 1.4 }, 1.6);
       // The intro is time-based and the exit is scroll-based; they share the
       // letters. The moment the reader scrolls, the intro jumps to its end so
       // the two never fight, and scrolling back up always lands on a whole headline.
@@ -86,7 +85,6 @@ export function LandingMotion() {
 
       // Intro → into the ring: the headline scatters back into dust as the eclipse grows past the screen.
       pinned('hero', '130%')
-        .fromTo('[data-scroll-cue]', { opacity: 1 }, { opacity: 0, duration: 0.1, immediateRender: false }, 0)
         .fromTo(
           '[data-hero-char]',
           assembled,

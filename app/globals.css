@@ -1288,7 +1288,7 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
 .orbit {
   --rail: min(56vh, 460px);
   position: fixed;
-  right: clamp(16px, 2.4vw, 36px);
+  right: 10px;
   top: 50%;
   z-index: 15;
   display: grid;
@@ -1487,15 +1487,17 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   box-shadow: 0 0 4px rgba(255, 255, 255, 0.9);
 }
 
-/* The current chapter, always shown beside the ring. */
+/* The current chapter, always shown beside the ring, turned to run along
+   the line (read from bottom to top) so it never reaches into the page. */
 .orbit-tag {
   position: absolute;
-  right: 26px;
+  right: 20px;
   top: 0;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
-  margin-top: -0.55em;
+  writing-mode: vertical-rl;
+  transform: translateY(-50%) rotate(180deg);
   font-family: var(--font-mono), monospace;
   font-size: 0.6875rem;
   line-height: 1.1;
@@ -1517,6 +1519,8 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
 
 .orbit-count {
   margin: 0;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
   font-family: var(--font-mono), monospace;
   font-size: 0.625rem;
   letter-spacing: 0.12em;
@@ -1529,9 +1533,7 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
 }
 
 .orbit-pct {
-  display: block;
-  margin-top: 6px;
-  text-align: center;
+  margin-inline-start: 0.9em;
   color: var(--dim);
 }
 
@@ -1571,13 +1573,6 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
 
 html:not(.motion-ok) .orbit-ring i {
   animation: none;
-}
-
-/* Beside narrower columns the tag would touch the text; the stars stay. */
-@media (max-width: 1180px) {
-  .orbit-tag {
-    display: none;
-  }
 }
 
 /* Phones: the same rail, slimmer, on the right edge. Only the ring takes
@@ -1623,57 +1618,12 @@ html:not(.motion-ok) .orbit-ring i {
 
   .orbit-count {
     font-size: 0.5625rem;
-    writing-mode: vertical-rl;
     letter-spacing: 0.08em;
   }
 
   .orbit-pct {
     display: none;
   }
-}
-
-.scroll-cue {
-  position: absolute;
-  left: 50%;
-  bottom: 18px;
-  display: grid;
-  justify-items: center;
-  gap: 8px;
-  transform: translateX(-50%);
-  font-size: 0.6875rem;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.scroll-cue i {
-  position: relative;
-  width: 1px;
-  height: 44px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.18);
-}
-
-.scroll-cue i::after {
-  content: '';
-  position: absolute;
-  left: -1px;
-  top: -12px;
-  width: 3px;
-  height: 12px;
-  border-radius: 999px;
-  background: var(--text);
-  animation: cue 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
-}
-
-@keyframes cue {
-  to {
-    transform: translateY(56px);
-  }
-}
-
-.motion-ok .scene-hero .scene-pin {
-  padding-bottom: clamp(88px, 11vh, 120px);
 }
 
 /* ---------- Price: quote from the docs ---------- */
@@ -1751,7 +1701,7 @@ html:not(.motion-ok) .orbit-ring i {
   max-width: 1320px;
   margin: 0 auto;
   /* Room on the right for the chapter rail. */
-  padding: 76px clamp(48px, 8vw, 150px) 28px 0;
+  padding: 76px clamp(40px, 5vw, 80px) 28px 0;
 }
 
 .motion-ok .film-copy {
@@ -1804,7 +1754,7 @@ html:not(.motion-ok) .orbit-ring i {
 .motion-ok .tools-film {
   position: absolute;
   top: 50%;
-  right: clamp(48px, 6vw, 110px);
+  right: clamp(32px, 4vw, 64px);
   width: min(54%, 100%);
   height: 100%;
   transform: translateY(-50%);
@@ -2018,7 +1968,7 @@ html:not(.motion-ok) [data-t='film'] ~ [data-t='film'] {
   overflow: hidden;
 }
 
-/* ---------- Scrollbar, idle cue ---------- */
+/* ---------- Scrollbar ---------- */
 
 /* On the landing page the orbit rail is the scrollbar. */
 html:has(.story) {
@@ -2027,21 +1977,6 @@ html:has(.story) {
 
 html:has(.story)::-webkit-scrollbar {
   display: none;
-}
-
-.idle-cue {
-  position: fixed;
-  z-index: 30;
-  bottom: 22px;
-  opacity: 0;
-  transform: translate(-50%, 14px);
-  pointer-events: none;
-  transition: opacity 0.6s, transform 0.8s var(--ease-out);
-}
-
-.idle-cue.is-visible {
-  opacity: 1;
-  transform: translate(-50%, 0);
 }
 
 /* ---------- Requirements ---------- */

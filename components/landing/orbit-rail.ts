@@ -64,7 +64,8 @@ export function setupOrbitRail(motion: boolean): () => void {
     if (num) num.textContent = text;
     if (count) count.textContent = text;
     if (label) label.textContent = chapters[index].link?.textContent ?? '';
-    if (motion && tag) gsap.fromTo(tag, { yPercent: 70, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.6, ease: 'expo.out', overwrite: true });
+    // The tag itself is rotated in CSS, so animate what is inside it.
+    if (motion && tag) gsap.fromTo(tag.children, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.6, ease: 'expo.out', stagger: 0.06, overwrite: true });
   };
 
   ScrollTrigger.create({

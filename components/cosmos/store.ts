@@ -27,14 +27,6 @@ export const cosmos = {
   pointsX: 0,
   pointsY: 0,
   pointsScale: 0.8,
-
-  /** Star swarm that forms the story's shapes (see shapes.ts). form: index into FORMS. */
-  swarm: 0,
-  form: 0,
-  /** Centre in clip space (-1..1) and height as a share of the screen. */
-  swarmX: 0,
-  swarmY: 0,
-  swarmScale: 0.3,
 };
 
 let pulseStartedAt = Number.NEGATIVE_INFINITY;

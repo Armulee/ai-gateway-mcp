@@ -9,6 +9,12 @@ gsap.registerPlugin(ScrollTrigger);
 
 let lenis: Lenis | undefined;
 
+/** Scrolls to a pixel offset: instantly (for dragging) or smoothly. */
+export function scrollToY(y: number, immediate = false) {
+  if (lenis) lenis.scrollTo(y, { immediate });
+  else window.scrollTo({ top: y, behavior: immediate ? 'instant' : 'smooth' });
+}
+
 /** Scrolls to an in-page anchor, smoothly when Lenis is running. */
 export function scrollToHash(hash: string) {
   const target = document.querySelector<HTMLElement>(hash);

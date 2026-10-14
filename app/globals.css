@@ -597,16 +597,6 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   overflow-wrap: anywhere;
 }
 
-/* Empty: the star swarm draws each tool's picture over this spot. */
-.tool-visual {
-  display: none;
-  aspect-ratio: 4 / 3;
-}
-
-.motion-ok .tool-visual {
-  display: block;
-}
-
 .ticks {
   display: none;
 }
@@ -658,14 +648,7 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   }
 
   .motion-ok .tool {
-    align-content: center;
-  }
-
-  .tool-visual {
-    order: -1;
-    width: min(100%, 420px);
-    aspect-ratio: 16 / 9;
-    margin: 0 auto;
+    align-content: end;
   }
 
   .tool-text p {
@@ -687,15 +670,8 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   margin: 0 auto;
 }
 
-.motion-ok .scene-keys .scene-pin {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding-bottom: clamp(40px, 10vh, 120px);
-}
-
 .motion-ok .scene-keys .keys-text {
-  font-size: clamp(1.4rem, 0.9rem + 1.7vw, 2.5rem);
+  font-size: clamp(1.25rem, 0.85rem + 1.3vw, 2.2rem);
 }
 
 .keys-text {
@@ -719,6 +695,8 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
 }
 
 .moves {
+  --line: 1;
+  position: relative;
   list-style: none;
   margin: clamp(48px, 9vh, 96px) auto 0;
   padding: 0;
@@ -726,6 +704,37 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: clamp(24px, 4vw, 56px);
+}
+
+/* The three moves join into a constellation as the finale arrives. */
+.moves::before {
+  content: '';
+  position: absolute;
+  left: 16.6%;
+  right: 16.6%;
+  top: -30px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.2), #fff 50%, rgba(255, 255, 255, 0.2));
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+  transform: scaleX(var(--line));
+  transform-origin: left;
+}
+
+.moves li {
+  position: relative;
+}
+
+.moves li::before {
+  content: '';
+  position: absolute;
+  top: -34px;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 10px #fff, 0 0 24px rgba(255, 255, 255, 0.5);
 }
 
 .move-verb {
@@ -757,6 +766,11 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
 @media (max-width: 760px) {
   .moves {
     grid-template-columns: 1fr;
+  }
+
+  .moves::before,
+  .moves li::before {
+    display: none;
   }
 }
 
@@ -1199,7 +1213,12 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
    first paint). If scripts never run, they appear after 3 seconds. */
 
 .motion-ok [data-hero-char] {
-  transform: translateY(115%);
+  opacity: 0;
+}
+
+/* Letters fly in from scattered dust, so their lines must not clip them. */
+.motion-ok .split-line {
+  overflow: visible;
 }
 
 .motion-ok [data-hero-fade],
@@ -1506,8 +1525,49 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   font-variant-numeric: tabular-nums;
 }
 
-.orbit-count span {
+.orbit-count [data-orbit-count] {
   color: var(--text);
+}
+
+.orbit-pct {
+  display: block;
+  margin-top: 6px;
+  text-align: center;
+  color: var(--dim);
+}
+
+/* The rail is the scrollbar: click the line to fly, drag the ring to scrub. */
+.orbit-rail {
+  cursor: pointer;
+}
+
+.orbit-rail::before {
+  content: '';
+  position: absolute;
+  inset: -24px -12px;
+}
+
+.orbit .orbit-ring {
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+  transition: transform 0.3s var(--ease-out);
+}
+
+.orbit .orbit-ring::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+}
+
+.orbit.is-dragging .orbit-ring {
+  cursor: grabbing;
+  transform: scale(1.4);
+}
+
+.orbit.is-dragging .orbit-tag {
+  opacity: 1;
 }
 
 .orbit-mobile {
@@ -1665,44 +1725,28 @@ html:not(.motion-ok) .orbit-ring i {
   color: var(--muted);
 }
 
-/* ---------- Star formations ---------- */
+/* ---------- Film scenes ----------
+   Each chapter is a short motion graphic (SVG, see components/landing/film)
+   beside its caption. Without motion the drawing rests, finished, under the
+   text. With motion the caption sits left and the film right; on phones the
+   film is on top. */
 
-/* An empty square the star swarm draws its shape into. The canvas reads its
-   position; it has no look of its own. */
-.formation {
-  display: none;
+.film-stage {
+  max-width: 560px;
+  aspect-ratio: 1;
+  margin: 2.5rem auto 0;
 }
 
-.motion-ok .formation {
-  --slot: min(34vh, 62vw);
+.film {
   display: block;
-  position: absolute;
-  top: 13vh;
-  left: calc(50% - var(--slot) / 2);
-  width: var(--slot);
-  height: var(--slot);
-  pointer-events: none;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
 
-.motion-ok [data-scene='how'] .formation {
-  --slot: min(40vh, 64vw);
-  top: 11vh;
-}
-
-.motion-ok .scene-formed .formation {
-  --slot: min(30vh, 56vw);
-  top: calc(clamp(72px, 11vh, 120px) + clamp(3.5rem, 2rem + 4vw, 6rem));
-}
-
-.motion-ok .scene-keys .formation {
-  --slot: min(28vh, 52vw);
-  top: 12vh;
-}
-
-/* Paying and Open source: a standing headline, then one point at a time. */
 .scene-heading {
   max-width: 1000px;
-  margin: 0 auto 8vh;
+  margin: 0 auto 6vh;
   text-align: center;
   font-size: clamp(1.6rem, 1rem + 2vw, 3rem);
   line-height: 1.08;
@@ -1713,39 +1757,311 @@ html:not(.motion-ok) .orbit-ring i {
   color: var(--dim);
 }
 
-.motion-ok .scene-heading {
-  position: absolute;
-  top: clamp(72px, 11vh, 120px);
-  left: 0;
-  right: 0;
-}
-
 .beat-note {
   margin-top: 1.25rem;
   font-size: 0.875rem;
   color: var(--dim);
 }
 
+.motion-ok .scene-film .scene-pin {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  align-items: center;
+  gap: clamp(24px, 4vw, 72px);
+  max-width: 1320px;
+  margin: 0 auto;
+  /* Room on the right for the chapter rail. */
+  padding: 76px clamp(48px, 8vw, 150px) 28px 0;
+}
+
+.motion-ok .film-copy {
+  position: relative;
+  z-index: 1;
+  text-align: left;
+}
+
+.motion-ok .scene-film .beats {
+  display: grid;
+}
+
+.motion-ok .scene-film .beat {
+  position: relative;
+  inset: auto;
+  grid-area: 1 / 1;
+  width: auto;
+  margin: 0;
+  text-align: left;
+  align-self: center;
+}
+
+.motion-ok .scene-film .beat-title {
+  font-size: clamp(2rem, 1rem + 2.4vw, 3.5rem);
+}
+
+.motion-ok .scene-film .beat-sub {
+  margin-left: 0;
+}
+
+.motion-ok .scene-film .quote {
+  margin-left: 0;
+}
+
+.motion-ok .scene-film .scene-heading {
+  margin: 0 0 2.25rem;
+  text-align: left;
+  font-size: clamp(1.25rem, 0.9rem + 1.1vw, 2rem);
+}
+
+.motion-ok .film-stage {
+  max-width: none;
+  width: 100%;
+  height: min(80vh, 100%);
+  aspect-ratio: auto;
+  margin: 0;
+  min-width: 0;
+}
+
+.motion-ok .tools-film {
+  position: absolute;
+  top: 50%;
+  right: clamp(48px, 6vw, 110px);
+  width: min(54%, 100%);
+  height: 100%;
+  transform: translateY(-50%);
+}
+
 @media (max-width: 899px) {
-  .motion-ok .formation {
-    --slot: min(30vh, 72vw);
-    top: 12vh;
+  .motion-ok .scene-film .scene-pin {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    align-items: stretch;
+    gap: 6px;
+    padding: 64px 0 max(24px, 4vh);
   }
 
-  .motion-ok [data-scene='how'] .formation {
-    --slot: min(30vh, 72vw);
-    top: 12vh;
+  .motion-ok .film-stage {
+    grid-row: 1;
+    height: 100%;
+    min-height: 0;
   }
 
-  .motion-ok .scene-formed .formation {
-    --slot: min(24vh, 60vw);
-    top: calc(76px + 5.5rem);
+  .motion-ok .film-copy {
+    grid-row: 2;
+    text-align: center;
   }
 
-  .motion-ok .scene-keys .formation {
-    --slot: min(22vh, 56vw);
-    top: 11vh;
+  .motion-ok .scene-film .beat {
+    text-align: center;
   }
+
+  .motion-ok .scene-film .beat-title {
+    font-size: clamp(1.6rem, 1rem + 3vw, 2.2rem);
+  }
+
+  .motion-ok .scene-film .beat-sub {
+    margin: 0.75rem auto 0;
+    font-size: 1rem;
+  }
+
+  .motion-ok .scene-film .scene-heading {
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  .motion-ok .scene-film .quote {
+    margin: 1rem auto 0;
+    padding: 16px 18px;
+  }
+
+  .motion-ok .scene-film .quote p {
+    font-size: 1rem;
+  }
+
+  .motion-ok .tools-film {
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 50%;
+    transform: none;
+  }
+}
+
+/* The quote's key phrases, underlined by the price film. */
+.hl {
+  --hl: 1;
+  background: linear-gradient(#fff, #fff) left bottom / calc(var(--hl) * 100%) 2px no-repeat;
+  padding-bottom: 2px;
+}
+
+/* Drawing styles: white hairlines and points of light, nothing else. */
+.film .ln {
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.film .ln.dim {
+  stroke: rgba(255, 255, 255, 0.3);
+}
+
+.film .ln.thick {
+  stroke-width: 4;
+}
+
+.film .ln.code {
+  stroke-width: 7;
+}
+
+.film .ln.slash {
+  stroke-width: 3;
+  filter: url(#glow-strong);
+}
+
+.film .ln.scan {
+  stroke-width: 2;
+  filter: url(#glow-strong);
+}
+
+.film .ln.budget {
+  stroke-width: 2.5;
+}
+
+.film .ln.node,
+.film .ln.pill,
+.film .ln.bubble,
+.film .ln.coin,
+.film .ln.planet {
+  fill: rgba(0, 0, 0, 0.85);
+}
+
+.film .route {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.4);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.film .fill {
+  fill: var(--text);
+}
+
+.film .fill.dim {
+  fill: rgba(255, 255, 255, 0.32);
+}
+
+.film .bar {
+  fill: var(--text);
+}
+
+.film .bar.dust,
+.film .meter-fill.dim {
+  fill: url(#stardust);
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 1;
+}
+
+.film .meter-fill {
+  fill: rgba(255, 255, 255, 0.85);
+}
+
+.film .shard {
+  fill: #fff;
+  opacity: 0;
+}
+
+.film .extra {
+  opacity: 0.35;
+}
+
+.film text {
+  fill: var(--text);
+}
+
+.film .mono {
+  font-family: var(--font-mono), monospace;
+}
+
+.film .label {
+  font-size: 13px;
+  letter-spacing: 0.2em;
+}
+
+.film .small {
+  font-size: 13px;
+}
+
+.film .tiny {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.film text.dim,
+.film tspan.dim {
+  fill: var(--dim);
+}
+
+.film .display-num {
+  font-family: var(--font-sans), sans-serif;
+  font-size: 92px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.film .stamp-big {
+  font-family: var(--font-sans), sans-serif;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.film .logo {
+  filter: invert(1);
+}
+
+/* Without motion the drawings rest finished: no travelling stars, no
+   in-between states. */
+html:not(.motion-ok) .film .head,
+html:not(.motion-ok) .film .comet,
+html:not(.motion-ok) .film .slash,
+html:not(.motion-ok) [data-pay='calendar'],
+html:not(.motion-ok) [data-t='film'] ~ [data-t='film'] {
+  display: none;
+}
+
+.star-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* ---------- Scrollbar, idle cue ---------- */
+
+/* On the landing page the orbit rail is the scrollbar. */
+html:has(.story) {
+  scrollbar-width: none;
+}
+
+html:has(.story)::-webkit-scrollbar {
+  display: none;
+}
+
+.idle-cue {
+  position: fixed;
+  z-index: 30;
+  bottom: 22px;
+  opacity: 0;
+  transform: translate(-50%, 14px);
+  pointer-events: none;
+  transition: opacity 0.6s, transform 0.8s var(--ease-out);
+}
+
+.idle-cue.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 /* ---------- Requirements ---------- */

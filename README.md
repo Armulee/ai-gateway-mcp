@@ -98,7 +98,7 @@ Choose **Streamable HTTP** and connect to `http://localhost:3000/mcp/<MCP_SECRET
 
 ## How it works
 
-- **Website:** `/` tells the story of the project as a scroll-driven WebGL scene where a swarm of stars forms each picture (black and white, all drawn in code). `/setup` is the setup page for your deployment.
+- **Website:** `/` tells the story of the project as a scroll-driven film: a WebGL starfield behind SVG motion graphics for each chapter (black and white, all drawn in code). `/setup` is the setup page for your deployment.
 - **Stack:** Next.js (App Router) and TypeScript. MCP is served over Streamable HTTP using [`mcp-handler`](https://github.com/vercel/mcp-handler) v2, and model calls go through the [AI SDK](https://ai-sdk.dev) with the AI Gateway provider.
 - **Secret check:** `proxy.ts` rejects a wrong secret before routing by rewriting it to the standard 404 page. The route handler then checks the secret again, using a constant-time comparison.
 - **Video jobs:** jobs don't need a database. Each `job_id` holds the model and the AI Gateway job id, signed with a key derived from `MCP_SECRET` so it can't be forged.

@@ -72,6 +72,11 @@ const LOGOS: Record<string, { name: string; icon: unknown }> = {
   liquid: { name: 'Liquid AI', icon: liquid },
 };
 
+/** A provider's mark as a URL, for SVG artwork. */
+export function logoSrc(id: string): string | undefined {
+  return LOGOS[id] ? assetUrl(LOGOS[id].icon) : undefined;
+}
+
 /** The providers behind one kind of model, as a small constellation of marks. */
 export function KindLogos({ providerIds, max }: { providerIds: string[]; max: number }) {
   const known = providerIds.filter((id) => LOGOS[id]);

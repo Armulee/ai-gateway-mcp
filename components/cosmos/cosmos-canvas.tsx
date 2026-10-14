@@ -11,9 +11,7 @@ import {
   POINT_VERTEX,
   STAR_FRAGMENT,
   STAR_VERTEX,
-  SWARM_VERTEX,
 } from './shaders';
-import { buildForms, FORMS } from './shapes';
 import { cosmos, pulseAge } from './store';
 
 type Props = {
@@ -23,8 +21,6 @@ type Props = {
   initial?: Partial<typeof cosmos>;
   /** Fewer stars and no drift, for pages built for reading. */
   calm?: boolean;
-  /** Build the star swarm that forms the story's shapes. */
-  formations?: boolean;
 };
 
 // Seeded so the sky looks the same on every visit.
@@ -59,7 +55,7 @@ function uniforms(gl: WebGL2RenderingContext, p: WebGLProgram, names: string[]) 
   return Object.fromEntries(names.map((n) => [n, gl.getUniformLocation(p, n)]));
 }
 
-export function CosmosCanvas({ counts, initial, calm = false, formations = false }: Props) {
+export function CosmosCanvas({ counts, initial, calm = false }: Props) {
   const ref = useRef<HTMLCanvasElement>(null);
   const text = counts?.text ?? 0;
   const image = counts?.image ?? 0;
@@ -74,13 +70,12 @@ export function CosmosCanvas({ counts, initial, calm = false, formations = false
       return;
     }
 
-    let nebula: WebGLProgram, stars: WebGLProgram, body: WebGLProgram, points: WebGLProgram, swarm: WebGLProgram;
+    let nebula: WebGLProgram, stars: WebGLProgram, body: WebGLProgram, points: WebGLProgram;
     try {
       nebula = program(gl, FULLSCREEN_VERTEX, NEBULA_FRAGMENT);
       stars = program(gl, STAR_VERTEX, STAR_FRAGMENT);
       body = program(gl, FULLSCREEN_VERTEX, BODY_FRAGMENT);
       points = program(gl, POINT_VERTEX, POINT_FRAGMENT);
-      swarm = program(gl, SWARM_VERTEX, POINT_FRAGMENT);
     } catch {
       document.documentElement.classList.add('no-webgl');
       return;
@@ -131,28 +126,6 @@ export function CosmosCanvas({ counts, initial, calm = false, formations = false
       attribute(1, kind, 1);
       attribute(2, index, 1);
     }
-    // The swarm: random seeds per star, and every shape in one float texture
-    // (a row per shape). Kept under 2048 stars, the smallest texture width
-    // WebGL2 guarantees.
-    const swarmCount = formations ? (small ? 1300 : 2000) : 0;
-    const swarmVao = gl.createVertexArray();
-    const shapeTexture = gl.createTexture();
-    if (swarmCount > 0) {
-      const seeds = new Float32Array(swarmCount * 4);
-      for (let i = 0; i < seeds.length; i++) seeds[i] = random();
-      gl.bindVertexArray(swarmVao);
-      attribute(0, seeds, 4);
-      const font = getComputedStyle(document.body).fontFamily || 'sans-serif';
-      gl.bindTexture(gl.TEXTURE_2D, shapeTexture);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texImage2D(
-        gl.TEXTURE_2D, 0, gl.RGBA32F, swarmCount, FORMS.length, 0, gl.RGBA, gl.FLOAT,
-        buildForms(swarmCount, font, mulberry32(7)),
-      );
-    }
     gl.bindVertexArray(null);
     const emptyVao = gl.createVertexArray();
 
@@ -161,10 +134,6 @@ export function CosmosCanvas({ counts, initial, calm = false, formations = false
     const B = uniforms(gl, body, ['uRes', 'uTime', 'uEclipse', 'uEclipseScale', 'uEclipseY', 'uHorizon', 'uHorizonLift', 'uFlash']);
     const P = uniforms(gl, points, [
       'uTime', 'uMorph', 'uCount', 'uKindShare', 'uAspect', 'uScale', 'uOffset', 'uPointer', 'uPointerStrength', 'uAlpha', 'uDpr', 'uPointSize',
-    ]);
-
-    const W = uniforms(gl, swarm, [
-      'uShapes', 'uForm', 'uShapeCount', 'uTime', 'uAspect', 'uScale', 'uOffset', 'uAlpha', 'uDpr', 'uPointSize',
     ]);
 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -258,23 +227,6 @@ export function CosmosCanvas({ counts, initial, calm = false, formations = false
         gl!.drawArrays(gl!.POINTS, 0, total);
       }
 
-      if (swarmCount > 0 && cosmos.swarm > 0.001) {
-        gl!.useProgram(swarm);
-        gl!.bindVertexArray(swarmVao);
-        gl!.activeTexture(gl!.TEXTURE0);
-        gl!.bindTexture(gl!.TEXTURE_2D, shapeTexture);
-        gl!.uniform1i(W.uShapes, 0);
-        gl!.uniform1f(W.uForm, cosmos.form);
-        gl!.uniform1f(W.uShapeCount, FORMS.length);
-        gl!.uniform1f(W.uTime, time);
-        gl!.uniform1f(W.uAspect, aspect);
-        gl!.uniform1f(W.uScale, cosmos.swarmScale);
-        gl!.uniform2f(W.uOffset, cosmos.swarmX, cosmos.swarmY);
-        gl!.uniform1f(W.uAlpha, cosmos.swarm);
-        gl!.uniform1f(W.uDpr, dpr);
-        gl!.uniform1f(W.uPointSize, Math.max(3, Math.min(6, h / dpr / 160)));
-        gl!.drawArrays(gl!.POINTS, 0, swarmCount);
-      }
     }
 
     const tick = () => {
@@ -305,9 +257,8 @@ export function CosmosCanvas({ counts, initial, calm = false, formations = false
       window.removeEventListener('pointermove', onPointer);
       document.removeEventListener('pointerleave', onLeave);
       buffers.forEach((b) => gl.deleteBuffer(b));
-      [starVao, pointVao, swarmVao, emptyVao].forEach((v) => gl.deleteVertexArray(v));
-      [nebula, stars, body, points, swarm].forEach((p) => gl.deleteProgram(p));
-      gl.deleteTexture(shapeTexture);
+      [starVao, pointVao, emptyVao].forEach((v) => gl.deleteVertexArray(v));
+      [nebula, stars, body, points].forEach((p) => gl.deleteProgram(p));
     };
     // `initial` and `calm` are read on mount only.
     // eslint-disable-next-line react-hooks/exhaustive-deps

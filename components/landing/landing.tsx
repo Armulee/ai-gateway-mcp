@@ -8,6 +8,14 @@ import { SplitText } from '../split-text';
 import { VercelBadge } from '../vercel-badge';
 import { WordReveal } from '../word-reveal';
 import { LandingMotion } from './landing-motion';
+import { HowArt } from './film/how-art';
+import { OpenArt } from './film/open-art';
+import { PayingArt } from './film/paying-art';
+import { PriceArt } from './film/price-art';
+import { SafetyArt } from './film/safety-art';
+import { StarDefs } from './film/star-defs';
+import { ToolsArt } from './film/tools-art';
+import { IdleHint } from './idle-hint';
 import { KindLogos } from './provider-logos';
 
 /** "author": the project's own site. "instance": someone's self-hosted deployment. */
@@ -53,8 +61,10 @@ export function Landing({
 
   return (
     <>
-      <CosmosCanvas counts={catalog?.counts ?? FALLBACK_COUNTS} formations />
+      <CosmosCanvas counts={catalog?.counts ?? FALLBACK_COUNTS} />
+      <StarDefs />
       <LandingMotion />
+      <IdleHint />
 
       <SiteNav
         home="#top"
@@ -104,6 +114,9 @@ export function Landing({
         </div>
         <p className="orbit-count" aria-hidden="true">
           <span data-orbit-count>01</span> / {pad(CHAPTERS.length)}
+          <span className="orbit-pct" data-orbit-pct>
+            0%
+          </span>
         </p>
       </nav>
       <div className="orbit-mobile" aria-hidden="true" data-orbit>
@@ -152,38 +165,44 @@ export function Landing({
         </section>
 
         {/* Price: why this costs less than a typical AI app. */}
-        <section id="price" className="scene" data-scene="price" data-chapter="price" aria-labelledby="price-title">
+        <section id="price" className="scene scene-film" data-scene="price" data-chapter="price" aria-labelledby="price-title">
           <div className="scene-pin">
-            <h2 id="price-title" className="sr-only">
-              Price
-            </h2>
-            <div className="formation" data-formation aria-hidden="true" />
-            <div className="beat" data-beat>
-              <h3 className="beat-title">
-                Many AI apps add a margin.
-                <br />
-                <span className="dim">A monthly plan, or a markup on every request.</span>
-              </h3>
-              <p className="beat-sub">Part of what you pay goes to the app, not to the model you are using.</p>
-            </div>
-            <div className="beat beat-quote" data-beat>
-              <h3 className="beat-title">This one does not.</h3>
-              <p className="beat-sub">
-                Requests run on <VercelBadge kind="gateway" />, which bills at the provider&apos;s own price. In Vercel&apos;s words:
-              </p>
-              <figure className="quote">
-                <blockquote>
-                  <p>
-                    &ldquo;AI Gateway charges no markup and no platform fee on tokens. You pay the provider&apos;s list price on a
-                    pay-as-you-go basis.&rdquo;
+            <div className="film-copy">
+              <div className="beats">
+                <h2 id="price-title" className="sr-only">
+                  Price
+                </h2>
+                <div className="beat" data-beat>
+                  <h3 className="beat-title">
+                    Many AI apps add a margin.
+                    <br />
+                    <span className="dim">A monthly plan, or a markup on every request.</span>
+                  </h3>
+                  <p className="beat-sub">Part of what you pay goes to the app, not to the model you are using.</p>
+                </div>
+                <div className="beat beat-quote" data-beat>
+                  <h3 className="beat-title">This one does not.</h3>
+                  <p className="beat-sub">
+                    Requests run on <VercelBadge kind="gateway" />, which bills at the provider&apos;s own price. In Vercel&apos;s words:
                   </p>
-                </blockquote>
-                <figcaption>
-                  <a href="https://vercel.com/docs/ai-gateway/pricing" target="_blank" rel="noopener noreferrer">
-                    Vercel AI Gateway docs, Pricing
-                  </a>
-                </figcaption>
-              </figure>
+                  <figure className="quote">
+                    <blockquote>
+                      <p>
+                        &ldquo;AI Gateway charges <span className="hl">no markup</span> and <span className="hl">no platform fee</span> on tokens. You pay the provider&apos;s list price on a
+                        pay-as-you-go basis.&rdquo;
+                      </p>
+                    </blockquote>
+                    <figcaption>
+                      <a href="https://vercel.com/docs/ai-gateway/pricing" target="_blank" rel="noopener noreferrer">
+                        Vercel AI Gateway docs, Pricing
+                      </a>
+                    </figcaption>
+                  </figure>
+                </div>
+              </div>
+            </div>
+            <div className="film-stage">
+              <PriceArt />
             </div>
           </div>
         </section>
@@ -229,40 +248,46 @@ export function Landing({
         </section>
 
         {/* How it works, in plain words. */}
-        <section id="how" className="scene" data-scene="how" data-chapter="how" aria-labelledby="how-title">
+        <section id="how" className="scene scene-film" data-scene="how" data-chapter="how" aria-labelledby="how-title">
           <div className="scene-pin">
-            <h2 id="how-title" className="sr-only">
-              How it works
-            </h2>
-            <div className="formation" data-formation aria-hidden="true" />
-            <div className="beat" data-beat>
-              <h3 className="beat-title">
-                <WordReveal text="Claude and ChatGPT can plug in extra tools." />
-              </h3>
-              <p className="beat-sub">
-                They are called connectors. This project is one: it connects your chat to every model on{' '}
-                <VercelBadge kind="gateway" />.
-              </p>
+            <div className="film-copy">
+              <div className="beats">
+                <h2 id="how-title" className="sr-only">
+                  How it works
+                </h2>
+                <div className="beat" data-beat>
+                  <h3 className="beat-title">
+                    <WordReveal text="Claude and ChatGPT can plug in extra tools." />
+                  </h3>
+                  <p className="beat-sub">
+                    They are called connectors. This project is one: it connects your chat to every model on{' '}
+                    <VercelBadge kind="gateway" />.
+                  </p>
+                </div>
+                <div className="beat" data-beat>
+                  <h3 className="beat-title">
+                    <WordReveal text="You ask in chat." />
+                  </h3>
+                  <p className="beat-sub">Claude or ChatGPT picks the right tool, like making an image, and uses it.</p>
+                </div>
+                <div className="beat" data-beat>
+                  <h3 className="beat-title">
+                    <WordReveal text="Your private link carries it." />
+                  </h3>
+                  <p className="beat-sub">A web address with your secret inside. Only your own copy of this project answers it.</p>
+                </div>
+                <div className="beat" data-beat>
+                  <h3 className="beat-title">
+                    <WordReveal text="AI Gateway runs the model." />
+                  </h3>
+                  <p className="beat-sub">
+                    The result comes back to your chat. The cost goes to your own <VercelBadge kind="vercel" /> account.
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="beat" data-beat>
-              <h3 className="beat-title">
-                <WordReveal text="You ask in chat." />
-              </h3>
-              <p className="beat-sub">Claude or ChatGPT picks the right tool, like making an image, and uses it.</p>
-            </div>
-            <div className="beat" data-beat>
-              <h3 className="beat-title">
-                <WordReveal text="Your private link carries it." />
-              </h3>
-              <p className="beat-sub">A web address with your secret inside. Only your own copy of this project answers it.</p>
-            </div>
-            <div className="beat" data-beat>
-              <h3 className="beat-title">
-                <WordReveal text="AI Gateway runs the model." />
-              </h3>
-              <p className="beat-sub">
-                The result comes back to your chat. The cost goes to your own <VercelBadge kind="vercel" /> account.
-              </p>
+            <div className="film-stage">
+              <HowArt />
             </div>
           </div>
         </section>
@@ -274,7 +299,10 @@ export function Landing({
               What your chat can do with it
             </h2>
             <div className="tools-stage">
-              {TOOLS.map((tool, i) => (
+              <div className="film-stage tools-film">
+                <ToolsArt />
+              </div>
+              {TOOLS.map((tool) => (
                 <article key={tool.name} className="tool" data-tool>
                   <div className="tool-text">
                     <h3>{tool.label}</h3>
@@ -282,8 +310,6 @@ export function Landing({
                     <p>{tool.text}</p>
                     <code>{tool.signature}</code>
                   </div>
-                  {/* The swarm draws each tool's picture here; the first one marks the spot. */}
-                  <div className="tool-visual" aria-hidden="true" data-formation={i === 0 ? '' : undefined} />
                 </article>
               ))}
             </div>
@@ -296,68 +322,84 @@ export function Landing({
         </section>
 
         {/* Paying: usage, not plans. */}
-        <section id="paying" className="scene scene-formed" data-scene="paying" data-chapter="paying" aria-labelledby="paying-title">
+        <section id="paying" className="scene scene-film" data-scene="paying" data-chapter="paying" aria-labelledby="paying-title">
           <div className="scene-pin">
-            <h2 id="paying-title" className="scene-heading" data-heading>
-              Pay only for what you use.
-            </h2>
-            <div className="formation" data-formation aria-hidden="true" />
-            <div className="beat" data-beat>
-              <h3 className="beat-title">No plan.</h3>
-              <p className="beat-sub">No subscription and no monthly fee. Each request costs what that model costs, nothing more.</p>
+            <div className="film-copy">
+              <h2 id="paying-title" className="scene-heading" data-heading>
+                Pay only for what you use.
+              </h2>
+              <div className="beats">
+                <div className="beat" data-beat>
+                  <h3 className="beat-title">No plan.</h3>
+                  <p className="beat-sub">No subscription and no monthly fee. Each request costs what that model costs, nothing more.</p>
+                </div>
+                <div className="beat" data-beat>
+                  <h3 className="beat-title">Your own credits.</h3>
+                  <p className="beat-sub">
+                    Top up <VercelBadge kind="gateway" /> credits on your Vercel account, or turn on auto top-up. Every team also gets free
+                    monthly credits for a set of models.
+                  </p>
+                </div>
+                <div className="beat" data-beat>
+                  <h3 className="beat-title">Your own limit.</h3>
+                  <p className="beat-sub">Set a spend budget in AI Gateway to cap what your link can ever spend.</p>
+                </div>
+              </div>
             </div>
-            <div className="beat" data-beat>
-              <h3 className="beat-title">Your own credits.</h3>
-              <p className="beat-sub">
-                Top up <VercelBadge kind="gateway" /> credits on your Vercel account, or turn on auto top-up. Every team also gets free
-                monthly credits for a set of models.
-              </p>
-            </div>
-            <div className="beat" data-beat>
-              <h3 className="beat-title">Your own limit.</h3>
-              <p className="beat-sub">Set a spend budget in AI Gateway to cap what your link can ever spend.</p>
+            <div className="film-stage">
+              <PayingArt />
             </div>
           </div>
         </section>
 
         {/* Open source and independent. */}
-        <section id="open" className="scene scene-formed" data-scene="open" data-chapter="open" aria-labelledby="open-title">
+        <section id="open" className="scene scene-film" data-scene="open" data-chapter="open" aria-labelledby="open-title">
           <div className="scene-pin">
-            <h2 id="open-title" className="scene-heading" data-heading>
-              Free. Open source. <span className="dim">Yours to run.</span>
-            </h2>
-            <div className="formation" data-formation aria-hidden="true" />
-            <div className="beat" data-beat>
-              <h3 className="beat-title">I charge nothing.</h3>
-              <p className="beat-sub">No fee, no markup, no sign-up with me. The code is MIT licensed, so anyone can use it, change it or share it.</p>
+            <div className="film-copy">
+              <h2 id="open-title" className="scene-heading" data-heading>
+                Free. Open source. <span className="dim">Yours to run.</span>
+              </h2>
+              <div className="beats">
+                <div className="beat" data-beat>
+                  <h3 className="beat-title">I charge nothing.</h3>
+                  <p className="beat-sub">No fee, no markup, no sign-up with me. The code is MIT licensed, so anyone can use it, change it or share it.</p>
+                </div>
+                <div className="beat" data-beat>
+                  <h3 className="beat-title">You run your own copy.</h3>
+                  <p className="beat-sub">
+                    Version 1 runs on your own <VercelBadge kind="vercel" /> account. It takes a few clicks, and the setup page walks you
+                    through each one.
+                  </p>
+                </div>
+                <div className="beat" data-beat>
+                  <h3 className="beat-title">Why I made it.</h3>
+                  <p className="beat-sub">So everyone can use AI at the price providers actually set, from the chat app they already use.</p>
+                  <p className="beat-note">Built independently. Not made by or affiliated with Vercel.</p>
+                </div>
+              </div>
             </div>
-            <div className="beat" data-beat>
-              <h3 className="beat-title">You run your own copy.</h3>
-              <p className="beat-sub">
-                Version 1 runs on your own <VercelBadge kind="vercel" /> account. It takes a few clicks, and the setup page walks you
-                through each one.
-              </p>
-            </div>
-            <div className="beat" data-beat>
-              <h3 className="beat-title">Why I made it.</h3>
-              <p className="beat-sub">So everyone can use AI at the price providers actually set, from the chat app they already use.</p>
-              <p className="beat-note">Built independently. Not made by or affiliated with Vercel.</p>
+            <div className="film-stage">
+              <OpenArt />
             </div>
           </div>
         </section>
 
         {/* Safety: one paragraph that lights up word by word. */}
-        <section id="safety" className="scene scene-keys" data-scene="keys" data-chapter="safety" aria-labelledby="keys-title">
+        <section id="safety" className="scene scene-film scene-keys" data-scene="keys" data-chapter="safety" aria-labelledby="keys-title">
           <div className="scene-pin">
-            <div className="formation" data-formation aria-hidden="true" />
-            <h2 id="keys-title" className="eyebrow">
-              Your keys, your credits
-            </h2>
-            <p className="keys-text" data-words>
-              <WordReveal
-                text={`Your link works like a password, so keep it private. Set a budget in AI Gateway, because that is the real limit. Files stay in your own private storage, and the links you get expire after ${linkTtlHours} hours. Nobody else ever holds your keys.`}
-              />
-            </p>
+            <div className="film-copy">
+              <h2 id="keys-title" className="eyebrow">
+                Your keys, your credits
+              </h2>
+              <p className="keys-text" data-words>
+                <WordReveal
+                  text={`Your link works like a password, so keep it private. Set a budget in AI Gateway, because that is the real limit. Files stay in your own private storage, and the links you get expire after ${linkTtlHours} hours. Nobody else ever holds your keys.`}
+                />
+              </p>
+            </div>
+            <div className="film-stage">
+              <SafetyArt hours={linkTtlHours} />
+            </div>
           </div>
         </section>
 

@@ -119,23 +119,6 @@ export function Landing({
           </span>
         </p>
       </nav>
-      <div className="orbit-mobile" aria-hidden="true" data-orbit>
-        <div className="orbit-rail" style={{ '--last': CHAPTERS.length - 1 } as React.CSSProperties}>
-          <span className="orbit-track" />
-          <span className="orbit-fill" />
-          <ol>
-            {CHAPTERS.map((chapter, i) => (
-              <li key={chapter.id} style={{ '--i': i } as React.CSSProperties} data-rail-dot={chapter.id}>
-                <span className="orbit-star" />
-              </li>
-            ))}
-          </ol>
-          <div className="orbit-ship">
-            <span className="orbit-ring" />
-          </div>
-        </div>
-      </div>
-
       <main className="story">
         {/* Intro: an eclipse. Its ring is the private link every request passes through. */}
         <section id="top" className="scene scene-hero" data-scene="hero" data-chapter="top" aria-labelledby="hero-title">

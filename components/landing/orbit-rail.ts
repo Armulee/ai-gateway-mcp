@@ -15,7 +15,6 @@ export function setupOrbitRail(motion: boolean): () => void {
     const trigger = section.parentElement?.classList.contains('pin-spacer') ? section.parentElement : section;
     return {
       link: document.querySelector<HTMLElement>(`[data-rail="${section.dataset.chapter}"]`),
-      dot: document.querySelector<HTMLElement>(`[data-rail-dot="${section.dataset.chapter}"]`),
       st: ScrollTrigger.create({ trigger, start: 'top center', end: 'bottom center' }),
     };
   });
@@ -55,11 +54,9 @@ export function setupOrbitRail(motion: boolean): () => void {
     if (percent) percent.textContent = `${Math.round((y / Math.max(ScrollTrigger.maxScroll(window), 1)) * 100)}%`;
     if (index === active) return;
     active = index;
-    chapters.forEach(({ link, dot }, i) => {
-      for (const el of [link, dot]) {
-        el?.classList.toggle('is-active', i === index);
-        el?.classList.toggle('is-past', i < index);
-      }
+    chapters.forEach(({ link }, i) => {
+      link?.classList.toggle('is-active', i === index);
+      link?.classList.toggle('is-past', i < index);
       if (i === index) link?.setAttribute('aria-current', 'step');
       else link?.removeAttribute('aria-current');
     });
@@ -105,7 +102,8 @@ export function setupOrbitRail(motion: boolean): () => void {
   };
   // Click the line anywhere (stars keep their own links): fly there.
   const onRailDown = (event: PointerEvent) => {
-    if ((event.target as Element).closest('a, .orbit-ring')) return;
+    // On touch screens only the ring responds; a thumb near the edge keeps scrolling the page.
+    if (event.pointerType === 'touch' || (event.target as Element).closest('a, .orbit-ring')) return;
     scrollToY(toScroll(shipAt(event.clientY)));
   };
 

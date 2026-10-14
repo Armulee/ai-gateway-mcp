@@ -1326,8 +1326,7 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   transform: scaleY(var(--ship, 0));
 }
 
-.orbit ol,
-.orbit-mobile ol {
+.orbit ol {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -1570,10 +1569,6 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   opacity: 1;
 }
 
-.orbit-mobile {
-  display: none;
-}
-
 html:not(.motion-ok) .orbit-ring i {
   animation: none;
 }
@@ -1585,70 +1580,55 @@ html:not(.motion-ok) .orbit-ring i {
   }
 }
 
-/* Phones: the same line of stars runs across the top edge. */
+/* Phones: the same rail, slimmer, on the right edge. Only the ring takes
+   touches, so a thumb scrolling near the edge still scrolls the page. */
 @media (max-width: 899px) {
+  :root:has(.story) {
+    --gutter: 28px;
+  }
+
   .orbit {
+    --rail: min(46vh, 380px);
+    right: 4px;
+    gap: 14px;
+  }
+
+  .orbit-rail {
+    width: 18px;
+    cursor: default;
+  }
+
+  .orbit-rail::before {
     display: none;
   }
 
-  .orbit-mobile {
-    display: block;
-    position: fixed;
-    inset: 0 0 auto;
-    z-index: 25;
-    height: 12px;
-    padding: 0 14px;
+  .orbit a {
     pointer-events: none;
   }
 
-  .orbit-mobile .orbit-rail {
-    width: 100%;
-    height: 12px;
+  .orbit-name,
+  .orbit-tag {
+    display: none;
   }
 
-  .orbit-mobile .orbit-track,
-  .orbit-mobile .orbit-fill {
-    left: 0;
-    top: 50%;
-    width: auto;
-    height: 1px;
-    margin: -0.5px 0 0;
+  .orbit-ring {
+    width: 11px;
+    height: 11px;
+    margin: -5.5px 0 0 -5.5px;
   }
 
-  .orbit-mobile .orbit-track {
-    left: -14px;
-    right: -14px;
-    bottom: auto;
-    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.16) 8%, rgba(255, 255, 255, 0.16) 92%, transparent);
+  .orbit .orbit-ring::before {
+    inset: -16px;
   }
 
-  .orbit-mobile .orbit-fill {
-    width: 100%;
-    background: linear-gradient(to right, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.85));
-    transform-origin: left;
-    transform: scaleX(var(--ship, 0));
+  .orbit-count {
+    font-size: 0.5625rem;
+    writing-mode: vertical-rl;
+    letter-spacing: 0.08em;
   }
 
-  .orbit-mobile li {
-    position: absolute;
-    top: 50%;
-    left: calc(var(--i) / var(--last) * 100%);
-  }
-
-  .orbit-mobile .orbit-star {
-    margin: -1.5px 0 0 -1.5px;
-  }
-
-  .orbit-mobile .orbit-ship {
-    transform: translateX(calc(var(--ship, 0) * 100%));
-  }
-
-  .orbit-mobile .orbit-ring {
-    left: 0;
-    top: 50%;
-    width: 9px;
-    height: 9px;
-    margin: -4.5px 0 0 -4.5px;
+  .orbit-pct {
+    display: none;
   }
 }
 

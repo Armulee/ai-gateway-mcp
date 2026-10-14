@@ -961,6 +961,7 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
 
 /* Under "Set MCP_SECRET": generate, save in Vercel, redeploy. */
 .guide-copy > .secret-panel,
+.guide-copy > .blob-panel,
 .guide-copy > .generator {
   margin-top: 1.5rem;
 }
@@ -979,8 +980,13 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   font-size: 0.9375rem;
 }
 
-.secret-steps code {
+.secret-steps code,
+.secret-steps strong {
   color: var(--text);
+}
+
+.secret-steps strong {
+  font-weight: 500;
 }
 
 /* Safety facts and footer */

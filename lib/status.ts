@@ -10,7 +10,8 @@ import { secretStatus } from './secret';
 
 export type StepId = 'deploy' | 'secret' | 'gateway' | 'blob' | 'connect' | 'chat';
 export type StepState = 'done' | 'todo';
-export type ServerStep = { id: StepId; title: string; state: StepState; detail: string };
+/** An optional step never becomes "next", so it never holds up the steps after it. */
+export type ServerStep = { id: StepId; title: string; state: StepState; detail: string; optional?: boolean };
 
 const CACHE_MS = 60 * 1000;
 let cache: { at: number; steps: ServerStep[] } | undefined;
@@ -62,12 +63,13 @@ async function checkGateway(): Promise<ServerStep> {
 }
 
 async function checkBlob(): Promise<ServerStep> {
-  const step = { id: 'blob' as const, title: 'Connect file storage' };
+  // Only video and image download links need Blob, so the step is optional.
+  const step = { id: 'blob' as const, title: 'Connect file storage', optional: true };
   if (!blobConfigured()) {
     return {
       ...step,
       state: 'todo',
-      detail: 'No Blob store found. In your Vercel project open Storage, create a private Blob store, connect it, then redeploy. Images and videos need it.',
+      detail: 'Text and images already work. Videos and download links for images need a private Blob store: create one, connect it to this project, then redeploy.',
     };
   }
   try {

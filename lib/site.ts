@@ -13,3 +13,4 @@ export const LANDING_URL = 'https://github.com/armulee/ai-gateway-mcp-landing';
 const dashboardUrl = (path: string) => `https://vercel.com/d?to=${encodeURIComponent(`/[team]/[project]/${path}`)}`;
 export const ENV_VARS_URL = dashboardUrl('settings/environment-variables');
 export const DEPLOYMENTS_URL = dashboardUrl('deployments');
+export const STORAGE_URL = dashboardUrl('stores');

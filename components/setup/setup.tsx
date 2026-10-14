@@ -7,6 +7,7 @@ import { SiteNav } from '../site-nav';
 import { VercelBadge } from '../vercel-badge';
 import { ChatGuides } from './chat-guides';
 import { ConnectorPanel } from './connector-panel';
+import { BlobPanel } from './blob-panel';
 import { SecretPanel } from './secret-panel';
 import { SetupMotion } from './setup-motion';
 import { StatsPanel } from './stats-panel';
@@ -46,7 +47,7 @@ function StepExtra({ id }: { id: StepId }) {
 }
 
 export function Setup({ steps, linkTtlHours }: { steps: ServerStep[]; linkTtlHours: number }) {
-  const views: StepView[] = steps.map(({ id, title, state }) => ({ id, title, state }));
+  const views: StepView[] = steps.map(({ id, title, state, optional }) => ({ id, title, state, optional }));
   const chapters = [
     { id: 'overview', label: 'Overview' },
     ...steps.map((step) => ({ id: step.id, label: RAIL_LABELS[step.id], done: step.state === 'done' })),
@@ -89,6 +90,7 @@ export function Setup({ steps, linkTtlHours }: { steps: ServerStep[]; linkTtlHou
                 <p className="guide-detail">{step.detail}</p>
                 {step.id === 'gateway' && <StepExtra id={step.id} />}
                 {step.id === 'secret' && <SecretPanel isSet={step.state === 'done'} />}
+                {step.id === 'blob' && step.state !== 'done' && <BlobPanel />}
               </div>
               {(step.id === 'connect' || step.id === 'chat') && (
                 <div className="guide-extra" data-guide-copy>

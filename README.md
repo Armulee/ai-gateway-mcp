@@ -66,7 +66,7 @@ Errors are written to be readable and always name the model. They cover unknown 
 | `SIGNED_URL_TTL_HOURS` | `24` | How long file links stay valid. The maximum is 168 (7 days). |
 | `AI_GATEWAY_API_KEY` | unset | Optional. Use it for local development. When set, it replaces the OIDC token. |
 
-Vercel sets the Blob variables (`BLOB_STORE_ID`, plus `BLOB_READ_WRITE_TOKEN` as a fallback) and `VERCEL_OIDC_TOKEN` automatically when the store is connected.
+Vercel sets the Blob variables (`BLOB_STORE_ID`, plus `BLOB_READ_WRITE_TOKEN` as a fallback) and `VERCEL_OIDC_TOKEN` automatically when the store is connected. If your project has no Blob store (for example, you imported the repo yourself), text and images still work; for video and image links, create a private Blob store under the project's Storage tab, connect it and redeploy. The setup page links there.
 
 ## Security and costs
 

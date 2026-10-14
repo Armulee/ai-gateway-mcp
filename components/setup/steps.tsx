@@ -4,13 +4,13 @@ import { useEffect } from 'react';
 import type { StepId, StepState } from '@/lib/status';
 import { appsInUse, useSetup } from './setup-store';
 
-export type StepView = { id: StepId; title: string; state: StepState };
+export type StepView = { id: StepId; title: string; state: StepState; optional?: boolean };
 export type LiveState = 'done' | 'next' | 'todo';
 
 /**
  * Server checks cover the first four steps; this browser confirms the last
  * two (a link that tested fine, a chat app that has used it). The first step
- * not done is "next".
+ * not done, skipping optional ones, is "next".
  */
 export function useStepStates(steps: StepView[]): LiveState[] {
   const { connected, stats } = useSetup();
@@ -19,14 +19,14 @@ export function useStepStates(steps: StepView[]): LiveState[] {
     if (step.id === 'chat') return appsInUse(stats).length > 0;
     return step.state === 'done';
   });
-  const next = done.indexOf(false);
+  const next = done.findIndex((isDone, i) => !isDone && !steps[i].optional);
   return done.map((isDone, i) => (isDone ? 'done' : i === next ? 'next' : 'todo'));
 }
 
 /** One step of the guide; its look follows the live state, and so does its star on the rail. */
 export function GuideStep({ steps, index, children }: { steps: StepView[]; index: number; children: React.ReactNode }) {
   const state = useStepStates(steps)[index];
-  const { id } = steps[index];
+  const { id, optional } = steps[index];
 
   useEffect(() => {
     document.querySelector(`[data-rail="${id}"]`)?.classList.toggle('is-done', state === 'done');
@@ -43,16 +43,16 @@ export function GuideStep({ steps, index, children }: { steps: StepView[]; index
           String(index + 1).padStart(2, '0')
         )}
       </span>
-      <span className="sr-only">{state === 'done' ? 'Done: ' : state === 'next' ? 'Next step: ' : 'To do: '}</span>
+      <span className="sr-only">{state === 'done' ? 'Done: ' : state === 'next' ? 'Next step: ' : optional ? 'Optional: ' : 'To do: '}</span>
       {children}
     </li>
   );
 }
 
-/** "Next" or "Done" beside a step's title. */
+/** "Next", "Done" or "Optional" beside a step's title. */
 export function StepTag({ steps, index }: { steps: StepView[]; index: number }) {
   const state = useStepStates(steps)[index];
-  if (state === 'todo') return null;
+  if (state === 'todo') return steps[index].optional ? <span className="step-tag">Optional</span> : null;
   return <span className={`step-tag is-${state}`}>{state === 'done' ? 'Done' : 'Next'}</span>;
 }
 

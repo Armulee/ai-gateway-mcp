@@ -51,18 +51,6 @@ const ART: Record<StepId, React.ReactNode> = {
       </g>
     </>
   ),
-  // A credit meter, topped up, and a budget line it cannot pass.
-  credits: (
-    <>
-      <rect className="ln" data-draw x={92} y={24} width={56} height={116} rx={12} />
-      <rect className="meter-fill" data-fill x={99} y={62} width={42} height={71} rx={7} />
-      <path className="ln budget" data-draw d="M40,52 H200" />
-      <text className="mono tiny" x={40} y={44}>
-        budget
-      </text>
-      <path className="ln" data-draw d="M182,52 V46 A8,8 0 0 1 198,46 V52 M178,52 H202 V68 H178 Z" />
-    </>
-  ),
   // Your link: a comet runs through it and it lights up.
   connect: (
     <>

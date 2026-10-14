@@ -8,7 +8,7 @@ export type StepView = { id: StepId; title: string; state: StepState };
 export type LiveState = 'done' | 'next' | 'todo';
 
 /**
- * Server checks cover the first five steps; this browser confirms the last
+ * Server checks cover the first four steps; this browser confirms the last
  * two (a link that tested fine, a chat app that has used it). The first step
  * not done is "next".
  */

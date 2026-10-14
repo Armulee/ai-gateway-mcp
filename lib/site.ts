@@ -7,3 +7,9 @@ export const DEPLOY_URL =
 // The project's website (the landing lives in its own repo). Points at that
 // repo until the site has its own address.
 export const LANDING_URL = 'https://github.com/armulee/ai-gateway-mcp-landing';
+
+// A page of the owner's project in the Vercel dashboard. The app does not know
+// the team or project slug, so Vercel's "/d?to=" link asks which one to open.
+const dashboardUrl = (path: string) => `https://vercel.com/d?to=${encodeURIComponent(`/[team]/[project]/${path}`)}`;
+export const ENV_VARS_URL = dashboardUrl('settings/environment-variables');
+export const DEPLOYMENTS_URL = dashboardUrl('deployments');

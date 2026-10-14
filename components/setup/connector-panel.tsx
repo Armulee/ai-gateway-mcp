@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { pulse } from '../cosmos/store';
+import { CopyButton } from './copy-button';
 import { forgetSecret, markConnected, restoreSecret, setRemember, setSecret, useSetup } from './setup-store';
 
 // Runs in the browser only. The secret is only ever sent to this deployment:
@@ -37,33 +38,10 @@ async function rpc(url: string, body: object, protocolVersion?: string): Promise
   return message.result ?? {};
 }
 
-function randomSecret(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(32));
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-function CopyButton({ value, label = 'Copy' }: { value: string; label?: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button
-      type="button"
-      className="btn btn-ghost btn-small"
-      onClick={async () => {
-        await navigator.clipboard.writeText(value);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1600);
-      }}
-    >
-      {copied ? 'Copied' : label}
-    </button>
-  );
-}
-
 export function ConnectorPanel() {
   const { secret, remember, connected } = useSetup();
   const [reveal, setReveal] = useState(false);
   const [test, setTest] = useState<TestState>({ state: 'idle' });
-  const [generated, setGenerated] = useState('');
 
   useEffect(restoreSecret, []);
 
@@ -177,24 +155,9 @@ export function ConnectorPanel() {
         <p className="empty-hint">Paste your secret above to build the URL you will add to Claude or ChatGPT.</p>
       )}
 
-      <details className="generator">
-        <summary>Don&apos;t have a secret yet?</summary>
-        <p>
-          Generate 64 random characters here, save them as <code>MCP_SECRET</code> in Project Settings, Environment Variables, then
-          redeploy.
-        </p>
-        <div className="url-row">
-          <button type="button" className="btn btn-ghost btn-small" onClick={() => setGenerated(randomSecret())}>
-            Generate
-          </button>
-          {generated && (
-            <>
-              <code className="url-value">{generated}</code>
-              <CopyButton value={generated} />
-            </>
-          )}
-        </div>
-      </details>
+      <p className="field-help">
+        No secret yet, or lost it? Make one in <a href="#secret">Set MCP_SECRET</a>.
+      </p>
     </div>
   );
 }

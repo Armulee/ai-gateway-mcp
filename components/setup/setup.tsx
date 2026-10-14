@@ -7,6 +7,7 @@ import { SiteNav } from '../site-nav';
 import { VercelBadge } from '../vercel-badge';
 import { ChatGuides } from './chat-guides';
 import { ConnectorPanel } from './connector-panel';
+import { SecretPanel } from './secret-panel';
 import { SetupMotion } from './setup-motion';
 import { StatsPanel } from './stats-panel';
 import { StepArt } from './step-art';
@@ -22,7 +23,6 @@ const RAIL_LABELS: Record<StepId, string> = {
   secret: 'Secret',
   gateway: 'AI Gateway',
   blob: 'Storage',
-  credits: 'Credits',
   connect: 'Your link',
   chat: 'Chat app',
 };
@@ -34,13 +34,6 @@ function StepExtra({ id }: { id: StepId }) {
       return (
         <p className="guide-note">
           Requests run on <VercelBadge kind="gateway" /> and bill your own Vercel team at each provider&apos;s price.
-        </p>
-      );
-    case 'credits':
-      return (
-        <p className="guide-note">
-          In the Vercel dashboard open AI Gateway: top up under Credits (or turn on auto top-up), and set a spend budget. The budget is
-          the real limit on what your link can ever spend.
         </p>
       );
     case 'connect':
@@ -94,7 +87,8 @@ export function Setup({ steps, linkTtlHours }: { steps: ServerStep[]; linkTtlHou
                   <StepTag steps={views} index={i} />
                 </h2>
                 <p className="guide-detail">{step.detail}</p>
-                {(step.id === 'gateway' || step.id === 'credits') && <StepExtra id={step.id} />}
+                {step.id === 'gateway' && <StepExtra id={step.id} />}
+                {step.id === 'secret' && <SecretPanel isSet={step.state === 'done'} />}
               </div>
               {(step.id === 'connect' || step.id === 'chat') && (
                 <div className="guide-extra" data-guide-copy>

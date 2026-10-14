@@ -37,7 +37,7 @@ Two repos:
 - **`armulee/ai-gateway-mcp-landing`** is the project's own website (black-and-white scrollytelling story). Its setup buttons open Vercel's clone flow for this repo. The waitlist for the hosted version belongs there; its storage is not decided yet: ask before choosing.
 
 Setup page at `/` (every self-hoster lands here on their own deployment):
-- A guide in steps, each with a code-drawn motion graphic: deploy, `MCP_SECRET`, AI Gateway via OIDC, Blob, credits + budget (checked on the server), then test the link and add it to a chat app (confirmed in the owner's browser). Shows what is done and what is next.
+- A guide in steps, each with a code-drawn motion graphic: deploy, `MCP_SECRET` (generated in the browser, with a link to the project's Environment Variables), AI Gateway via OIDC, Blob (checked on the server), then test the link and add it to a chat app (confirmed in the owner's browser). Shows what is done and what is next.
 - Never render the secret or the full connector URL by default. The owner pastes the secret into a field; the URL is built in the browser, "Test connection" calls the MCP endpoint's tools list, and the secret may be remembered in that browser (localStorage) with a way to forget it.
 - Usage stats, unlocked with the secret via `POST /api/stats` (constant-time check, 404 when wrong): team credits, and this connector's spend per day, per model and per chat app from AI Gateway's spend report filtered by the tags every call carries. No database.
 - How-to for Claude, ChatGPT and other MCP apps; set a Gateway budget; rotate the secret.

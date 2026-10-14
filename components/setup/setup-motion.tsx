@@ -46,7 +46,6 @@ export function SetupMotion() {
             .to(head, { opacity: 0, duration: 0.3 }, 1.25);
         }
         tl.fromTo(art.querySelectorAll('[data-drop]'), { y: -50, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, ease: 'bounce.out' }, 0.5);
-        tl.fromTo(art.querySelectorAll('[data-fill]'), { scaleY: 0, transformOrigin: '50% 100%' }, { scaleY: 1, duration: 0.9, ease: 'power3.out' }, 0.5);
         tl.fromTo(art.querySelectorAll('[data-dock]'), { x: 60, opacity: 0 }, { x: 0, opacity: 1, duration: 0.7, ease: 'power3.out' }, 0.6);
         tl.fromTo(art.querySelectorAll('[data-dots]'), { opacity: 0, letterSpacing: '0.6em' }, { opacity: 1, letterSpacing: '0em', duration: 0.6 }, 0.7);
       });

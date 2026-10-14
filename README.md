@@ -27,7 +27,7 @@ This project is not made by or affiliated with Vercel. It uses AI Gateway becaus
 ## Set up
 
 1. **Click Deploy.** Vercel copies this repo to your GitHub, GitLab or Bitbucket account and asks for `MCP_SECRET` (see [below](#mcp_secret)). It also creates a **private Vercel Blob store** and connects it to the project, so there is nothing else to configure.
-2. **Open your deployment** at `https://<your-project>.vercel.app`. Its home page is a step-by-step guide that checks your copy (secret, AI Gateway, Blob, credits), shows which steps are done and tells you what to do next.
+2. **Open your deployment** at `https://<your-project>.vercel.app`. Its home page is a step-by-step guide that checks your copy (secret, AI Gateway, Blob), shows which steps are done and tells you what to do next.
 3. **Paste your secret** there to build your connector URL, then click **Test connection**. The URL is assembled in your browser and has this form:
    ```
    https://<your-project>.vercel.app/mcp/<MCP_SECRET>

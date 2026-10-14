@@ -959,6 +959,30 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   font-size: 0.9375rem;
 }
 
+/* Under "Set MCP_SECRET": generate, save in Vercel, redeploy. */
+.guide-copy > .secret-panel,
+.guide-copy > .generator {
+  margin-top: 1.5rem;
+}
+
+.secret-steps {
+  display: grid;
+  gap: 18px;
+  max-width: 58ch;
+  margin: 0;
+  padding-left: 1.25em;
+  color: var(--muted);
+}
+
+.secret-steps p {
+  margin: 0 0 8px;
+  font-size: 0.9375rem;
+}
+
+.secret-steps code {
+  color: var(--text);
+}
+
 /* Safety facts and footer */
 .facts {
   display: grid;
@@ -1431,10 +1455,6 @@ html:not(.motion-ok) .orbit-ring i {
   filter: url(#glow-strong);
 }
 
-.film .ln.budget {
-  stroke-width: 2.5;
-}
-
 .film .ln.node,
 .film .ln.pill,
 .film .ln.bubble,
@@ -1462,15 +1482,10 @@ html:not(.motion-ok) .orbit-ring i {
   fill: var(--text);
 }
 
-.film .bar.dust,
-.film .meter-fill.dim {
+.film .bar.dust {
   fill: url(#stardust);
   stroke: rgba(255, 255, 255, 0.5);
   stroke-width: 1;
-}
-
-.film .meter-fill {
-  fill: rgba(255, 255, 255, 0.85);
 }
 
 .film .shard {

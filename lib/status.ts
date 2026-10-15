@@ -69,13 +69,13 @@ async function checkGateway(): Promise<ServerStep> {
 }
 
 async function checkBlob(): Promise<ServerStep> {
-  // Only video and image download links need Blob, so the step is optional.
-  const step = { id: 'blob' as const, title: 'Connect file storage', optional: true };
+  // Required, as in Vercel's clone flow: video and every download link live in Blob.
+  const step = { id: 'blob' as const, title: 'Connect file storage' };
   if (!blobConfigured()) {
     return {
       ...step,
       state: 'todo',
-      detail: 'Text and images work without it. Video needs it.',
+      detail: 'Video and every download link need it. Pictures and voice still show in chat without it.',
     };
   }
   try {

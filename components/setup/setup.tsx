@@ -67,11 +67,10 @@ export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: Serv
       <SetupSession steps={views} open={open} />
       <SiteNav
         home="#overview"
-        links={
-          <>
-            <a href={LANDING_URL}>About</a>
-            <a href={REPO_URL}>GitHub</a>
-          </>
+        action={
+          <a className="nav-action" href={REPO_URL}>
+            GitHub
+          </a>
         }
       />
       <OrbitNav chapters={chapters} label="Setup steps" />

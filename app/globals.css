@@ -235,6 +235,18 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
   }
 }
 
+/* A single link on the right of the bar, shown at every width. */
+.nav-action {
+  color: var(--muted);
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.nav-action:hover {
+  color: var(--text);
+}
+
 
 /* ---------- Setup page ----------
    The home page of every deployment: an overview ring, then one step per

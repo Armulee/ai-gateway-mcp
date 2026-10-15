@@ -91,7 +91,11 @@ export function estimateVideo(model: GatewayModel, { seconds, audio, mode }: Vid
   return { low: low * seconds, high: high * seconds, basis: `for ${seconds} s at ${range(low, high)} per second`, notes };
 }
 
-/** The tool reply for an estimate. */
+/**
+ * The tool reply for an estimate. List prices can trail what the provider
+ * bills: bfl/flux-3-image was listed at $0.024 for 1024x1024 but billed $0.048
+ * (Oct 2026), so the reply says the charge can be higher.
+ */
 export function estimateResult(model: string, estimate: Estimate): CallToolResult {
   if ('unknown' in estimate) {
     return textResult(`No price estimate for "${model}": ${estimate.unknown} Nothing was generated or charged.`);
@@ -100,7 +104,7 @@ export function estimateResult(model: string, estimate: Estimate): CallToolResul
     [
       `Price estimate for "${model}" (nothing was generated or charged): ${range(estimate.low, estimate.high)} ${estimate.basis}.`,
       ...estimate.notes,
-      "Based on AI Gateway's published list prices; the actual charge shows in the result and in Vercel's AI Gateway usage. Call again without estimate_only to run it.",
+      "Based on AI Gateway's published list prices. The provider's actual charge can be higher than the list price (one model has been billed double); it shows in the result and in Vercel's AI Gateway usage. Call again without estimate_only to run it.",
     ].join('\n'),
   );
 }

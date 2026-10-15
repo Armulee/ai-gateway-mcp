@@ -95,14 +95,14 @@ Ask in plain words. Your chat does the thinking and the writing with everything 
     <td width="50%" valign="top">
       <h3>Pick the right model</h3>
       <p><i>"Which video model is cheapest for an 8-second clip that still looks good?"</i></p>
-      <p>The connector lists every model with its live price, so your chat can choose for you, or compare a few side by side.</p>
+      <p>The connector lists every model with its AI Gateway catalog price, so your chat can choose for you, or compare a few side by side.</p>
       <sub><code>list_models</code> <code>check_credits</code></sub><br>
       <b>Free</b> <sub>reading the catalog costs nothing</sub>
     </td>
   </tr>
 </table>
 
-<sub>Costs are list prices from the AI Gateway catalog in October 2026, for the example quantities shown. They are examples, not quotes: ask <code>list_models</code> for today's prices.</sub>
+<sub>Costs are AI Gateway catalog prices from October 2026, for the example quantities shown. They are examples, not quotes: the provider's bill can differ from the catalog (see <a href="#what-it-costs">What it costs</a>), and each call reports what it actually cost. Ask <code>list_models</code> for today's catalog.</sub>
 
 ## How it works
 
@@ -187,11 +187,11 @@ Once every step is done, the guide steps aside for good. From then on your page 
 
 ## What it costs
 
-Nothing from this project: it is free and MIT licensed, with no plan and no fee. You pay each provider's list price through your own AI Gateway credits, and every Vercel team gets free monthly credits for a set of models. In Vercel's words ([AI Gateway pricing](https://vercel.com/docs/ai-gateway/pricing)):
+Nothing from this project: it is free and MIT licensed, with no plan and no fee. You pay what each provider charges, with no markup, through your own AI Gateway credits, and every Vercel team gets free monthly credits for a set of models. In Vercel's words ([AI Gateway pricing](https://vercel.com/docs/ai-gateway/pricing)):
 
 > AI Gateway charges no markup and no platform fee on tokens. You pay the provider's list price on a pay-as-you-go basis.
 
-| You ask for | Model | List price |
+| You ask for | Model | Catalog price |
 | --- | --- | --- |
 | A picture | `recraft/recraft-v4.1-flash` | $0.007 |
 | A picture | `google/gemini-3-pro-image` (Nano Banana Pro) | $0.134 |
@@ -201,7 +201,7 @@ Nothing from this project: it is free and MIT licensed, with no plan and no fee.
 | 1,000 words read aloud | `openai/tts-1-hd` | about $0.17 |
 | An hour of speech written down | `openai/whisper-1` | $0.36 |
 
-<sub>From the AI Gateway catalog, October 2026. Ask <code>list_models</code> for today's prices.</sub>
+<sub>From the AI Gateway catalog, October 2026. The catalog is a guide, not the bill: the provider's charge can differ. <code>bfl/flux-3-image</code> lists $0.024 for a 1024x1024 picture, but Black Forest Labs billed $0.048, which AI Gateway passed on with no surcharge. Each call reports its actual cost; ask <code>list_models</code> for today's catalog.</sub>
 
 This project is not made by or affiliated with Vercel. Version 1 means you run your own copy, so setup is as short as I could make it: the goal is for everyone to use AI at the price providers actually set.
 
@@ -234,7 +234,7 @@ Your chat app picks these for you; you never have to name them. Every tool retur
     </td>
     <td width="50%" valign="top">
       <h4>Models and your account</h4>
-      <code>list_models</code> lists every model with its live price.<br><br>
+      <code>list_models</code> lists every model with its AI Gateway catalog price.<br><br>
       <code>generate_text</code> asks another model for text, to compare answers.<br><br>
       <code>check_credits</code> shows your credits and this connector's spend.<br><br>
       <code>list_files</code> finds the pictures, videos and audio you made before.
@@ -249,7 +249,7 @@ Your chat app picks these for you; you never have to name them. Every tool retur
 
 | Tool | What it does |
 | --- | --- |
-| `list_models({ type?, query? })` | Lists the models in the AI Gateway catalog with their type (`text`, `image`, `video`, `speech`, `transcription`), capabilities (`t2v`, `i2v`, …) and price. |
+| `list_models({ type?, query? })` | Lists the models in the AI Gateway catalog with their type (`text`, `image`, `video`, `speech`, `transcription`), capabilities (`t2v`, `i2v`, …) and catalog price. |
 | `generate_text({ model, prompt, system?, max_tokens? })` | Generates text. Returns the text plus its cost when AI Gateway reports one. |
 | `generate_image({ model, prompt, size_or_aspect?, n?, estimate_only? })` | Works with image models (`bfl/flux-2-pro`, `openai/gpt-image-2`, …) and image-capable LLMs (`google/gemini-3-pro-image`). Images come back inline, and as expiring links when Blob is connected. |
 | `edit_image({ model, prompt, image_urls, mask_url?, size_or_aspect?, n? })` | Changes existing images from an instruction. Works with edit-capable image models (`bfl/flux-kontext-pro`, `openai/gpt-image-2`, …) and image-capable LLMs. Takes https links; links this server returned work too, because it downloads the inputs itself. |
@@ -259,7 +259,7 @@ Your chat app picks these for you; you never have to name them. Every tool retur
 | `upscale_video({ video_url, resolution?, model?, estimate_only? })` | Makes a video sharper and larger and cleans up noise (Topaz Proteus by default). |
 | `edit_video({ video_url, prompt, estimate_only? })` | Changes an existing video from an instruction (Grok Imagine Video, up to 720p). |
 | `extend_video({ video_url, prompt, duration?, estimate_only? })` | Continues a video from its last frame (Grok Imagine Video). |
-| `estimate_only: true` | On `generate_image` and the video tools: returns the price from AI Gateway's published list prices instead of running. Nothing is generated or charged. Often a range, because resolution or audio is left to the model's defaults; token-priced models (e.g. `openai/gpt-image-2`, Seedance 2) have no estimate. The provider can bill more than the list price: `bfl/flux-3-image` is listed at $0.024 for 1024x1024 but was billed $0.048. |
+| `estimate_only: true` | On `generate_image` and the video tools: returns the price from the AI Gateway catalog instead of running. Nothing is generated or charged. Often a range, because resolution or audio is left to the model's defaults; token-priced models (e.g. `openai/gpt-image-2`, Seedance 2) have no estimate. The provider can bill more than the catalog price: `bfl/flux-3-image` is listed at $0.024 for 1024x1024 but was billed $0.048. |
 | `get_video({ job_id })` | For every video tool above: reports whether the job is still generating. When it finishes, the video is saved to your Blob store and you get an expiring link; call it again later for a fresh one. |
 | `generate_speech({ model, text, voice?, instructions?, speed?, language?, format? })` | Turns text into speech (`openai/tts-1-hd`, `google/gemini-3.8-flash-tts`, `fish-audio/s2-pro`, …). The audio comes back inline and as an expiring link. |
 | `transcribe({ model, audio_url, timestamps? })` | Turns speech in an audio or video file (up to 25 MB) into text, optionally with timestamps. |

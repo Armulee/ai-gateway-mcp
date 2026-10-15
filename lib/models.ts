@@ -3,7 +3,7 @@
 const MODELS_URL = 'https://ai-gateway.vercel.sh/v1/models';
 const CACHE_MS = 5 * 60 * 1000;
 
-type PriceTier = { size?: string; resolution?: string; cost?: string; cost_per_second?: string };
+type PriceTier = { size?: string; resolution?: string; mode?: string; audio?: boolean; cost?: string; cost_per_second?: string };
 
 export type GatewayModel = {
   id: string;
@@ -79,7 +79,9 @@ export function priceOf(model: GatewayModel): string | undefined {
   const video = p.video_duration_pricing;
   if (video?.length) {
     if (video.every((t) => t.resolution)) {
-      return video.map((t) => `${t.resolution} $${t.cost_per_second}/s`).join(', ');
+      // Tiers can also split by mode or audio; name those so equal resolutions are told apart.
+      const label = (t: PriceTier) => [t.resolution, t.mode, t.audio === true ? 'with audio' : t.audio === false ? 'silent' : undefined].filter(Boolean).join(' ');
+      return video.map((t) => `${label(t)} $${t.cost_per_second}/s`).join(', ');
     }
     // Tiers split by mode/audio instead of resolution: show the range.
     const costs = video.map((t) => Number(t.cost_per_second)).filter(Number.isFinite);

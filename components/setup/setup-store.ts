@@ -7,7 +7,8 @@ import type { Stats } from '@/lib/stats';
 // Browser-side state of the setup page: the owner's secret (kept in this
 // browser only if they choose), whether the link has been tested, and the
 // usage stats it unlocks. The secret is only ever sent to this deployment:
-// to its MCP endpoint (Test connection) and to /api/stats (usage).
+// to its MCP endpoint (Test connection) and to /api/stats (usage), until the
+// owner clicks an install button to hand the link to a chat app.
 
 const KEY = 'ai-gateway-mcp:secret';
 const CHAT_KEY = 'ai-gateway-mcp:chat-added';

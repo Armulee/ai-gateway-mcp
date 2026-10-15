@@ -1822,6 +1822,15 @@ html:not(.motion-ok) .step-body-inner {
   margin-top: 24px;
 }
 
+.guide-installs {
+  margin-top: 16px;
+}
+
+.guide-installs .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Safety facts and footer */
 /* The open intro (open-intro.tsx): the arch and the lockup share one cell in
    the middle of the screen, over the page, until the lockup lands in the nav. */

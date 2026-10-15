@@ -11,14 +11,32 @@ import { appsInUse, restoreChatAdded, setChatAdded, useSetup } from './setup-sto
 // How to add the link in each chat app. Menu names move around between
 // releases, so each guide names what to look for rather than exact paths.
 
-const GUIDES = [
+const NAME = 'AI Gateway';
+
+/**
+ * One-click installs, built in this browser from the pasted secret. Each opens
+ * the app with the link filled in, and the owner still confirms there.
+ * claude.ai: https://claude.com/docs/connectors/building/directory-vs-custom
+ * Cursor: https://cursor.com/docs/context/mcp/install-links
+ * VS Code: https://code.visualstudio.com/docs/copilot/guides/mcp-developer-guide
+ */
+type Install = { label: string; href: (url: string) => string } | { label: string; copy: (url: string) => string };
+
+const GUIDES: { app: string; icon: string; steps: string[]; installs: Install[] }[] = [
   {
     app: 'Claude',
     icon: claude,
     steps: [
-      'On claude.ai open Settings, then Connectors.',
-      'Choose Add custom connector and paste your link. Leave the OAuth fields empty.',
+      'Click Add to Claude: claude.ai opens Add custom connector with the name and your link filled in. Check them and click Add.',
+      'Or on claude.ai open Customize, then Connectors, choose Add custom connector and paste your link. Leave the OAuth fields empty.',
       'It then shows up in Claude on desktop and on your phone too.',
+    ],
+    installs: [
+      {
+        label: 'Add to Claude',
+        href: (url) =>
+          `https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=${encodeURIComponent(NAME)}&connectorUrl=${encodeURIComponent(url)}`,
+      },
     ],
   },
   {
@@ -29,17 +47,63 @@ const GUIDES = [
       'Create a connector and paste your link. Choose no authentication.',
       'Turn it on in a chat from the tools menu.',
     ],
+    installs: [],
   },
   {
     app: 'Other apps',
     icon: cursor,
     steps: [
-      'Any app that takes a remote MCP server over Streamable HTTP works: Cursor, VS Code, Claude Code and more.',
-      'Add a remote server and paste your link as its URL.',
-      'In Claude Code: claude mcp add --transport http ai-gateway <your link>',
+      'Cursor and VS Code: click their button and confirm in the app.',
+      'Claude Code: copy the command and run it in your terminal.',
+      'Any other app that takes a remote MCP server over Streamable HTTP: add a remote server and paste your link as its URL.',
+    ],
+    installs: [
+      { label: 'Add to Cursor', href: (url) => `cursor://anysphere.cursor-deeplink/mcp/install?name=ai-gateway&config=${encodeURIComponent(btoa(JSON.stringify({ url })))}` },
+      { label: 'Add to VS Code', href: (url) => `vscode:mcp/install?${encodeURIComponent(JSON.stringify({ name: 'ai-gateway', type: 'http', url }))}` },
+      { label: 'Copy Claude Code command', copy: (url) => `claude mcp add --transport http ai-gateway ${url}` },
     ],
   },
 ];
+
+/** The buttons under a guide: live once a secret is pasted, so the link is never built from nothing. */
+function Installs({ installs }: { installs: Install[] }) {
+  const { secret, connected } = useSetup();
+  const [origin, setOrigin] = useState('');
+  useEffect(() => setOrigin(window.location.origin), []);
+  if (installs.length === 0) return null;
+  const url = secret.trim() && origin ? `${origin}/mcp/${encodeURIComponent(secret.trim())}` : '';
+  return (
+    <div className="action-steps guide-installs">
+      <div className="action-row">
+        {installs.map((install) =>
+          !url ? (
+            <button key={install.label} type="button" className="btn btn-small btn-ghost" disabled>
+              {install.label}
+            </button>
+          ) : 'copy' in install ? (
+            <CopyButton key={install.label} value={install.copy(url)} label={install.label} />
+          ) : (
+            <a
+              key={install.label}
+              className="btn btn-small btn-primary"
+              href={install.href(url)}
+              {...(install.href(url).startsWith('https:') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+            >
+              {install.label}
+            </a>
+          ),
+        )}
+      </div>
+      <p className="action-hint">
+        {!url
+          ? 'Paste your secret in “Get your link and test it” to turn these on.'
+          : connected
+            ? 'Each opens the app with your link filled in; you confirm there. Your link goes to that app, the same as pasting it.'
+            : 'Test your link above first, so you add one that works.'}
+      </p>
+    </div>
+  );
+}
 
 // A first call that costs a fraction of a cent and shows up in usage, which ticks this step.
 const TEST_PROMPT =
@@ -106,6 +170,7 @@ export function ChatGuides() {
             <li key={step}>{step}</li>
           ))}
         </ol>
+        <Installs installs={guide.installs} />
       </section>
       <ChatCheck used={used} />
     </>

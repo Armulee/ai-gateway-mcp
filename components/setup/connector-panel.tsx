@@ -6,7 +6,8 @@ import { CopyButton } from './copy-button';
 import { forgetSecret, markConnected, restoreSecret, setRemember, setSecret, useSetup } from './setup-store';
 
 // Runs in the browser only. The secret is only ever sent to this deployment:
-// to its MCP endpoint (Test connection) and to /api/stats (your usage).
+// to its MCP endpoint (Test connection) and to /api/stats (your usage). The
+// install buttons in chat-guides.tsx hand the link to a chat app when clicked.
 
 type RpcResult = Record<string, unknown>;
 type TestState =
@@ -153,7 +154,7 @@ export function ConnectorPanel() {
       </div>
 
       <p className="field-help" id="mcp-secret-help">
-        Sent only to this deployment. No secret yet, or lost it? <a href="#secret">Make one</a>.
+        Sent only to this deployment, until you add the link to a chat app. No secret yet, or lost it? <a href="#secret">Make one</a>.
       </p>
     </div>
   );

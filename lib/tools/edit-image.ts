@@ -2,10 +2,10 @@ import type { CallToolResult } from '@modelcontextprotocol/server';
 import { generateImage, generateText, type GeneratedFile } from 'ai';
 import { z } from 'zod';
 import { getConfig, isModelAllowed } from '../env';
-import { errorResult, toolError, type ToolContext } from '../gateway';
+import { errorResult, toolError, warningNote, type ToolContext } from '../gateway';
 import { fetchMedia, MediaError, readCost, type Media } from '../media';
 import { findModel, kindsOf } from '../models';
-import { parseSize } from './generate-image';
+import { imageSizeOptions } from './generate-image';
 import { imageResult } from './image-result';
 
 type EditArgs = { model: string; prompt: string; images: Media[]; mask?: Media; size_or_aspect?: string; n: number; tool: string };
@@ -15,8 +15,8 @@ type EditArgs = { model: string; prompt: string; images: Media[]; mask?: Media; 
  * image-capable LLM (Nano Banana etc.) as image parts of one message.
  */
 async function editImages({ model, prompt, images, mask, size_or_aspect, n, tool }: EditArgs, ctx: ToolContext): Promise<CallToolResult> {
-  const size = parseSize(size_or_aspect);
-  if ('invalid' in size) return errorResult(`size_or_aspect must look like "16:9" or "1024x1024", got "${size_or_aspect}".`);
+  const sizeOptions = imageSizeOptions(model, size_or_aspect);
+  if ('invalid' in sizeOptions) return errorResult(`size_or_aspect must look like "16:9" or "1024x1024", got "${size_or_aspect}".`);
 
   const info = await findModel(model);
   if (!info) return errorResult(`Unknown model "${model}". Call list_models with type "image" to see image models.`);
@@ -26,15 +26,17 @@ async function editImages({ model, prompt, images, mask, size_or_aspect, n, tool
   let cost: unknown;
   const notes: string[] = [];
   if (info.type === 'image') {
+    const { providerOptions, notes: sizeNotes, priceSize: _priceSize, ...size } = sizeOptions;
     const result = await generateImage({
       model: ctx.gateway.imageModel(model),
       prompt: { images: images.map((image) => image.bytes), text: prompt, ...(mask ? { mask: mask.bytes } : {}) },
       n,
       ...size,
-      providerOptions: ctx.gatewayOptions(tool),
+      providerOptions: { ...providerOptions, ...ctx.gatewayOptions(tool) },
     });
     output = result.images;
     cost = readCost(result.providerMetadata);
+    notes.push(...sizeNotes, ...result.warnings.map(warningNote));
   } else {
     if (n > 1) notes.push(`"${model}" is a multimodal LLM, so n is ignored; ask in the prompt for more images.`);
     if (mask) notes.push(`"${model}" does not take a mask, so it was ignored; describe the area in the prompt instead.`);
@@ -54,6 +56,7 @@ async function editImages({ model, prompt, images, mask, size_or_aspect, n, tool
     output = result.files.filter((file) => file.mediaType.startsWith('image/'));
     cost = readCost(result.providerMetadata);
     if (result.text) notes.push(`Model said: ${result.text.slice(0, 500)}`);
+    notes.push(...(result.warnings ?? []).map(warningNote));
   }
   if (output.length === 0) return errorResult(`"${model}" returned no images. Try rephrasing the instruction or another model.`);
   return imageResult(model, output, cost, notes);

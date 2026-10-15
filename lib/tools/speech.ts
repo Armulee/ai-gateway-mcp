@@ -1,7 +1,7 @@
 import { generateSpeech, transcribe } from 'ai';
 import { z } from 'zod';
 import { getConfig, isModelAllowed } from '../env';
-import { errorResult, textResult, toolError, type ToolContext } from '../gateway';
+import { errorResult, textResult, toolError, warningNote, type ToolContext } from '../gateway';
 import { fetchMedia, MediaError, readCost, storeAndLink } from '../media';
 import { findModel } from '../models';
 
@@ -52,7 +52,7 @@ export const generateSpeechTool = {
         `Speech from ${model} (${audio.format})${cost != null ? `, cost: $${cost}` : ''}.`,
         ...stored.links,
         ...stored.notes,
-        ...result.warnings.map((warning) => `Note: ${'message' in warning && warning.message ? warning.message : JSON.stringify(warning)}`),
+        ...result.warnings.map(warningNote),
       ].join('\n');
       return {
         content: [

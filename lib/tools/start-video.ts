@@ -3,7 +3,7 @@ import { experimental_startVideo as startVideo } from 'ai';
 import { z } from 'zod';
 import { BLOB_MISSING_MESSAGE, blobConfigured } from '../blob';
 import { getConfig, isModelAllowed } from '../env';
-import { errorResult, textResult, toolError, type ToolContext } from '../gateway';
+import { errorResult, textResult, toolError, warningNote, type ToolContext } from '../gateway';
 import { encodeJobId } from '../jobs';
 import { findModel } from '../models';
 import { estimateResult, estimateVideo, type VideoQuery } from '../pricing';
@@ -48,7 +48,7 @@ export async function startVideoJob(
     }
 
     const jobId = encodeJobId({ model, gatewayJobId }, ctx.keyPrefix);
-    const notes = warnings.map((warning) => `Note: ${'message' in warning && warning.message ? warning.message : JSON.stringify(warning)}`);
+    const notes = warnings.map(warningNote);
     return textResult(
       [
         `Video job started with ${model}.`,

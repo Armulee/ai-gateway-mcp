@@ -6,6 +6,7 @@ import {
   type GatewayProvider,
 } from '@ai-sdk/gateway';
 import type { CallToolResult } from '@modelcontextprotocol/server';
+import type { Warning } from 'ai';
 import { AsyncLocalStorage } from 'node:async_hooks';
 
 /**
@@ -62,6 +63,19 @@ export function textResult(text: string): CallToolResult {
 
 export function errorResult(text: string): CallToolResult {
   return { isError: true, content: [{ type: 'text', text }] };
+}
+
+/** An AI SDK warning (e.g. an option the model ignored) as a line for the tool reply. */
+export function warningNote(warning: Warning): string {
+  switch (warning.type) {
+    case 'unsupported':
+    case 'compatibility':
+      return `Note: "${warning.feature}" ${warning.type === 'unsupported' ? 'is not supported' : 'ran in compatibility mode'}${warning.details ? `. ${warning.details}` : ''}`;
+    case 'deprecated':
+      return `Note: "${warning.setting}" is deprecated. ${warning.message}`;
+    default:
+      return `Note: ${warning.message}`;
+  }
 }
 
 type ErrorLike = {

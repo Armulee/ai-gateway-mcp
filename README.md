@@ -251,14 +251,15 @@ Your chat app picks these for you; you never have to name them. Every tool retur
 | --- | --- |
 | `list_models({ type?, query? })` | Lists the models in the AI Gateway catalog with their type (`text`, `image`, `video`, `speech`, `transcription`), capabilities (`t2v`, `i2v`, …) and price. |
 | `generate_text({ model, prompt, system?, max_tokens? })` | Generates text. Returns the text plus its cost when AI Gateway reports one. |
-| `generate_image({ model, prompt, size_or_aspect?, n? })` | Works with image models (`bfl/flux-2-pro`, `openai/gpt-image-2`, …) and image-capable LLMs (`google/gemini-3-pro-image`). Images come back inline, and as expiring links when Blob is connected. |
+| `generate_image({ model, prompt, size_or_aspect?, n?, estimate_only? })` | Works with image models (`bfl/flux-2-pro`, `openai/gpt-image-2`, …) and image-capable LLMs (`google/gemini-3-pro-image`). Images come back inline, and as expiring links when Blob is connected. |
 | `edit_image({ model, prompt, image_urls, mask_url?, size_or_aspect?, n? })` | Changes existing images from an instruction. Works with edit-capable image models (`bfl/flux-kontext-pro`, `openai/gpt-image-2`, …) and image-capable LLMs. Takes https links; links this server returned work too, because it downloads the inputs itself. |
 | `upscale_image({ image_url, model?, prompt? })` | Makes an image sharper and larger. Uses `topaz/wonder-3.5` unless you name another model. |
-| `start_video({ model, prompt, image_url?, end_image_url?, reference_urls?, duration?, aspect_ratio?, sound? })` | Starts a video job and returns a `job_id` right away: text-to-video, image-to-video, first-to-last frame, or reference-to-video with up to 4 pictures or clips of your characters. |
-| `motion_control({ image_url, video_url, prompt?, orientation?, quality?, keep_sound? })` | Makes the character in a picture move like the person in a reference video (Kling motion control). |
-| `upscale_video({ video_url, resolution?, model? })` | Makes a video sharper and larger and cleans up noise (Topaz Proteus by default). |
-| `edit_video({ video_url, prompt })` | Changes an existing video from an instruction (Grok Imagine Video, up to 720p). |
-| `extend_video({ video_url, prompt, duration? })` | Continues a video from its last frame (Grok Imagine Video). |
+| `start_video({ model, prompt, image_url?, end_image_url?, reference_urls?, duration?, aspect_ratio?, sound?, estimate_only? })` | Starts a video job and returns a `job_id` right away: text-to-video, image-to-video, first-to-last frame, or reference-to-video with up to 4 pictures or clips of your characters. |
+| `motion_control({ image_url, video_url, prompt?, orientation?, quality?, keep_sound?, estimate_only? })` | Makes the character in a picture move like the person in a reference video (Kling motion control). |
+| `upscale_video({ video_url, resolution?, model?, estimate_only? })` | Makes a video sharper and larger and cleans up noise (Topaz Proteus by default). |
+| `edit_video({ video_url, prompt, estimate_only? })` | Changes an existing video from an instruction (Grok Imagine Video, up to 720p). |
+| `extend_video({ video_url, prompt, duration?, estimate_only? })` | Continues a video from its last frame (Grok Imagine Video). |
+| `estimate_only: true` | On `generate_image` and the video tools: returns the price from AI Gateway's published list prices instead of running. Nothing is generated or charged. Often a range, because resolution or audio is left to the model's defaults; token-priced models (e.g. `openai/gpt-image-2`, Seedance 2) have no estimate. |
 | `get_video({ job_id })` | For every video tool above: reports whether the job is still generating. When it finishes, the video is saved to your Blob store and you get an expiring link; call it again later for a fresh one. |
 | `generate_speech({ model, text, voice?, instructions?, speed?, language?, format? })` | Turns text into speech (`openai/tts-1-hd`, `google/gemini-3.8-flash-tts`, `fish-audio/s2-pro`, …). The audio comes back inline and as an expiring link. |
 | `transcribe({ model, audio_url, timestamps? })` | Turns speech in an audio or video file (up to 25 MB) into text, optionally with timestamps. |

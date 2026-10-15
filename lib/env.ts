@@ -14,6 +14,7 @@ export function getConfig() {
   return {
     maxVideoSeconds: positiveInt('MAX_VIDEO_SECONDS', 8),
     maxImagesPerCall: positiveInt('MAX_IMAGES_PER_CALL', 4),
+    maxSpeechCharacters: positiveInt('MAX_SPEECH_CHARACTERS', 5000),
     allowedModels: (process.env.ALLOWED_MODELS ?? '')
       .split(',')
       .map((id) => id.trim())

@@ -20,7 +20,7 @@ export type GatewayModel = {
   } & Record<string, unknown>;
 };
 
-export type ModelKind = 'text' | 'image' | 'video';
+export type ModelKind = 'text' | 'image' | 'video' | 'speech' | 'transcription';
 
 let cache: { at: number; models: GatewayModel[] } | undefined;
 
@@ -43,6 +43,10 @@ export function kindsOf(model: GatewayModel): ModelKind[] {
   if (model.type === 'language') kinds.push('text');
   if (model.type === 'image' || model.modalities?.output?.includes('image')) kinds.push('image');
   if (model.type === 'video') kinds.push('video');
+  if (model.type === 'speech') kinds.push('speech');
+  // Live-only transcription models need a WebSocket session, which a tool call cannot hold.
+  const live = (model.tags ?? []).includes('websocket-realtime') || /-(live|streaming)$/.test(model.id);
+  if (model.type === 'transcription' && !live) kinds.push('transcription');
   return kinds;
 }
 
@@ -86,6 +90,10 @@ export function priceOf(model: GatewayModel): string | undefined {
     return p.image_dimension_quality_pricing.map((t) => `${t.size} $${t.cost}`).join(', ') + ' per image';
   }
   if (p.image) return `$${p.image} per image`;
+  const perChar = Number(p.speech_input_character_cost);
+  if (perChar > 0) return `$${+(perChar * 1000).toFixed(4)} per 1K characters`;
+  const perSecond = Number(p.transcription_duration_cost_per_second);
+  if (perSecond > 0) return `$${+(perSecond * 60).toFixed(4)} per minute of audio`;
   if (p.input && p.output) return `${perMillion(p.input)} in, ${perMillion(p.output)} out`;
   return undefined;
 }

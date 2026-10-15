@@ -91,7 +91,7 @@ function errorChain(error: unknown): ErrorLike[] {
 export function toolError(
   error: unknown,
   modelId: string,
-  kind: 'text' | 'image' | 'video' | 'models' = 'text',
+  kind: 'text' | 'image' | 'video' | 'speech' | 'transcription' | 'credits' | 'files' | 'models' = 'text',
 ): CallToolResult {
   const chain = errorChain(error);
   const status = chain.find((e) => typeof e.statusCode === 'number')?.statusCode;

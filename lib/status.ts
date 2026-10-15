@@ -5,12 +5,13 @@ import { MIN_SECRET_LENGTH } from './env';
 import { secretStatus } from './secret';
 
 // The setup page's checklist. The server checks what it can (deployment,
-// secret, AI Gateway, Blob, credits); the two last steps (testing the link and
+// secret, AI Gateway, Blob); the two last steps (testing the link and
 // adding it to a chat app) are confirmed in the owner's browser.
 
-export type StepId = 'deploy' | 'secret' | 'gateway' | 'blob' | 'credits' | 'connect' | 'chat';
+export type StepId = 'deploy' | 'secret' | 'gateway' | 'blob' | 'connect' | 'chat';
 export type StepState = 'done' | 'todo';
-export type ServerStep = { id: StepId; title: string; state: StepState; detail: string };
+/** An optional step never becomes "next", so it never holds up the steps after it. */
+export type ServerStep = { id: StepId; title: string; state: StepState; detail: string; optional?: boolean };
 
 const CACHE_MS = 60 * 1000;
 let cache: { at: number; steps: ServerStep[] } | undefined;
@@ -39,49 +40,36 @@ function checkSecret(): ServerStep {
     detail:
       status === 'ok'
         ? `Set and at least ${MIN_SECRET_LENGTH} characters long. The MCP endpoint is on.`
-        : `${status === 'missing' ? 'MCP_SECRET is not set' : `MCP_SECRET is shorter than ${MIN_SECRET_LENGTH} characters`}, so the MCP endpoint is off. Add a long random value in Project Settings → Environment Variables, then redeploy.`,
+        : `${status === 'missing' ? 'Not set yet' : `Shorter than ${MIN_SECRET_LENGTH} characters`}, so your MCP endpoint is off. It takes three clicks.`,
   };
 }
 
-async function checkGatewayAndCredits(): Promise<[ServerStep, ServerStep]> {
+async function checkGateway(): Promise<ServerStep> {
+  const step = { id: 'gateway' as const, title: 'Reach AI Gateway' };
   try {
-    const credits = await withTimeout(gateway.getCredits(), 8000);
+    // Reading the team's credits is the cheapest call that proves the token works.
+    await withTimeout(gateway.getCredits(), 8000);
     const via = process.env.AI_GATEWAY_API_KEY ? 'AI_GATEWAY_API_KEY' : 'the deployment’s OIDC token';
-    // The balance itself is shown only after the owner unlocks usage with the secret.
-    const hasCredits = Number(credits.balance) > 0;
-    return [
-      { id: 'gateway', title: 'Reach AI Gateway', state: 'done', detail: `Signed in with ${via}. No API key needed.` },
-      {
-        id: 'credits',
-        title: 'Add credits and a budget',
-        state: hasCredits ? 'done' : 'todo',
-        detail: hasCredits
-          ? 'Your team has AI Gateway credits. Set a spend budget too: it is the real limit on what this link can spend.'
-          : 'No paid credits yet. Free monthly credits cover a set of models; top up for the rest, and set a spend budget.',
-      },
-    ];
+    return { ...step, state: 'done', detail: `Signed in with ${via}. No API key needed.` };
   } catch {
-    return [
-      {
-        id: 'gateway',
-        title: 'Reach AI Gateway',
-        state: 'todo',
-        detail: process.env.VERCEL
-          ? 'Could not sign in with the OIDC token. Check that AI Gateway is enabled for your team, then redeploy.'
-          : 'Running outside Vercel. Run vercel link and vercel env pull (the token lasts 12 hours), or set AI_GATEWAY_API_KEY.',
-      },
-      { id: 'credits', title: 'Add credits and a budget', state: 'todo', detail: 'Checked once AI Gateway is reachable.' },
-    ];
+    return {
+      ...step,
+      state: 'todo',
+      detail: process.env.VERCEL
+        ? 'Could not sign in with the OIDC token. Check that AI Gateway is enabled for your team, then redeploy.'
+        : 'Running outside Vercel. Run vercel link and vercel env pull (the token lasts 12 hours), or set AI_GATEWAY_API_KEY.',
+    };
   }
 }
 
 async function checkBlob(): Promise<ServerStep> {
-  const step = { id: 'blob' as const, title: 'Connect file storage' };
+  // Only video and image download links need Blob, so the step is optional.
+  const step = { id: 'blob' as const, title: 'Connect file storage', optional: true };
   if (!blobConfigured()) {
     return {
       ...step,
       state: 'todo',
-      detail: 'No Blob store found. In your Vercel project open Storage, create a private Blob store, connect it, then redeploy. Images and videos need it.',
+      detail: 'Text and images work without it. Video needs it.',
     };
   }
   try {
@@ -97,13 +85,12 @@ async function checkBlob(): Promise<ServerStep> {
 /** The server-checked steps, in order, plus placeholders for the two browser steps. Cached briefly. */
 export async function getSetupSteps(): Promise<ServerStep[]> {
   if (cache && Date.now() - cache.at < CACHE_MS) return cache.steps;
-  const [[gatewayStep, creditsStep], blobStep] = await Promise.all([checkGatewayAndCredits(), checkBlob()]);
+  const [gatewayStep, blobStep] = await Promise.all([checkGateway(), checkBlob()]);
   const steps: ServerStep[] = [
     checkDeploy(),
     checkSecret(),
     gatewayStep,
     blobStep,
-    creditsStep,
     { id: 'connect', title: 'Get your link and test it', state: 'todo', detail: 'Paste your secret to build the link, then test it.' },
     { id: 'chat', title: 'Add it to your chat app', state: 'todo', detail: 'Add the link as a connector in Claude, ChatGPT or another MCP app.' },
   ];

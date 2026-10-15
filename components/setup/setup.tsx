@@ -1,16 +1,20 @@
-import { LANDING_URL, REPO_URL } from '@/lib/site';
+import { DEPLOY_URL, LANDING_URL, REPO_URL, type DashboardLinks } from '@/lib/site';
 import type { ServerStep, StepId } from '@/lib/status';
 import { CosmosCanvas } from '../cosmos/cosmos-canvas';
 import { StarDefs } from '../motion/star-defs';
 import { OrbitNav } from '../orbit/orbit-nav';
 import { SiteNav } from '../site-nav';
-import { VercelBadge } from '../vercel-badge';
+import { VercelBadge, VercelMark } from '../vercel-badge';
 import { ChatGuides } from './chat-guides';
 import { ConnectorPanel } from './connector-panel';
+import { BlobPanel } from './blob-panel';
+import { SecretPanel } from './secret-panel';
 import { SetupMotion } from './setup-motion';
+import { OpenIntro } from './open-intro';
+import { SetupSession } from './setup-session';
 import { StatsPanel } from './stats-panel';
 import { StepArt } from './step-art';
-import { GuideStep, Progress, StepTag, type StepView } from './steps';
+import { GuideFocus, GuideStep, Progress, type StepView } from './steps';
 
 // The home page of every deployment: where you are in the setup, what to do
 // next, how to add the link to a chat app, and (once unlocked with your
@@ -22,7 +26,6 @@ const RAIL_LABELS: Record<StepId, string> = {
   secret: 'Secret',
   gateway: 'AI Gateway',
   blob: 'Storage',
-  credits: 'Credits',
   connect: 'Your link',
   chat: 'Chat app',
 };
@@ -36,13 +39,6 @@ function StepExtra({ id }: { id: StepId }) {
           Requests run on <VercelBadge kind="gateway" /> and bill your own Vercel team at each provider&apos;s price.
         </p>
       );
-    case 'credits':
-      return (
-        <p className="guide-note">
-          In the Vercel dashboard open AI Gateway: top up under Credits (or turn on auto top-up), and set a spend budget. The budget is
-          the real limit on what your link can ever spend.
-        </p>
-      );
     case 'connect':
       return <ConnectorPanel />;
     case 'chat':
@@ -52,11 +48,13 @@ function StepExtra({ id }: { id: StepId }) {
   }
 }
 
-export function Setup({ steps, linkTtlHours }: { steps: ServerStep[]; linkTtlHours: number }) {
-  const views: StepView[] = steps.map(({ id, title, state }) => ({ id, title, state }));
+export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: ServerStep[]; open: boolean; guide: boolean; linkTtlHours: number; links: DashboardLinks }) {
+  const views: StepView[] = steps.map(({ id, title, state, optional }) => ({ id, title, state, optional }));
+  // With the gateway open the guide is gone (unless asked for with ?steps), and so are its stars on the rail.
   const chapters = [
-    { id: 'overview', label: 'Overview' },
-    ...steps.map((step) => ({ id: step.id, label: RAIL_LABELS[step.id], done: step.state === 'done' })),
+    // The open intro replaces the overview: the page starts at usage.
+    ...(guide ? [{ id: 'overview', label: 'Overview' }] : []),
+    ...(!guide ? [] : steps.map((step) => ({ id: step.id, label: RAIL_LABELS[step.id], done: step.state === 'done' }))),
     { id: 'usage', label: 'Usage' },
     { id: 'safety', label: 'Safety' },
   ];
@@ -66,6 +64,7 @@ export function Setup({ steps, linkTtlHours }: { steps: ServerStep[]; linkTtlHou
       <CosmosCanvas calm initial={{ eclipse: 0, horizon: 0, flash: 0, points: 0, stars: 0.75, dust: 0.8, travel: 0 }} />
       <StarDefs />
       <SetupMotion />
+      <SetupSession steps={views} open={open} />
       <SiteNav
         home="#overview"
         links={
@@ -78,23 +77,33 @@ export function Setup({ steps, linkTtlHours }: { steps: ServerStep[]; linkTtlHou
       <OrbitNav chapters={chapters} label="Setup steps" />
 
       <main className="setup">
-        <section className="setup-hero" id="overview" data-chapter="overview">
-          <Progress steps={views} />
-        </section>
+        {guide ? (
+          <section className="setup-hero" id="overview" data-chapter="overview">
+            <Progress steps={views} settled={open} guide={guide} />
+          </section>
+        ) : (
+          <OpenIntro steps={views} />
+        )}
 
-        <ol className="guide">
+        {guide && (
+        <GuideFocus steps={views}>
           {steps.map((step, i) => (
             <GuideStep key={step.id} steps={views} index={i}>
               <div className="guide-art">
                 <StepArt id={step.id} />
               </div>
               <div className="guide-copy" data-guide-copy>
-                <h2 className="guide-title">
-                  {step.title}
-                  <StepTag steps={views} index={i} />
-                </h2>
                 <p className="guide-detail">{step.detail}</p>
-                {(step.id === 'gateway' || step.id === 'credits') && <StepExtra id={step.id} />}
+                {step.id === 'deploy' && step.state !== 'done' && (
+                  <a className="btn btn-primary step-cta" href={DEPLOY_URL} target="_blank" rel="noopener noreferrer">
+                    <VercelMark />
+                    Deploy to Vercel
+                    <span className="sr-only"> (opens Vercel in a new tab)</span>
+                  </a>
+                )}
+                {step.id === 'gateway' && <StepExtra id={step.id} />}
+                {step.id === 'secret' && <SecretPanel isSet={step.state === 'done'} links={links} />}
+                {step.id === 'blob' && step.state !== 'done' && <BlobPanel links={links} />}
               </div>
               {(step.id === 'connect' || step.id === 'chat') && (
                 <div className="guide-extra" data-guide-copy>
@@ -103,40 +112,50 @@ export function Setup({ steps, linkTtlHours }: { steps: ServerStep[]; linkTtlHou
               )}
             </GuideStep>
           ))}
-        </ol>
+        </GuideFocus>
+        )}
 
-        <section className="setup-section" id="usage" data-chapter="usage">
+        <section className={`setup-section${guide ? '' : ' is-first'}`} id="usage" data-chapter="usage">
           <h2 className="section-title">Your usage</h2>
-          <p className="section-lead">What your chat apps have spent through this connector, straight from AI Gateway.</p>
-          <StatsPanel />
+          <StatsPanel connectHref={guide ? '#connect' : '/?steps#connect'} />
         </section>
 
         <section className="setup-section" id="safety" data-chapter="safety">
           <h2 className="section-title">Keep it safe</h2>
-          <dl className="facts">
-            <div>
-              <dt>Your link is a password</dt>
-              <dd>Anyone holding it can spend your credits and generate content under your Vercel account.</dd>
-            </div>
-            <div>
-              <dt>Set a budget</dt>
-              <dd>
-                In <VercelBadge kind="gateway" /> set a spend budget. That is the real limit.
-              </dd>
-            </div>
-            <div>
-              <dt>Change it if it leaks</dt>
-              <dd>Change MCP_SECRET in Environment Variables and redeploy. The old link stops working at once.</dd>
-            </div>
-            <div>
-              <dt>Links expire</dt>
-              <dd>Images and videos live in your private Blob store. Links shared in chat last {linkTtlHours} hours.</dd>
-            </div>
-          </dl>
+          {/* Four rules as big statements whose words light up as you read down. */}
+          <ol className="rules">
+            {[
+              { line: 'Your link is a password.', detail: 'Anyone holding it can spend your credits and make things under your Vercel account.' },
+              {
+                line: 'Your budget is the real limit.',
+                detail: (
+                  <>
+                    Set a spend budget in <VercelBadge kind="gateway" />. This server caps each call, but only the budget caps the month.
+                  </>
+                ),
+              },
+              { line: 'Leaked? Change it.', detail: 'Change MCP_SECRET in Environment Variables and redeploy. The old link stops working at once.' },
+              { line: `Links last ${linkTtlHours} hours.`, detail: 'Pictures, video and audio stay in your private Blob store. Each link you get in chat expires.' },
+            ].map((rule) => (
+              <li key={rule.line} className="rule" data-rule>
+                <p className="rule-line">
+                  {rule.line.split(' ').map((word, i) => (
+                    <span key={i} className="rule-word" data-rule-word>
+                      {word}{' '}
+                    </span>
+                  ))}
+                </p>
+                <p className="rule-detail" data-rule-detail>
+                  {rule.detail}
+                </p>
+              </li>
+            ))}
+          </ol>
         </section>
 
         <footer className="setup-footer">
           <span>AI Gateway MCP, MIT license. Not affiliated with Vercel.</span>
+          {guide ? null : <a href="/?steps">Show the setup steps</a>}
           <a href={LANDING_URL}>About this project</a>
         </footer>
       </main>

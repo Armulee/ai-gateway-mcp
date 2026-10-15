@@ -37,7 +37,7 @@ Two repos:
 - **`armulee/ai-gateway-mcp-landing`** is the project's own website (black-and-white scrollytelling story). Its setup buttons open Vercel's clone flow for this repo. The waitlist for the hosted version belongs there; its storage is not decided yet: ask before choosing.
 
 Setup page at `/` (every self-hoster lands here on their own deployment):
-- A guide in steps, each with a code-drawn motion graphic: deploy, `MCP_SECRET`, AI Gateway via OIDC, Blob, credits + budget (checked on the server), then test the link and add it to a chat app (confirmed in the owner's browser). Shows what is done and what is next.
+- A guide in steps, each with a code-drawn motion graphic: deploy, `MCP_SECRET` (generated in the browser, with a link to the project's Environment Variables), AI Gateway via OIDC, Blob (checked on the server), then test the link and add it to a chat app (confirmed in the owner's browser). Shows what is done and what is next.
 - Never render the secret or the full connector URL by default. The owner pastes the secret into a field; the URL is built in the browser, "Test connection" calls the MCP endpoint's tools list, and the secret may be remembered in that browser (localStorage) with a way to forget it.
 - Usage stats, unlocked with the secret via `POST /api/stats` (constant-time check, 404 when wrong): team credits, and this connector's spend per day, per model and per chat app from AI Gateway's spend report filtered by the tags every call carries. No database.
 - How-to for Claude, ChatGPT and other MCP apps; set a Gateway budget; rotate the secret.
@@ -50,7 +50,7 @@ Threat: a leaked connector URL lets anyone spend the owner's Gateway credits and
 - Wrong secret returns 404, identical to any unknown route. Constant-time comparison.
 - Never log the secret, full request URLs or auth headers.
 - Rotation: change `MCP_SECRET` and redeploy; the old URL dies. Document this in the README and on the setup page.
-- Per-call caps via env with safe defaults: `MAX_VIDEO_SECONDS` (default 8), `MAX_IMAGES_PER_CALL` (default 4), optional `ALLOWED_MODELS` allowlist (comma separated; empty means all).
+- Per-call caps via env with safe defaults: `MAX_VIDEO_SECONDS` (default 8), `MAX_IMAGES_PER_CALL` (default 4), `MAX_SPEECH_CHARACTERS` (default 5000), optional `ALLOWED_MODELS` allowlist (comma separated; empty means all).
 - The real spend cap is the AI Gateway budget, which Vercel enforces. The setup page and README must tell owners to set one.
 - Blob store is private; uploads use unguessable paths. Say plainly that anyone holding a returned link can view that file until the link expires.
 - v1 relies on a secret in the URL because claude.ai connectors cannot send headers. OAuth replaces this in v2.
@@ -69,6 +69,22 @@ Threat: a leaked connector URL lets anyone spend the owner's Gateway credits and
 5. `get_video({ job_id })`
    - Return status. When done, upload the video to Blob and return the URL.
    - If Blob is not configured, return a clear error telling the user to connect a Blob store.
+
+6. `edit_image({ model, prompt, image_urls, mask_url?, size_or_aspect?, n? })` and `upscale_image({ image_url, model?, prompt? })`
+   - Image models take the inputs as `generateImage({ prompt: { images, text, mask } })`; image-capable LLMs as image parts of one message.
+   - Input files (images, audio) are downloaded by the server (https only, size-capped) and passed as bytes, so this server's own private Blob links work as input.
+7. `generate_speech({ model, text, voice?, instructions?, speed?, language?, format? })` and `transcribe({ model, audio_url, timestamps? })`
+   - `generateSpeech` / `transcribe` with the gateway's speech and transcription models. Speech returns MCP audio content plus a Blob link.
+8. Video from existing media, each returning a `job_id` for `get_video` (shapes from Vercel's video docs and model pages):
+   - `start_video` also takes `end_image_url` (`frameImages` first/last frame), `reference_urls` (`inputReferences`; videos as `{ data, mediaType }`) and `sound` (`generateAudio`).
+   - `motion_control`: Kling motion-control, `prompt: { image, text }` + `providerOptions.klingai: { videoUrl, characterOrientation, mode, keepOriginalSound }`. Orientation "video" (up to 30 s) only when `MAX_VIDEO_SECONDS` ≥ 30.
+   - `upscale_video`: `topaz/proteus`, the video as an `inputReferences` entry plus a required `resolution`.
+   - `edit_video` / `extend_video`: Grok Imagine Video with `providerOptions.spacexai.videoUrl` (and `mode: 'extend-video'`).
+   - Async starts are capped at 300 KiB, so inputs go by hosted https URL, never inline bytes. Output length of motion control, upscale and edit follows the input, which `MAX_VIDEO_SECONDS` cannot see; the Gateway budget is the cap.
+9. `check_credits()` and `list_files({ kind?, limit? })`
+   - Team credits and this connector's 30-day spend; the files in Blob, newest first, with fresh links.
+
+Not offered, by design: 3D (no 3D models on AI Gateway), joining audio into video (needs ffmpeg), a talking-avatar tool (HeyGen Video on the Gateway is a general video model; put the dialogue in a `start_video` prompt), and app-level studios (ads, shorts, influencers, publishing). The chat app composes those from the tools above.
 
 Every tool must return readable errors for: insufficient Gateway credits, video not available on the user's plan, unknown model, provider error. Include the model id in errors.
 
@@ -90,7 +106,8 @@ Verified (Oct 2026):
 - Image-only models use `generateImage` (base64); image-capable LLMs (Nano Banana) use `generateText` and return `files`.
 
 Still unverified (check on a real deployment):
-- Whether providers can fetch Blob presigned URLs for image-to-video.
+- Whether `topaz/wonder-3.5` (upscale_image) and each edit model accept input images through `generateImage`, and which speech models honour `voice`/`instructions`. Speech and transcription were checked against the Gateway (tts-1 → whisper-1 round trip).
+- Whether video providers can fetch this server's presigned Blob links (needed by every video tool that takes a file).
 - Exact Gateway error shape for "out of credits" and "video not on plan" (matched by status/message today).
 - Whether the deployment's OIDC token may call AI Gateway's spend report (`getSpendReport`), and whether image and video calls honour request `tags` like text calls do.
 - Which User-Agent each chat app sends (used to name the app in usage; unknown apps count as "other").

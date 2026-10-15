@@ -3,9 +3,9 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollToY } from '../motion/smooth-scroll';
 
 /**
- * The chapter orbit, which is also the landing page's scrollbar. The ring
- * sits on a chapter's star when that chapter starts and drifts toward the
- * next one as you read. Drag the ring to scrub through the story; click
+ * The chapter orbit, which is also the page's scrollbar. The ring follows the
+ * scroll position from top to bottom, passing each chapter's star where that
+ * chapter starts. Drag the ring to scrub through the story; click
  * anywhere on the line to fly there. Create it after the pins so positions
  * include pin spacing. Returns a cleanup.
  */
@@ -27,26 +27,29 @@ export function setupOrbitRail(motion: boolean): () => void {
   const label = document.querySelector<HTMLElement>('[data-orbit-label]');
   const count = document.querySelector<HTMLElement>('[data-orbit-count]');
   const percent = document.querySelector<HTMLElement>('[data-orbit-pct]');
-  const last = Math.max(chapters.length - 1, 1);
   let active = -1;
 
-  /** Scroll offset → position on the line (0..1). */
+  /**
+   * The rail is a true scrollbar: the ring sits at the page's scroll
+   * position, top to bottom, and each star sits where its chapter starts
+   * (the first at the very top), so the ring reaches the end only with the page.
+   */
+  const max = () => Math.max(ScrollTrigger.maxScroll(window), 1);
+  const startOf = (index: number) => (index === 0 ? 0 : gsap.utils.clamp(0, max(), chapters[index].st.start));
+
+  /** Places each star where its chapter starts. Run after every refresh. */
+  const placeStars = () =>
+    chapters.forEach(({ link }, index) => link?.parentElement?.style.setProperty('--at', (startOf(index) / max()).toFixed(4)));
+
+  /** Scroll offset → the chapter being read, and the ring's place on the line (0..1). */
   const toShip = (y: number) => {
     let index = 0;
-    while (index < chapters.length - 1 && y >= chapters[index + 1].st.start) index++;
-    const { start, end } = chapters[index].st;
-    const within = gsap.utils.clamp(0, 1, (y - start) / Math.max(end - start, 1));
-    return { index, ship: gsap.utils.clamp(0, 1, (index + within) / last) };
+    while (index < chapters.length - 1 && y >= startOf(index + 1)) index++;
+    return { index, ship: gsap.utils.clamp(0, 1, y / max()) };
   };
 
-  /** Position on the line (0..1) → scroll offset; the inverse of toShip. */
-  const toScroll = (ship: number) => {
-    const at = gsap.utils.clamp(0, 1, ship) * last;
-    const index = Math.min(Math.floor(at), last);
-    const { start, end } = chapters[index].st;
-    const y = index === last && at >= last ? end : start + (at - index) * (end - start);
-    return gsap.utils.clamp(0, ScrollTrigger.maxScroll(window), y);
-  };
+  /** Place on the line (0..1) → scroll offset; the inverse of toShip. */
+  const toScroll = (ship: number) => gsap.utils.clamp(0, 1, ship) * max();
 
   const update = (y: number) => {
     const { index, ship } = toShip(y);
@@ -72,8 +75,12 @@ export function setupOrbitRail(motion: boolean): () => void {
     start: 0,
     end: 'max',
     onUpdate: (self) => update(self.scroll()),
-    onRefresh: (self) => update(self.scroll()),
+    onRefresh: (self) => {
+      placeStars();
+      update(self.scroll());
+    },
   });
+  placeStars();
   update(window.scrollY);
 
   if (!rail || !ring || !nav) return () => {};

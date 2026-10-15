@@ -46,7 +46,7 @@ Setup page at `/` (every self-hoster lands here on their own deployment):
 
 Threat: a leaked connector URL lets anyone spend the owner's Gateway credits and generate content under their Vercel account. Defaults:
 
-- `MCP_SECRET` must be at least 32 characters. If missing or shorter, the MCP endpoint refuses to run and the setup page shows the error.
+- `MCP_SECRET` must be at least 32 characters and not easy to guess (at least 8 different characters, not one short block repeated). If missing, shorter or weak, the MCP endpoint refuses to run and the setup page shows the error.
 - Wrong secret returns 404, identical to any unknown route. Constant-time comparison.
 - Never log the secret, full request URLs or auth headers.
 - Rotation: change `MCP_SECRET` and redeploy; the old URL dies. Document this in the README and on the setup page.
@@ -57,17 +57,19 @@ Threat: a leaked connector URL lets anyone spend the owner's Gateway credits and
 
 ## Tools
 
-1. `list_models({ type?: "text" | "image" | "video", query?: string })`
+1. `list_models({ type?: "text" | "image" | "video" | "speech" | "transcription", query?: string })`
    - Read from `https://ai-gateway.vercel.sh/v1/models`. Return id, type, capability tags (e.g. t2v, i2v) and price fields. Keep output compact.
-2. `generate_text({ model, prompt, system?, max_tokens? })`
+2. `generate_text({ model, prompt, system?, max_tokens?, file_urls? })`
    - Return the text plus cost from `providerMetadata.gateway.cost` when present.
+   - `file_urls`: up to 10 https links (20 MB in total) to images, video, audio or PDFs, downloaded by the server and sent as file parts. Refuse a file kind the model's catalog `modalities.input` does not list, before any charge.
 3. `generate_image({ model, prompt, size_or_aspect?, n? })`
    - Return images as MCP image content (base64) so they show in chat without storage.
    - If Blob is configured, also upload and return the URL.
+   - FLUX 3 ignores `size`: a WxH goes as its aspect ratio plus `providerOptions.blackForestLabs.resolution` (the nearest class). AI SDK warnings are shown in the reply.
 4. `start_video({ model, prompt, image_url?, duration?, aspect_ratio? })`
    - Video can take minutes, longer than a tool call or function should wait. Use AI Gateway's asynchronous video generation (start, then poll status). Return a `job_id` immediately.
 5. `get_video({ job_id })`
-   - Return status. When done, upload the video to Blob and return the URL.
+   - Return status. When done, upload the video to Blob and return the URL, plus the billed cost from `gateway.getGenerationInfo({ id: generationId })` (async video metadata carries no cost); leave the cost out if the lookup fails.
    - If Blob is not configured, return a clear error telling the user to connect a Blob store.
 
 6. `edit_image({ model, prompt, image_urls, mask_url?, size_or_aspect?, n? })` and `upscale_image({ image_url, model?, prompt? })`
@@ -83,6 +85,9 @@ Threat: a leaked connector URL lets anyone spend the owner's Gateway credits and
    - Async starts are capped at 300 KiB, so inputs go by hosted https URL, never inline bytes. Output length of motion control, upscale and edit follows the input, which `MAX_VIDEO_SECONDS` cannot see; the Gateway budget is the cap.
 9. `check_credits()` and `list_files({ kind?, limit? })`
    - Team credits and this connector's 30-day spend; the files in Blob, newest first, with fresh links.
+10. `estimate_only` on the image and video tools
+   - Returns the price from the AI Gateway catalog (`lib/pricing.ts`) instead of running; nothing is called or charged, and no Blob store or input download is needed. Often a range (resolution, audio and mode are left to model defaults). Token-priced models get no estimate.
+   - Every tool that starts a paid video job tells the chat app not to retry on its own after a timeout.
 
 Not offered, by design: 3D (no 3D models on AI Gateway), joining audio into video (needs ffmpeg), a talking-avatar tool (HeyGen Video on the Gateway is a general video model; put the dialogue in a `start_video` prompt), and app-level studios (ads, shorts, influencers, publishing). The chat app composes those from the tools above.
 
@@ -104,12 +109,15 @@ Verified (Oct 2026):
 - AI SDK 7. Video is still experimental: `experimental_startVideo` / `experimental_getVideoStatus` (ai >= 7.0.76); a job resumes from `{ gatewayJobId }`.
 - The Deploy button can create and connect a Blob store (`stores` param).
 - Image-only models use `generateImage` (base64); image-capable LLMs (Nano Banana) use `generateText` and return `files`.
+- Billing vs the catalog (real calls, Oct 15–16 2026): AI Gateway bills the provider's "market cost" with `surcharge_cost: 0`, but the catalog is not always that price. `bfl/flux-3-image` 1024x1024: catalog $0.024, billed $0.048 (BFL's own price). `google/veo-3.1-fast-generate-001` 4 s 720p with sound: billed $0.60 = catalog $0.15/s, though Vertex and the Gemini API list $0.10/s. `spacexai/grok-imagine-video` 2 s 720p: billed $0.14 = catalog $0.07/s; xAI's docs list $0.05/s. So provider pages are not a better source than the catalog.
+- `GET /v1/models/{id}/endpoints` (no auth) names the provider route Gateway uses (Veo goes through `vertex`). `gateway.getGenerationInfo({ id })` returns a generation's billed cost; it worked locally with the OIDC token.
+- Only BFL publishes prices as JSON-LD; Google, OpenAI, xAI, MiniMax, Alibaba, Recraft and Topaz have markdown docs; Kling and BytePlus render prices with JavaScript.
 
 Still unverified (check on a real deployment):
 - Whether `topaz/wonder-3.5` (upscale_image) and each edit model accept input images through `generateImage`, and which speech models honour `voice`/`instructions`. Speech and transcription were checked against the Gateway (tts-1 → whisper-1 round trip).
 - Whether video providers can fetch this server's presigned Blob links (needed by every video tool that takes a file).
 - Exact Gateway error shape for "out of credits" and "video not on plan" (matched by status/message today).
-- Whether the deployment's OIDC token may call AI Gateway's spend report (`getSpendReport`), and whether image and video calls honour request `tags` like text calls do.
+- Whether the deployment's OIDC token may call AI Gateway's spend report (`getSpendReport`) and generation lookup (`getGenerationInfo`) on Vercel (both work locally), and whether image and video calls honour request `tags` like text calls do.
 - Which User-Agent each chat app sends (used to name the app in usage; unknown apps count as "other").
 
 ## Deploy experience (README)

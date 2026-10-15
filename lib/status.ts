@@ -31,6 +31,12 @@ function checkDeploy(): ServerStep {
   };
 }
 
+const SECRET_PROBLEM = {
+  missing: 'Not set yet',
+  too_short: `Shorter than ${MIN_SECRET_LENGTH} characters`,
+  weak: 'Too easy to guess (typed by hand or repeating). Make a new one below',
+};
+
 function checkSecret(): ServerStep {
   const status = secretStatus();
   return {
@@ -40,7 +46,7 @@ function checkSecret(): ServerStep {
     detail:
       status === 'ok'
         ? `Set and at least ${MIN_SECRET_LENGTH} characters long. The MCP endpoint is on.`
-        : `${status === 'missing' ? 'Not set yet' : `Shorter than ${MIN_SECRET_LENGTH} characters`}, so your MCP endpoint is off. It takes three clicks.`,
+        : `${SECRET_PROBLEM[status]}, so your MCP endpoint is off. It takes three clicks.`,
   };
 }
 

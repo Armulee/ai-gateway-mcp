@@ -282,6 +282,7 @@ Your chat app picks these for you; you never have to name them. Every tool retur
 - **Your connector URL works like a password that spends money.** Anyone who has it can use your AI Gateway credits and generate content under your Vercel account.
 - **Set an AI Gateway budget.** This server caps each call (`MAX_VIDEO_SECONDS`, `MAX_IMAGES_PER_CALL`, `MAX_SPEECH_CHARACTERS`, `ALLOWED_MODELS`), but only Vercel's budget limits your total spend. Tools that start from your own video (`motion_control`, `upscale_video`, `edit_video`) follow its length, which the per-call caps cannot see.
 - **Rotate the secret if the URL leaks.** Change `MCP_SECRET` and redeploy. The old URL stops working right away, and any unfinished video jobs are abandoned.
+- **Optional: rate-limit the endpoint.** Guessing is hopeless, but every wrong request still counts toward your project's usage. If your plan includes Vercel Firewall rate limiting, add a rule for paths starting with `/mcp/` (for example, by IP). Do not turn on Attack Challenge Mode for it: Claude's and ChatGPT's servers cannot solve the challenge, so your connector would stop working.
 - **Files are private, but links are not.** Pictures, videos and audio are stored in a private Blob store. Anyone who holds one of the links returned in chat can open that file until the link expires (`SIGNED_URL_TTL_HOURS`).
 - **Usage stats need the secret.** `POST /api/stats` checks it in constant time and answers 404 otherwise. Remembering the secret in a browser lets anyone using that browser see your usage; "Forget" removes it.
 - **Logs:** this app never logs the secret or request URLs. Vercel's own request logs record request paths, so members of your Vercel team can see the secret there.
@@ -300,6 +301,8 @@ https://<your-project>.vercel.app/mcp/<MCP_SECRET>
 ```
 
 `MCP_SECRET` is a random value of at least 32 characters, for example the output of `openssl rand -hex 32`. Use URL-safe characters only; hex is ideal. The setup page can also make one for you.
+
+A random 64-character hex secret holds 256 bits: guessing it over the network is not possible in practice, and every wrong guess gets the same 404 as any unknown URL, compared in constant time. Secrets typed by hand are the weak spot, so the endpoint also stays off when the secret has fewer than 8 different characters or repeats one short block (`aaaa…`, `passwordpassword…`).
 
 claude.ai custom connectors only support OAuth or no auth, and they can't send custom headers, so the secret goes in the URL path. If `MCP_SECRET` is missing or shorter than 32 characters, the MCP endpoint is disabled. A wrong secret gets the same 404 page as any unknown URL.
 

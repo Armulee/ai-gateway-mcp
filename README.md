@@ -250,7 +250,7 @@ Your chat app picks these for you; you never have to name them. Every tool retur
 | Tool | What it does |
 | --- | --- |
 | `list_models({ type?, query? })` | Lists the models in the AI Gateway catalog with their type (`text`, `image`, `video`, `speech`, `transcription`), capabilities (`t2v`, `i2v`, …) and catalog price. |
-| `generate_text({ model, prompt, system?, max_tokens? })` | Generates text. Returns the text plus its cost when AI Gateway reports one. |
+| `generate_text({ model, prompt, system?, max_tokens?, file_urls? })` | Generates text. Returns the text plus its cost when AI Gateway reports one. With `file_urls` (https links to images, videos, audio or PDFs, up to 10 files and 20 MB in total) the model reads them too, e.g. `google/gemini-3.5-flash-lite` summarizing a video. Pick a model tagged `vision`, `video-input`, `audio-input` or `file-input` in `list_models`. |
 | `generate_image({ model, prompt, size_or_aspect?, n?, estimate_only? })` | Works with image models (`bfl/flux-2-pro`, `openai/gpt-image-2`, …) and image-capable LLMs (`google/gemini-3-pro-image`). Images come back inline, and as expiring links when Blob is connected. |
 | `edit_image({ model, prompt, image_urls, mask_url?, size_or_aspect?, n? })` | Changes existing images from an instruction. Works with edit-capable image models (`bfl/flux-kontext-pro`, `openai/gpt-image-2`, …) and image-capable LLMs. Takes https links; links this server returned work too, because it downloads the inputs itself. |
 | `upscale_image({ image_url, model?, prompt? })` | Makes an image sharper and larger. Uses `topaz/wonder-3.5` unless you name another model. |

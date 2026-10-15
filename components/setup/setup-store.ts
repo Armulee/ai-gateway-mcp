@@ -1,6 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { OPEN_COOKIE } from '@/lib/site';
 import type { Stats } from '@/lib/stats';
 
 // Browser-side state of the setup page: the owner's secret (kept in this
@@ -11,11 +12,22 @@ import type { Stats } from '@/lib/stats';
 const KEY = 'ai-gateway-mcp:secret';
 const CHAT_KEY = 'ai-gateway-mcp:chat-added';
 
+// OPEN_COOKIE (lib/site.ts): set once every required step is done, cleared the
+// moment a remembered secret stops matching.
+
+export function markGatewayOpen() {
+  document.cookie = `${OPEN_COOKIE}=1; path=/; max-age=31536000; samesite=lax`;
+}
+
+export function clearGatewayOpen() {
+  document.cookie = `${OPEN_COOKIE}=; path=/; max-age=0; samesite=lax`;
+}
+
 export type StatsState =
   | { state: 'locked' }
   | { state: 'loading' }
   | { state: 'ready'; stats: Stats }
-  | { state: 'fail'; message: string };
+  | { state: 'fail'; message: string; /** The secret no longer matches MCP_SECRET (changed or removed). */ mismatch?: boolean };
 
 type SetupState = {
   secret: string;
@@ -102,7 +114,8 @@ export async function loadStats() {
     });
     if (res.status === 404) {
       storage()?.removeItem(KEY);
-      set({ stats: { state: 'fail', message: 'This secret does not match MCP_SECRET on this deployment.' } });
+      clearGatewayOpen();
+      set({ stats: { state: 'fail', message: 'This secret does not match MCP_SECRET on this deployment.', mismatch: true }, connected: false });
       return;
     }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);

@@ -259,61 +259,134 @@ html:not(.motion-ok) .cosmos-canvas:has(~ .setup) {
 
 .progress-block {
   display: grid;
-  grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+  /* The words get a little more room than the arch, so the title keeps to two lines. */
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
   align-items: center;
   gap: clamp(28px, 5vw, 80px);
 }
 
-.progress-ring {
+/* The arch: the project's mark, built from the six steps. */
+.progress-art {
+  perspective: 900px;
+}
+
+.arch {
+  display: block;
   width: 100%;
-  max-width: 300px;
+  max-width: 460px;
   height: auto;
+  margin-left: auto;
+  overflow: visible;
+  transform-style: preserve-3d;
 }
 
-.ring-arc {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.16);
-  stroke-width: 6;
-  stroke-linecap: round;
+.arch-stone {
+  cursor: pointer;
+  outline: none;
 }
 
-.ring-arc.is-done {
-  stroke: var(--text);
-  filter: url(#glow);
+.arch-stone path {
+  fill: url(#stardust);
+  stroke: rgba(255, 255, 255, 0.28);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+  transition: stroke 0.3s, fill 0.3s;
 }
 
-.ring-arc.is-next {
-  stroke: rgba(255, 255, 255, 0.6);
-  animation: ring-wait 1.8s ease-in-out infinite;
+.arch-stone.is-done path {
+  fill: #ededed;
+  stroke: #fff;
+  stroke-dasharray: none;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.55));
 }
 
-@keyframes ring-wait {
-  50% {
-    opacity: 0.3;
+/* The next stone breathes and its outline runs, so the eye lands there. */
+.arch-stone.is-next path {
+  fill: rgba(255, 255, 255, 0.06);
+  stroke: #fff;
+  stroke-width: 1.5;
+  stroke-dasharray: 6 5;
+  animation: stone-run 1.2s linear infinite, stone-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes stone-run {
+  to {
+    stroke-dashoffset: -22;
   }
 }
 
-/* The intro starts hidden when it will animate (MOTION_FLAG in layout.tsx), so
-   the finished ring never flashes first. GSAP's inline styles take over. */
-html.motion-ok .progress-ring [data-arc] {
-  stroke-dasharray: 0 1000;
+@keyframes stone-breathe {
+  50% {
+    fill: rgba(255, 255, 255, 0.18);
+  }
 }
 
+.arch-stone:hover path,
+.arch-stone:focus-visible path {
+  stroke: #fff;
+  stroke-dasharray: none;
+}
+
+.arch-stone:focus-visible path {
+  stroke-width: 2.5;
+}
+
+.film .arch-label {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  fill: var(--dim);
+  transition: fill 0.3s;
+}
+
+.arch-stone.is-done .arch-label,
+.arch-stone.is-next .arch-label,
+.arch-stone:hover .arch-label {
+  fill: var(--text);
+}
+
+/* The point of light: dim while the gateway is being built, lit when it opens. */
+.arch-point-halo {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-dasharray: 1 5;
+}
+
+.arch-point-core {
+  fill: rgba(255, 255, 255, 0.14);
+  stroke: rgba(255, 255, 255, 0.4);
+}
+
+.arch.is-open .arch-point-core {
+  fill: #fff;
+  stroke: #fff;
+  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.9));
+}
+
+.arch.is-open .arch-point-halo {
+  stroke: rgba(255, 255, 255, 0.6);
+  stroke-dasharray: none;
+}
+
+.arch-beam {
+  opacity: 0.55;
+}
+
+/* Animated first paint starts hidden (MOTION_FLAG); GSAP brings it in. */
+html.motion-ok .arch [data-stone],
+html.motion-ok .arch [data-arch-point],
 html.motion-ok .progress-copy > * {
   opacity: 0;
 }
 
-.film .ring-count {
-  font-family: var(--font-sans), sans-serif;
-  font-size: 54px;
-  font-weight: 600;
-  letter-spacing: -0.04em;
+.setup-title {
+  font-size: clamp(2.6rem, 1.2rem + 4.4vw, 5rem);
+  line-height: 1;
+  letter-spacing: -0.055em;
 }
 
-.setup-title {
-  font-size: clamp(2.4rem, 1.2rem + 4vw, 4.5rem);
-  line-height: 1;
-  letter-spacing: -0.05em;
+.setup-title .dim {
+  color: var(--dim);
 }
 
 .setup-lead {
@@ -394,16 +467,6 @@ html.motion-ok .progress-copy > * {
     box-shadow 0.4s;
 }
 
-.guide-badge svg {
-  width: 20px;
-  height: 20px;
-  fill: none;
-  stroke: var(--text);
-  stroke-width: 2.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
 .guide-step.is-done .guide-badge {
   border-color: var(--text);
   box-shadow: 0 0 16px rgba(255, 255, 255, 0.35);
@@ -411,8 +474,37 @@ html.motion-ok .progress-copy > * {
 
 .guide-step.is-next .guide-badge {
   border-color: var(--text);
-  background: var(--text);
-  color: #000;
+}
+
+/* The badge is the arch in small, with this step's stone lit. */
+.mini-arch {
+  width: 24px;
+  height: auto;
+  overflow: visible;
+}
+
+.mini-arch path {
+  fill: rgba(255, 255, 255, 0.14);
+}
+
+.mini-arch path.is-this {
+  fill: rgba(255, 255, 255, 0.6);
+}
+
+.mini-arch path.is-done {
+  fill: #fff;
+  filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.9));
+}
+
+.mini-arch path.is-next {
+  fill: #fff;
+  animation: mini-stone 1.6s ease-in-out infinite;
+}
+
+@keyframes mini-stone {
+  50% {
+    fill: rgba(255, 255, 255, 0.35);
+  }
 }
 
 .guide-step.is-next .guide-badge::after {
@@ -784,151 +876,403 @@ html:not(.motion-ok) .step-body-inner {
   letter-spacing: -0.045em;
 }
 
-.section-lead {
-  max-width: 56ch;
+.usage {
+  margin-top: 2.5rem;
+}
+
+/* The headline number: what this connector spent, nothing else competes with it. */
+.usage-total {
+  font-size: clamp(4rem, 2rem + 9vw, 9.5rem);
+  font-weight: 600;
+  line-height: 0.9;
+  letter-spacing: -0.06em;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(180deg, #fff 35%, #7a7a7a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.usage-sub {
   margin-top: 0.9rem;
+  max-width: 34ch;
+  font-size: clamp(1.0625rem, 0.95rem + 0.4vw, 1.3rem);
   color: var(--muted);
 }
 
-.stats,
-.stats-locked {
-  margin-top: 2rem;
+.usage-credits {
+  margin-top: 0.6rem;
+  font-size: 0.875rem;
+  color: var(--dim);
 }
 
-.stats-locked {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 20px;
-  padding: 20px;
-  border-radius: 16px;
-  border: 1px dashed var(--line-strong);
-  color: var(--muted);
+.usage-credits b {
+  color: var(--text);
+  font-weight: 500;
 }
 
-.stat-cards {
+/* Spend per day: columns of light rising from a horizon, each topped with a star. */
+.usage-days {
+  margin-top: 3rem;
+}
+
+.days {
+  margin: 0;
+}
+
+.days-frame {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
 }
 
-.stat {
-  display: grid;
-  gap: 6px;
-  padding: 18px;
-  border-radius: 16px;
-  border: 1px solid var(--line);
-  background: rgba(10, 10, 10, 0.82);
+.days-axis {
+  position: relative;
+  min-width: 2.6rem;
 }
 
-.stat-label {
+.days-axis span {
+  position: absolute;
+  right: 0;
+  transform: translateY(50%);
   font-family: var(--font-mono), monospace;
   font-size: 0.6875rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.stat strong {
-  font-size: clamp(1.6rem, 1.1rem + 1.2vw, 2.2rem);
-  font-weight: 600;
-  letter-spacing: -0.03em;
+  color: var(--dim);
   font-variant-numeric: tabular-nums;
 }
 
-.stat-note {
-  font-size: 0.8125rem;
-  color: var(--dim);
+.days-plot {
+  position: relative;
+  height: clamp(190px, 28vw, 280px);
+  border-bottom: 1px solid var(--line-strong);
+  background: linear-gradient(0deg, rgba(255, 255, 255, 0.05), transparent 45%);
+  outline: none;
+  cursor: crosshair;
+  touch-action: pan-y;
 }
 
-.stat-block {
-  margin-top: 12px;
-  padding: 20px;
-  border-radius: 16px;
-  border: 1px solid var(--line);
-  background: rgba(10, 10, 10, 0.82);
+.days-plot:focus-visible {
+  box-shadow: 0 0 0 2px var(--line-strong);
+  border-radius: 6px;
 }
 
-.stat-block h3 {
-  margin-bottom: 14px;
-  font-size: 1rem;
+.days-guide {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--line);
+}
+
+.day {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+/* The column: faint at the ground, bright at the top, with a star on it. */
+.day i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 58%;
+  max-width: 14px;
+  height: max(3px, var(--h));
+  margin: 0 auto;
+  border-radius: 999px 999px 1px 1px;
+  background: linear-gradient(0deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.95));
+  box-shadow: 0 -4px 18px -6px rgba(255, 255, 255, 0.45);
+  transition: opacity 0.2s;
+}
+
+.day.is-lit i::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 10px 3px rgba(255, 255, 255, 0.55);
+  transform: translate(-50%, -50%);
+}
+
+.day:not(.is-lit) i {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.day.is-peak i::after {
+  width: 10px;
+  height: 10px;
+  box-shadow: 0 0 18px 5px rgba(255, 255, 255, 0.7);
+}
+
+/* Reading one day: the others step back. */
+.days-plot.is-reading .day i {
+  opacity: 0.3;
+}
+
+.days-plot.is-reading .day.is-active i {
+  opacity: 1;
+}
+
+.days-peak {
+  position: absolute;
+  transform: translate(-50%, -22px);
+  font-size: 0.875rem;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
-.stat-pair {
+.days-tip {
+  position: absolute;
+  top: 0;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 12px;
+  gap: 1px;
+  min-width: 7.5rem;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: rgba(10, 10, 10, 0.94);
+  transform: translateX(14px);
+  pointer-events: none;
 }
 
-.chart svg {
-  display: block;
-  width: 100%;
-  height: auto;
+.days-tip.is-left {
+  transform: translateX(calc(-100% - 14px));
 }
 
-.chart .chart-line {
-  stroke-width: 2;
-  filter: url(#glow);
+.days-tip b {
+  font-size: 1.125rem;
+  font-variant-numeric: tabular-nums;
 }
 
-.chart figcaption {
+.days-tip small {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.days-dates {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
-  margin-top: 8px;
+  margin-top: 10px;
+  padding-left: calc(2.6rem + 10px);
   font-family: var(--font-mono), monospace;
   font-size: 0.6875rem;
   color: var(--dim);
 }
 
-.bars {
+.days-table {
+  margin-top: 12px;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.days-table summary {
+  cursor: pointer;
+  width: fit-content;
+}
+
+.days-table table {
+  width: 100%;
+  max-width: 420px;
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.days-table th,
+.days-table td {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.days-table td + td,
+.days-table th + th {
+  text-align: right;
+}
+
+/* Models and chat apps side by side, no boxes: the sky is the frame. */
+.usage-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: clamp(32px, 6vw, 96px);
+  margin-top: 3.5rem;
+}
+
+.usage-part h3 {
+  margin-bottom: 1.25rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Comets: a trail fading in from the left to a bright head. */
+.comets {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 12px;
+  gap: 18px;
 }
 
-.bars li {
+.comets li {
   display: grid;
-  grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px 16px;
 }
 
-.bar-label {
+.comet-name {
+  display: grid;
+  min-width: 0;
+  font-size: 0.9375rem;
+}
+
+.comet-name,
+.comet-name small {
   overflow: hidden;
-  font-family: var(--font-mono), monospace;
-  font-size: 0.8125rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.bar-track {
-  height: 8px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
+.comet-name small,
+.comet-value small {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  color: var(--dim);
 }
 
-.bar-fill {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--text);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
-}
-
-.bar-value {
+.comet-value {
+  display: grid;
+  justify-items: end;
   font-size: 0.9375rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
-.bar-value small {
-  margin-left: 4px;
+.comet {
+  position: relative;
+  grid-column: 1 / -1;
+  width: var(--share);
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.9));
+}
+
+.comet i {
+  position: absolute;
+  right: -3px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 12px 3px rgba(255, 255, 255, 0.55);
+  transform: translateY(-50%);
+}
+
+/* One beam split between chat apps, tones from white down. */
+.split-beam {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+}
+
+.split-beam span {
+  flex-basis: 0;
+  min-width: 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, var(--tone));
+  box-shadow: 0 0 14px rgba(255, 255, 255, calc(var(--tone) * 0.35));
+}
+
+.split-legend {
+  list-style: none;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.split-legend li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 10px;
+}
+
+.split-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, var(--tone));
+  align-self: center;
+}
+
+.split-legend b {
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.split-legend small {
+  grid-column: 2 / -1;
+  font-size: 0.8125rem;
   color: var(--dim);
+}
+
+/* Locked: the way to light it up, over 30 columns waiting unlit. */
+.usage-locked {
+  position: relative;
+}
+
+/* Waiting: 30 low columns, brightening in a slow wave. No axis, so the plot takes the whole row. */
+.days.is-waiting .days-frame {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.days.is-waiting .days-plot {
+  height: clamp(120px, 18vw, 170px);
+  cursor: default;
+}
+
+.days.is-waiting .day i {
+  height: 14px;
+  transform-origin: 50% 100%;
+  animation: day-wait 3s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * -100ms);
+}
+
+.usage-locked.is-loading .day i {
+  animation-duration: 1.2s;
+}
+
+@keyframes day-wait {
+  50% {
+    transform: scaleY(2.4);
+    background: rgba(255, 255, 255, 0.45);
+  }
+}
+
+.usage-lock {
+  max-width: 30rem;
+  margin-bottom: 2rem;
+}
+
+.usage-lock-title {
+  font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.4rem);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+.usage-lock-text {
+  margin: 0.75rem 0 1.25rem;
+  color: var(--muted);
 }
 
 .stat-problem {
@@ -937,7 +1281,7 @@ html:not(.motion-ok) .step-body-inner {
 }
 
 .stat-footnote {
-  margin-top: 16px;
+  margin-top: 2rem;
   font-size: 0.875rem;
   color: var(--dim);
 }
@@ -1013,9 +1357,8 @@ html:not(.motion-ok) .step-body-inner {
     font-size: 0.6875rem;
   }
 
-  .guide-badge svg {
-    width: 16px;
-    height: 16px;
+  .mini-arch {
+    width: 18px;
   }
 
   .step-head {
@@ -1055,30 +1398,25 @@ html:not(.motion-ok) .step-body-inner {
     text-align: center;
   }
 
-  .progress-ring {
-    max-width: 220px;
+  /* On phones the arch comes first, smaller, then what to do. */
+  .progress-art {
+    order: -1;
+    width: min(300px, 78vw);
+  }
+
+  .arch {
+    margin: 0 auto;
   }
 
   .setup-lead {
     margin-inline: auto;
   }
 
-  .stat-cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .stat-pair {
+  .usage-split {
     grid-template-columns: 1fr;
   }
 
-  .bars li {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
 
-  .bar-track {
-    grid-column: 1 / -1;
-    order: 3;
-  }
 }
 
 /* Connector */
@@ -1473,28 +1811,112 @@ html:not(.motion-ok) .step-body-inner {
 }
 
 /* Safety facts and footer */
-.facts {
+/* The open intro (open-intro.tsx): the arch and the lockup share one cell in
+   the middle of the screen, over the page, until the lockup lands in the nav. */
+.open-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 2rem;
+  place-items: center;
+  pointer-events: none;
 }
 
-.facts > div {
-  padding: 20px;
-  border-radius: 16px;
-  border: 1px solid var(--line);
-  background: rgba(10, 10, 10, 0.82);
+.open-intro > * {
+  grid-area: 1 / 1;
 }
 
-.facts dt {
-  font-size: 1.0625rem;
+.open-stage .arch {
+  width: min(62vmin, 440px);
+  margin: 0;
+}
+
+/* The nav brand at --k times its size: one uniform scale of 1/k lands it in place. */
+.open-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(10px * var(--k));
+  font-size: calc(0.9375rem * var(--k));
   font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  color: var(--text);
+  opacity: 0;
 }
 
-.facts dd {
-  margin: 0.5rem 0 0;
+.open-lockup .brand-mark {
+  width: calc(22px * var(--k));
+  height: calc(22px * var(--k));
+}
+
+.open-intro.is-done,
+html:not(.motion-ok) .open-intro {
+  display: none;
+}
+
+/* While it plays, the page waits behind it. If scripts never run, everything
+   shows after a few seconds anyway. */
+html.motion-ok .open-intro {
+  animation: intro-gone 0.01s 7s forwards;
+}
+
+html.motion-ok:has(.open-intro:not(.is-done)) :is(.nav-brand, .orbit, .setup-section, .setup-footer) {
+  visibility: hidden;
+  animation: intro-show 0.01s 7s forwards;
+}
+
+@keyframes intro-gone {
+  to {
+    visibility: hidden;
+    opacity: 0;
+  }
+}
+
+@keyframes intro-show {
+  to {
+    visibility: visible;
+  }
+}
+
+/* With the guide hidden the page starts at usage, under the nav. */
+.setup-section.is-first {
+  margin-top: clamp(96px, 14vh, 140px);
+}
+
+/* Keep it safe: four statements, big, each with one plain sentence under it. */
+.rules {
+  list-style: none;
+  margin: 2.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: clamp(36px, 6vw, 72px);
+}
+
+.rule-line {
+  font-size: clamp(2.2rem, 1rem + 4.6vw, 5rem);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.05em;
+  text-wrap: balance;
+}
+
+.rule-detail {
+  max-width: 46ch;
+  margin-top: 1rem;
+  font-size: clamp(1rem, 0.95rem + 0.3vw, 1.2rem);
   color: var(--muted);
+}
+
+/* Every other rule sits to the right, so the eye zigzags down the page. */
+@media (min-width: 900px) {
+  .rule:nth-child(even) {
+    justify-self: end;
+    text-align: right;
+  }
+
+  .rule:nth-child(even) .rule-detail {
+    margin-left: auto;
+  }
 }
 
 .setup-footer {
@@ -1511,12 +1933,6 @@ html:not(.motion-ok) .step-body-inner {
 
 .setup-footer a {
   color: var(--muted);
-}
-
-@media (max-width: 640px) {
-  .facts {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1622,7 +2038,8 @@ html:not(.motion-ok) .step-body-inner {
 .orbit li {
   position: absolute;
   left: 50%;
-  top: calc(var(--i) / var(--last) * 100%);
+  /* Where its chapter starts (orbit-rail.ts); evenly spaced until scripts run. */
+  top: calc(var(--at, calc(var(--i) / var(--last))) * 100%);
 }
 
 .orbit a {

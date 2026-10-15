@@ -23,3 +23,10 @@ export function dashboardLinks(project?: VercelProject): DashboardLinks {
       : `https://vercel.com/d?to=${encodeURIComponent(`/[team]/[project]/${path}`)}`;
   return { envVars: at('settings/environment-variables'), deployments: at('deployments'), storage: at('stores'), direct: Boolean(project) };
 }
+
+/**
+ * Set by the setup page once every required step is done. The server reads it
+ * to show the page without the guide, as long as its own checks still pass.
+ * It holds no secret, only a flag.
+ */
+export const OPEN_COOKIE = 'gateway-open';

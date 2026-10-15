@@ -18,3 +18,8 @@ export async function POST(request: Request) {
   if (!matchesSecret(secret)) return new Response('Not Found', { status: 404 });
   return Response.json(await getStats(), { headers: { 'cache-control': 'no-store' } });
 }
+
+// Any other way of asking looks like a route that does not exist.
+export function GET() {
+  return new Response('Not Found', { status: 404 });
+}

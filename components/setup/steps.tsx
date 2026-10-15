@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { StepId, StepState } from '@/lib/status';
-import { scrollToHash } from '../motion/smooth-scroll';
+import { isReload, scrollToHash } from '../motion/smooth-scroll';
 import { appsInUse, useSetup } from './setup-store';
 
 export type StepView = { id: StepId; title: string; state: StepState; optional?: boolean };
@@ -24,6 +24,9 @@ export function useStepStates(steps: StepView[]): LiveState[] {
   const next = done.findIndex((isDone, i) => !isDone && !steps[i].optional);
   return done.map((isDone, i) => (isDone ? 'done' : i === next ? 'next' : 'todo'));
 }
+
+/** Asks the guide to open one step (the arch's stones send it). */
+export const OPEN_STEP = 'setup:open-step';
 
 const FocusContext = createContext<{ open: StepId | null; toggle: (id: StepId) => void }>({ open: null, toggle: () => {} });
 
@@ -56,6 +59,22 @@ export function GuideFocus({ steps, children }: { steps: StepView[]; children: R
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
+  // A stone in the arch (or a link like /#secret) opens its step outright.
+  useEffect(() => {
+    const show = (id: string) => {
+      if (!steps.some((step) => step.id === id)) return;
+      setOpen(id as StepId);
+      revealLater(id as StepId);
+    };
+    // On a reload the page goes back to the top instead (smooth-scroll.tsx).
+    const fromHash = isReload() ? '' : window.location.hash.slice(1);
+    if (fromHash) show(fromHash);
+    const onOpen = (event: Event) => show((event as CustomEvent<string>).detail);
+    window.addEventListener(OPEN_STEP, onOpen);
+    return () => window.removeEventListener(OPEN_STEP, onOpen);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function toggle(id: StepId) {
     setOpen((current) => (current === id ? null : id));
     revealLater(id);
@@ -82,13 +101,7 @@ export function GuideStep({ steps, index, children }: { steps: StepView[]; index
   return (
     <li className={`guide-step is-${state}${open ? ' is-open' : ''}`} id={id} data-chapter={id} data-step-state={state}>
       <span className="guide-badge" aria-hidden="true">
-        {state === 'done' ? (
-          <svg viewBox="0 0 24 24">
-            <path d="M6 12.5 L10.5 17 L18 8" data-tick />
-          </svg>
-        ) : (
-          String(index + 1).padStart(2, '0')
-        )}
+        <MiniArch index={index} state={state} />
       </span>
       <div className="step-card">
         <h2 className="step-heading">
@@ -116,54 +129,158 @@ export function StepTag({ steps, index }: { steps: StepView[]; index: number }) 
   return <span className={`step-tag is-${state}`}>{state === 'done' ? 'Done' : 'Next'}</span>;
 }
 
-const RING = { c: 110, r: 88, gap: 7 };
+// The overview draws the project's own mark: a gateway arch with a point of
+// light passing through it. Its six stones are the six steps, set from the
+// bottom left, over the top, down to the bottom right. Set stones glow, the
+// next one breathes, the rest are star dust. With all six set, the point lights
+// up and shoots through: the gateway is open.
 
-function arc(i: number, total: number) {
-  const span = 360 / total;
-  const from = ((i * span + RING.gap / 2 - 90) * Math.PI) / 180;
-  const to = (((i + 1) * span - RING.gap / 2 - 90) * Math.PI) / 180;
-  const point = (a: number) => `${(RING.c + Math.cos(a) * RING.r).toFixed(2)},${(RING.c + Math.sin(a) * RING.r).toFixed(2)}`;
-  return `M${point(from)} A${RING.r},${RING.r} 0 0 1 ${point(to)}`;
+const ARCH = { cx: 200, cy: 210, outer: 168, inner: 104, foot: 420, gap: 6 };
+
+type Stone = { d: string; label: { x: number; y: number; anchor: 'start' | 'middle' | 'end' } };
+
+function polar(r: number, deg: number): [number, number] {
+  const a = (deg * Math.PI) / 180;
+  return [ARCH.cx + r * Math.cos(a), ARCH.cy - r * Math.sin(a)];
 }
 
-/** The overview: a ring with one arc per step, lit as steps are done, and what to do next. */
-export function Progress({ steps }: { steps: StepView[] }) {
-  const states = useStepStates(steps);
+const f = (n: number) => n.toFixed(1);
+
+/** Six stones: two in each leg, two in the curve. */
+function stones(): Stone[] {
+  const { cx, cy, outer, inner, foot, gap } = ARCH;
+  const mid = cy + (foot - cy) / 2;
+  const leg = (left: boolean, top: number, bottom: number): Stone => {
+    const [x0, x1] = left ? [cx - outer, cx - inner] : [cx + inner, cx + outer];
+    return {
+      d: `M${f(x0)},${f(top)} H${f(x1)} V${f(bottom)} H${f(x0)} Z`,
+      label: { x: left ? x0 - 14 : x1 + 14, y: (top + bottom) / 2 + 4, anchor: left ? 'end' : 'start' },
+    };
+  };
+  const curve = (from: number, to: number, side: 'start' | 'end'): Stone => {
+    const g = (gap / inner) * (180 / Math.PI) * 0.5;
+    const [a, b] = [from - g, to + g];
+    const [o0, o1, i1, i0] = [polar(outer, a), polar(outer, b), polar(inner, b), polar(inner, a)];
+    const at = polar(outer + 18, (a + b) / 2);
+    return {
+      d: `M${f(o0[0])},${f(o0[1])} A${outer},${outer} 0 0 1 ${f(o1[0])},${f(o1[1])} L${f(i1[0])},${f(i1[1])} A${inner},${inner} 0 0 0 ${f(i0[0])},${f(i0[1])} Z`,
+      label: { x: at[0], y: at[1], anchor: side },
+    };
+  };
+  return [
+    leg(true, mid + gap / 2, foot),
+    leg(true, cy + gap / 2, mid - gap / 2),
+    curve(180, 90, 'end'),
+    curve(90, 0, 'start'),
+    leg(false, cy + gap / 2, mid - gap / 2),
+    leg(false, mid + gap / 2, foot),
+  ];
+}
+
+const SHORT: Record<StepId, string> = {
+  deploy: 'Deploy',
+  secret: 'Secret',
+  gateway: 'AI Gateway',
+  blob: 'Storage',
+  connect: 'Your link',
+  chat: 'Chat app',
+};
+
+/** A step's badge: the whole arch, small, with this step's own stone lit. */
+export function MiniArch({ index, state }: { index: number; state: LiveState }) {
+  return (
+    <svg className="mini-arch" viewBox="0 0 400 440">
+      {stones().map((stone, i) => (
+        <path key={i} d={stone.d} className={i === index ? `is-this is-${state}` : undefined} />
+      ))}
+    </svg>
+  );
+}
+
+/** The arch itself. Each stone links to its step. */
+export function GatewayArch({ steps, states, guide = true }: { steps: StepView[]; states: LiveState[]; guide?: boolean }) {
+  const open = states.every((s, i) => s === 'done' || steps[i].optional);
+  const point = ARCH.cy + (ARCH.foot - ARCH.cy) * 0.42;
+  return (
+    <svg className={`film arch${open ? ' is-open' : ''}`} viewBox="0 0 400 440" role="group" aria-label="Setup progress" data-arch>
+      <defs>
+        <linearGradient id="arch-beam" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity="0" />
+          <stop offset="0.5" stopColor="#fff" stopOpacity="0.9" />
+          <stop offset="1" stopColor="#fff" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {open && <rect className="arch-beam" x={ARCH.cx - 1.5} y={-40} width={3} height={520} fill="url(#arch-beam)" data-arch-beam />}
+      {stones().map((stone, i) => {
+        const step = steps[i];
+        const state = states[i];
+        return (
+          <a
+            key={step.id}
+            // With the guide hidden, a stone brings it back at that step.
+            href={guide ? `#${step.id}` : `/?steps#${step.id}`}
+            onClick={guide ? () => window.dispatchEvent(new CustomEvent(OPEN_STEP, { detail: step.id })) : undefined}
+            className={`arch-stone is-${state}`} aria-label={`Step ${i + 1}, ${step.title}: ${state === 'done' ? 'done' : state === 'next' ? 'next' : step.optional ? 'optional' : 'to do'}`} data-stone>
+            <path d={stone.d} />
+            <text className="arch-label" x={stone.label.x} y={stone.label.y} textAnchor={stone.label.anchor}>
+              {SHORT[step.id]}
+            </text>
+          </a>
+        );
+      })}
+      <g className="arch-point" transform={`translate(${ARCH.cx} ${point})`} data-arch-point>
+        <circle className="arch-point-halo" r={30} />
+        <circle className="arch-point-core" r={13} />
+      </g>
+    </svg>
+  );
+}
+
+/**
+ * With the gateway open, the browser steps were confirmed on an earlier visit:
+ * every required stone is set; optional ones keep their own state.
+ */
+export function settle(steps: StepView[], live: LiveState[]): LiveState[] {
+  return steps.map((step, i) => (step.optional ? (live[i] === 'done' ? 'done' : 'todo') : 'done'));
+}
+
+/** The overview: the arch on one side, where you are and what to do next on the other. */
+export function Progress({ steps, settled = false, guide = true }: { steps: StepView[]; settled?: boolean; guide?: boolean }) {
+  const live = useStepStates(steps);
+  const states = settled ? settle(steps, live) : live;
   const done = states.filter((s) => s === 'done').length;
   const next = states.indexOf('next');
   return (
     <div className="progress-block">
-      <svg className="film progress-ring" viewBox="0 0 220 220" aria-hidden="true">
-        <circle className="ln dim" cx={RING.c} cy={RING.c} r={RING.r - 14} />
-        {steps.map((step, i) => (
-          <path key={step.id} className={`ring-arc is-${states[i]}`} d={arc(i, steps.length)} data-arc />
-        ))}
-        <text className="ring-count" x={RING.c} y={RING.c + 8} textAnchor="middle">
-          {done}/{steps.length}
-        </text>
-        <text className="mono tiny" x={RING.c} y={RING.c + 32} textAnchor="middle">
-          STEPS DONE
-        </text>
-      </svg>
       <div className="progress-copy">
         <h1 className="setup-title">
-          {next === -1 ? 'You are all set.' : done === 0 ? 'Let’s set up your copy.' : `${done} of ${steps.length} done.`}
+          {next === -1 ? (
+            <>
+              Your gateway
+              <br />
+              is open.
+            </>
+          ) : (
+            <>
+              Build your gateway.
+              <br />
+              <span className="dim">
+                {done} of {steps.length} done.
+              </span>
+            </>
+          )}
         </h1>
         <p className="setup-lead">
           {next === -1
-            ? 'Your chat app can use every model on AI Gateway now. Your usage is below.'
-            : `Next: ${steps[next].title.toLowerCase()}. Each step below says what to do, and ticks itself off when it is done.`}
+            ? 'Every model on AI Gateway now runs from your chat app. Your usage is below.'
+            : `Six steps, one stone each. Next: ${steps[next].title.toLowerCase()}.`}
         </p>
-        {next !== -1 && (
-          <a className="btn btn-primary" href={`#${steps[next].id}`}>
-            Go to the next step
-          </a>
-        )}
-        {next === -1 && (
-          <a className="btn btn-primary" href="#usage">
-            See your usage
-          </a>
-        )}
+        <a className="btn btn-primary" href={next === -1 ? '#usage' : `#${steps[next].id}`} data-magnetic>
+          {next === -1 ? 'See your usage' : 'Go to the next step'}
+        </a>
+      </div>
+      <div className="progress-art" data-arch-stage>
+        <GatewayArch steps={steps} states={states} guide={guide} />
       </div>
     </div>
   );

@@ -10,6 +10,8 @@ import { ConnectorPanel } from './connector-panel';
 import { BlobPanel } from './blob-panel';
 import { SecretPanel } from './secret-panel';
 import { SetupMotion } from './setup-motion';
+import { OpenIntro } from './open-intro';
+import { SetupSession } from './setup-session';
 import { StatsPanel } from './stats-panel';
 import { StepArt } from './step-art';
 import { GuideFocus, GuideStep, Progress, type StepView } from './steps';
@@ -46,11 +48,13 @@ function StepExtra({ id }: { id: StepId }) {
   }
 }
 
-export function Setup({ steps, linkTtlHours, links }: { steps: ServerStep[]; linkTtlHours: number; links: DashboardLinks }) {
+export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: ServerStep[]; open: boolean; guide: boolean; linkTtlHours: number; links: DashboardLinks }) {
   const views: StepView[] = steps.map(({ id, title, state, optional }) => ({ id, title, state, optional }));
+  // With the gateway open the guide is gone (unless asked for with ?steps), and so are its stars on the rail.
   const chapters = [
-    { id: 'overview', label: 'Overview' },
-    ...steps.map((step) => ({ id: step.id, label: RAIL_LABELS[step.id], done: step.state === 'done' })),
+    // The open intro replaces the overview: the page starts at usage.
+    ...(guide ? [{ id: 'overview', label: 'Overview' }] : []),
+    ...(!guide ? [] : steps.map((step) => ({ id: step.id, label: RAIL_LABELS[step.id], done: step.state === 'done' }))),
     { id: 'usage', label: 'Usage' },
     { id: 'safety', label: 'Safety' },
   ];
@@ -60,6 +64,7 @@ export function Setup({ steps, linkTtlHours, links }: { steps: ServerStep[]; lin
       <CosmosCanvas calm initial={{ eclipse: 0, horizon: 0, flash: 0, points: 0, stars: 0.75, dust: 0.8, travel: 0 }} />
       <StarDefs />
       <SetupMotion />
+      <SetupSession steps={views} open={open} />
       <SiteNav
         home="#overview"
         links={
@@ -72,10 +77,15 @@ export function Setup({ steps, linkTtlHours, links }: { steps: ServerStep[]; lin
       <OrbitNav chapters={chapters} label="Setup steps" />
 
       <main className="setup">
-        <section className="setup-hero" id="overview" data-chapter="overview">
-          <Progress steps={views} />
-        </section>
+        {guide ? (
+          <section className="setup-hero" id="overview" data-chapter="overview">
+            <Progress steps={views} settled={open} guide={guide} />
+          </section>
+        ) : (
+          <OpenIntro steps={views} />
+        )}
 
+        {guide && (
         <GuideFocus steps={views}>
           {steps.map((step, i) => (
             <GuideStep key={step.id} steps={views} index={i}>
@@ -103,39 +113,49 @@ export function Setup({ steps, linkTtlHours, links }: { steps: ServerStep[]; lin
             </GuideStep>
           ))}
         </GuideFocus>
+        )}
 
-        <section className="setup-section" id="usage" data-chapter="usage">
+        <section className={`setup-section${guide ? '' : ' is-first'}`} id="usage" data-chapter="usage">
           <h2 className="section-title">Your usage</h2>
-          <p className="section-lead">What your chat apps have spent through this connector, straight from AI Gateway.</p>
-          <StatsPanel />
+          <StatsPanel connectHref={guide ? '#connect' : '/?steps#connect'} />
         </section>
 
         <section className="setup-section" id="safety" data-chapter="safety">
           <h2 className="section-title">Keep it safe</h2>
-          <dl className="facts">
-            <div>
-              <dt>Your link is a password</dt>
-              <dd>Anyone holding it can spend your credits and generate content under your Vercel account.</dd>
-            </div>
-            <div>
-              <dt>Set a budget</dt>
-              <dd>
-                In <VercelBadge kind="gateway" /> set a spend budget. That is the real limit.
-              </dd>
-            </div>
-            <div>
-              <dt>Change it if it leaks</dt>
-              <dd>Change MCP_SECRET in Environment Variables and redeploy. The old link stops working at once.</dd>
-            </div>
-            <div>
-              <dt>Links expire</dt>
-              <dd>Images and videos live in your private Blob store. Links shared in chat last {linkTtlHours} hours.</dd>
-            </div>
-          </dl>
+          {/* Four rules as big statements whose words light up as you read down. */}
+          <ol className="rules">
+            {[
+              { line: 'Your link is a password.', detail: 'Anyone holding it can spend your credits and make things under your Vercel account.' },
+              {
+                line: 'Your budget is the real limit.',
+                detail: (
+                  <>
+                    Set a spend budget in <VercelBadge kind="gateway" />. This server caps each call, but only the budget caps the month.
+                  </>
+                ),
+              },
+              { line: 'Leaked? Change it.', detail: 'Change MCP_SECRET in Environment Variables and redeploy. The old link stops working at once.' },
+              { line: `Links last ${linkTtlHours} hours.`, detail: 'Pictures, video and audio stay in your private Blob store. Each link you get in chat expires.' },
+            ].map((rule) => (
+              <li key={rule.line} className="rule" data-rule>
+                <p className="rule-line">
+                  {rule.line.split(' ').map((word, i) => (
+                    <span key={i} className="rule-word" data-rule-word>
+                      {word}{' '}
+                    </span>
+                  ))}
+                </p>
+                <p className="rule-detail" data-rule-detail>
+                  {rule.detail}
+                </p>
+              </li>
+            ))}
+          </ol>
         </section>
 
         <footer className="setup-footer">
           <span>AI Gateway MCP, MIT license. Not affiliated with Vercel.</span>
+          {guide ? null : <a href="/?steps">Show the setup steps</a>}
           <a href={LANDING_URL}>About this project</a>
         </footer>
       </main>

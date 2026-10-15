@@ -5,22 +5,26 @@ import { getConfig, isModelAllowed } from '../env';
 import { errorResult, toolError, warningNote, type ToolContext } from '../gateway';
 import { fetchMedia, MediaError, readCost, type Media } from '../media';
 import { findModel, kindsOf } from '../models';
+import { estimateImage, estimateResult } from '../pricing';
 import { imageSizeOptions } from './generate-image';
+import { estimateOnly } from './start-video';
 import { imageResult } from './image-result';
 
-type EditArgs = { model: string; prompt: string; images: Media[]; mask?: Media; size_or_aspect?: string; n: number; tool: string };
+type EditArgs = { model: string; prompt: string; images: Media[]; mask?: Media; size_or_aspect?: string; n: number; tool: string; estimate?: boolean };
 
 /**
  * Sends input images and an instruction to an image model, or to an
- * image-capable LLM (Nano Banana etc.) as image parts of one message.
+ * image-capable LLM (Nano Banana etc.) as image parts of one message. With
+ * `estimate`, nothing runs and the inputs are not needed: the reply is the list price.
  */
-async function editImages({ model, prompt, images, mask, size_or_aspect, n, tool }: EditArgs, ctx: ToolContext): Promise<CallToolResult> {
+async function editImages({ model, prompt, images, mask, size_or_aspect, n, tool, estimate }: EditArgs, ctx: ToolContext): Promise<CallToolResult> {
   const sizeOptions = imageSizeOptions(model, size_or_aspect);
   if ('invalid' in sizeOptions) return errorResult(`size_or_aspect must look like "16:9" or "1024x1024", got "${size_or_aspect}".`);
 
   const info = await findModel(model);
   if (!info) return errorResult(`Unknown model "${model}". Call list_models with type "image" to see image models.`);
   if (!kindsOf(info).includes('image')) return errorResult(`Model "${model}" does not make images. Call list_models with type "image".`);
+  if (estimate) return estimateResult(model, estimateImage(info, info.type === 'image' ? n : 1, sizeOptions.priceSize));
 
   let output: GeneratedFile[];
   let cost: unknown;
@@ -79,15 +83,25 @@ export const editImageTool = {
     mask_url: z.string().url().optional().describe('https link to a mask image (white = change, black = keep)'),
     size_or_aspect: z.string().optional().describe('Aspect ratio like "16:9" or size like "1024x1024". Support varies by model.'),
     n: z.number().int().positive().optional().describe('Number of results (image-only models). Default 1.'),
+    estimate_only: estimateOnly,
   }),
   async run(
-    { model, prompt, image_urls, mask_url, size_or_aspect, n = 1 }: { model: string; prompt: string; image_urls: string[]; mask_url?: string; size_or_aspect?: string; n?: number },
+    {
+      model,
+      prompt,
+      image_urls,
+      mask_url,
+      size_or_aspect,
+      n = 1,
+      estimate_only,
+    }: { model: string; prompt: string; image_urls: string[]; mask_url?: string; size_or_aspect?: string; n?: number; estimate_only?: boolean },
     ctx: ToolContext,
   ) {
     if (!isModelAllowed(model)) return errorResult(`Model "${model}" is not in this server's ALLOWED_MODELS list.`);
     const { maxImagesPerCall } = getConfig();
     if (n > maxImagesPerCall) return errorResult(`n=${n} is above this server's limit of ${maxImagesPerCall} images per call (MAX_IMAGES_PER_CALL).`);
     try {
+      if (estimate_only) return await editImages({ model, prompt, images: [], size_or_aspect, n, tool: 'edit_image', estimate: true }, ctx);
       const images = await Promise.all(image_urls.map((url) => fetchMedia(url, 'image')));
       const mask = mask_url ? await fetchMedia(mask_url, 'image') : undefined;
       return await editImages({ model, prompt, images, mask, size_or_aspect, n, tool: 'edit_image' }, ctx);
@@ -106,12 +120,17 @@ export const upscaleImageTool = {
     image_url: z.string().url().describe('https link to the image to upscale'),
     model: z.string().optional().describe(`Image model id. Default "${UPSCALE_MODEL}".`),
     prompt: z.string().optional().describe('Optional guidance, e.g. "restore the faces" or "keep the film grain"'),
+    estimate_only: estimateOnly,
   }),
-  async run({ image_url, model = UPSCALE_MODEL, prompt }: { image_url: string; model?: string; prompt?: string }, ctx: ToolContext) {
+  async run(
+    { image_url, model = UPSCALE_MODEL, prompt, estimate_only }: { image_url: string; model?: string; prompt?: string; estimate_only?: boolean },
+    ctx: ToolContext,
+  ) {
     if (!isModelAllowed(model)) return errorResult(`Model "${model}" is not in this server's ALLOWED_MODELS list.`);
     try {
-      const image = await fetchMedia(image_url, 'image');
       const instruction = prompt ?? 'Upscale this image to a higher resolution. Keep every detail and add nothing new.';
+      if (estimate_only) return await editImages({ model, prompt: instruction, images: [], n: 1, tool: 'upscale_image', estimate: true }, ctx);
+      const image = await fetchMedia(image_url, 'image');
       return await editImages({ model, prompt: instruction, images: [image], n: 1, tool: 'upscale_image' }, ctx);
     } catch (error) {
       return inputError(error, model);

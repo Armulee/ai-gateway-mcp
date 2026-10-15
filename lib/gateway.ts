@@ -57,6 +57,20 @@ export function instanceContext(): ToolContext {
   };
 }
 
+/**
+ * What AI Gateway billed for a generation, read from its generation lookup with
+ * the context's own credentials. Undefined when there is no id or the lookup
+ * fails (for example right after the job finishes), so callers just omit it.
+ */
+export async function billedCost(ctx: ToolContext, generationId: unknown): Promise<number | undefined> {
+  if (typeof generationId !== 'string') return undefined;
+  try {
+    return (await ctx.gateway.getGenerationInfo({ id: generationId })).totalCost;
+  } catch {
+    return undefined;
+  }
+}
+
 export function textResult(text: string): CallToolResult {
   return { content: [{ type: 'text', text }] };
 }

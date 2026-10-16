@@ -6,7 +6,6 @@ import openai from '@lobehub/icons-static-svg/icons/openai.svg';
 import { assetUrl } from '@/lib/asset-url';
 import { useEffect, useState } from 'react';
 import { CopyButton } from './copy-button';
-import { PhonePair } from './phone-pair';
 import { appsInUse, restoreChatAdded, setChatAdded, useSetup } from './setup-store';
 
 // How to add the link in each chat app. Menu names move around between
@@ -191,7 +190,6 @@ export function ChatGuides() {
         <Installs installs={guide.installs} />
       </section>
       <ChatCheck used={used} />
-      <PhonePair />
     </>
   );
 }

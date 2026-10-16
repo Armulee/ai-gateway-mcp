@@ -353,6 +353,15 @@ npx @modelcontextprotocol/inspector@latest
 
 Choose **Streamable HTTP** and connect to `http://localhost:3000/mcp/<MCP_SECRET>`.
 
+The same tools also run over **stdio**, for local MCP clients and for directories that start the server to list its tools (Glama does this). Your deployment does not use it.
+
+```bash
+npm run build:stdio   # bundles scripts/stdio.ts into dist/stdio.mjs
+AI_GATEWAY_API_KEY=... MCP_SECRET=... node dist/stdio.mjs
+```
+
+A stdio server is a process you start yourself, so it has no secret check: it spends whatever Gateway key it is given. `MCP_SECRET` only signs video job ids there. Listing the tools needs no variables at all.
+
 Two development-only addresses preview states you cannot reach without a deployment: `/?preview-open` shows the page as it looks once setup is done, and `/?sample-stats` fills the usage with sample numbers.
 
 </details>

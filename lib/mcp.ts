@@ -1,5 +1,5 @@
 import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server';
-import type { CallToolResult } from '@modelcontextprotocol/server';
+import type { CallToolResult, McpServer } from '@modelcontextprotocol/server';
 import { createMcpHandler } from 'mcp-handler';
 import { createHash } from 'node:crypto';
 import type { z } from 'zod';
@@ -66,32 +66,37 @@ function mediaViewMeta() {
   };
 }
 
+export const SERVER_INFO = { name: 'gateway-mcp', version: '0.1.0' };
+
+/**
+ * Registers every tool and the media view on `server`. Shared by the HTTP
+ * route and the stdio entry (scripts/stdio.ts), so both offer the same tools.
+ */
+export function registerGatewayTools(server: McpServer, getContext: () => ToolContext) {
+  for (const tool of TOOLS) {
+    const config = { description: tool.description, inputSchema: tool.inputSchema };
+    const run = (args: unknown) => tool.run(args as never, getContext());
+    if (UI_TOOLS.has(tool.name)) {
+      // Hosts with MCP Apps show the result in the media view; others use its plain content.
+      registerAppTool(server, tool.name, { ...config, _meta: { ui: { resourceUri: MEDIA_VIEW_URI } } }, run);
+    } else {
+      server.registerTool(tool.name, config, run);
+    }
+  }
+  registerAppResource(
+    server,
+    'AI Gateway media',
+    MEDIA_VIEW_URI,
+    { description: 'Shows pictures, video and audio from this connector inline, with download, upscale and extend.', mimeType: RESOURCE_MIME_TYPE },
+    () => ({ contents: [{ uri: MEDIA_VIEW_URI, mimeType: RESOURCE_MIME_TYPE, text: MEDIA_VIEW_HTML, _meta: mediaViewMeta() }] }),
+  );
+}
+
 /**
  * Builds the MCP request handler. Authentication happens before this handler
  * runs (the secret path in v1); `getContext` decides whose Gateway credits and
  * Blob namespace the tools use.
  */
 export function createGatewayMcpHandler(getContext: () => ToolContext) {
-  return createMcpHandler(
-    (server) => {
-      for (const tool of TOOLS) {
-        const config = { description: tool.description, inputSchema: tool.inputSchema };
-        const run = (args: unknown) => tool.run(args as never, getContext());
-        if (UI_TOOLS.has(tool.name)) {
-          // Hosts with MCP Apps show the result in the media view; others use its plain content.
-          registerAppTool(server, tool.name, { ...config, _meta: { ui: { resourceUri: MEDIA_VIEW_URI } } }, run);
-        } else {
-          server.registerTool(tool.name, config, run);
-        }
-      }
-      registerAppResource(
-        server,
-        'AI Gateway media',
-        MEDIA_VIEW_URI,
-        { description: 'Shows pictures, video and audio from this connector inline, with download, upscale and extend.', mimeType: RESOURCE_MIME_TYPE },
-        () => ({ contents: [{ uri: MEDIA_VIEW_URI, mimeType: RESOURCE_MIME_TYPE, text: MEDIA_VIEW_HTML, _meta: mediaViewMeta() }] }),
-      );
-    },
-    { serverInfo: { name: 'gateway-mcp', version: '0.1.0' }, verboseLogs: false },
-  );
+  return createMcpHandler((server) => registerGatewayTools(server, getContext), { serverInfo: SERVER_INFO, verboseLogs: false });
 }

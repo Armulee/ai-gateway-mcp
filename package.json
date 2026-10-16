@@ -13,7 +13,9 @@
     "typecheck": "npm run build:ui && tsc --noEmit",
     "build:ui": "node scripts/build-ui.mjs",
     "predev": "npm run build:ui",
-    "prebuild": "npm run build:ui"
+    "prebuild": "npm run build:ui",
+    "build:stdio": "npm run build:ui && node scripts/build-stdio.mjs",
+    "stdio": "node dist/stdio.mjs"
   },
   "dependencies": {
     "@ai-sdk/gateway": "^4.0.112",

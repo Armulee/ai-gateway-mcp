@@ -1,6 +1,7 @@
 import type { CallToolResult } from '@modelcontextprotocol/server';
 import { textResult } from './gateway';
 import type { GatewayModel } from './models';
+import { defaultResolutionOf, describeSeconds, minSeconds, resolutionsOf, secondsOf } from './video-specs';
 
 // Price estimates from AI Gateway's public list prices, for `estimate_only`.
 // Nothing is called or charged. Requests leave some choices to the provider
@@ -13,7 +14,7 @@ export type Estimate =
   | { unknown: string };
 
 /** Dollars with at least two decimals and at most four: $0.024, $1.20. */
-function money(v: number) {
+export function money(v: number) {
   const [whole, cents = ''] = String(+v.toFixed(4)).split('.');
   return `$${whole}.${cents.padEnd(2, '0')}`;
 }
@@ -63,20 +64,26 @@ export type VideoQuery = {
   audio?: boolean;
   /** Kling "std"/"pro", or HeyGen's "text_to_video"/"image_to_video"/"reference_to_video". */
   mode?: string;
+  /** "480p", "720p"…, already checked against what the model offers. */
+  resolution?: string;
+  /** start_video only: also say the model's lengths, its shortest clip's price and how to pin the resolution. */
+  lengthAndResolution?: boolean;
 };
 
-export function estimateVideo(model: GatewayModel, { seconds, audio, mode }: VideoQuery): Estimate {
+export function estimateVideo(model: GatewayModel, { seconds, audio, mode, resolution, lengthAndResolution }: VideoQuery): Estimate {
   const p = model.pricing ?? {};
   let tiers = tiersOf(p.video_duration_pricing).filter((t) => Number.isFinite(Number(t.cost_per_second)));
   if (tiers.length === 0) {
+    const allowed = lengthAndResolution ? secondsOf(model) : undefined;
+    const lengths = allowed ? ` Lengths this model makes: ${describeSeconds(allowed)} (shortest ${minSeconds(allowed)} s).` : '';
     return p.video_token_pricing
-      ? { unknown: 'This model is priced by video tokens, which depend on resolution and length, so the cost is only known after the call.' }
-      : { unknown: 'AI Gateway lists no price for this model.' };
+      ? { unknown: `This model is priced by video tokens, which depend on resolution and length, so the cost is only known after the call.${lengths}` }
+      : { unknown: `AI Gateway lists no price for this model.${lengths}` };
   }
   // Voice control is a paid extra this server never turns on.
   const plain = tiers.filter((t) => !t.voice_control);
   if (plain.length) tiers = plain;
-  tiers = narrow(tiers, { audio, mode });
+  tiers = narrow(tiers, { audio, mode, resolution });
 
   const rates = tiers.map((t) => Number(t.cost_per_second));
   const [low, high] = [Math.min(...rates), Math.max(...rates)];
@@ -88,7 +95,30 @@ export function estimateVideo(model: GatewayModel, { seconds, audio, mode }: Vid
   if (seconds === undefined) {
     return { low, high, basis: 'per second of output. The length follows the input video, so multiply by its length in seconds', notes };
   }
+  if (lengthAndResolution) notes.push(...videoOptionNotes(model, resolution, low, high));
   return { low: low * seconds, high: high * seconds, basis: `for ${seconds} s at ${range(low, high)} per second`, notes };
+}
+
+/** The shortest clip and its price, and how to pin the resolution, so a chat can offer the cheapest run. */
+function videoOptionNotes(model: GatewayModel, resolution: string | undefined, low: number, high: number): string[] {
+  const notes: string[] = [];
+  const allowed = secondsOf(model);
+  if (allowed) {
+    const min = minSeconds(allowed);
+    notes.push(`Lengths this model makes: ${describeSeconds(allowed)}. The shortest (${min} s) costs ${range(low * min, high * min)}${resolution ? ` at ${resolution}` : ''}.`);
+  } else {
+    notes.push('The shortest length this model accepts is not documented.');
+  }
+  if (!resolution) {
+    const offered = resolutionsOf(model);
+    const fallback = defaultResolutionOf(model);
+    notes.push(
+      offered.length
+        ? `Set resolution (${offered.join(', ')}) to fix the price${fallback ? `; without it the model uses ${fallback}` : ''}.`
+        : 'This model does not let you choose the resolution.',
+    );
+  }
+  return notes;
 }
 
 /**

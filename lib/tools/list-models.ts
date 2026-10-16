@@ -2,13 +2,14 @@ import { z } from 'zod';
 import { isModelAllowed } from '../env';
 import { errorResult, textResult, toolError, type ToolContext } from '../gateway';
 import { capabilitiesOf, fetchModels, kindsOf, priceOf, type ModelKind } from '../models';
+import { videoOptionsLine } from '../video-specs';
 
 const MAX_RESULTS = 80;
 
 export const listModels = {
   name: 'list_models',
   description:
-    'List AI Gateway models this server can call. Filter by type (text, image, video, speech for text-to-speech, transcription for speech-to-text) and/or a search query. Returns one line per model: id | type | capabilities | price.',
+    'List AI Gateway models this server can call. Filter by type (text, image, video, speech for text-to-speech, transcription for speech-to-text) and/or a search query. Returns one line per model: id | type | capabilities | price, and for video models the resolutions start_video can pick and the lengths (seconds) the model makes.',
   inputSchema: z.object({
     type: z.enum(['text', 'image', 'video', 'speech', 'transcription']).optional().describe('Only models of this type'),
     query: z.string().optional().describe('Case-insensitive match on model id or name, e.g. "veo" or "flux"'),
@@ -28,7 +29,8 @@ export const listModels = {
 
       const lines = rows.slice(0, MAX_RESULTS).map(({ model, kinds }) => {
         const caps = capabilitiesOf(model).join(',');
-        return [model.id, kinds.join('+'), caps || '-', priceOf(model)].join(' | ');
+        const video = kinds.includes('video') ? [videoOptionsLine(model)] : [];
+        return [model.id, kinds.join('+'), caps || '-', priceOf(model), ...video].join(' | ');
       });
       const more = rows.length > MAX_RESULTS ? `\n…and ${rows.length - MAX_RESULTS} more; narrow with query.` : '';
       return textResult(`${rows.length} model(s). id | type | capabilities | price\n${lines.join('\n')}${more}`);

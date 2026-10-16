@@ -5,8 +5,20 @@ import { BLOB_MISSING_MESSAGE, blobConfigured } from '../blob';
 import { getConfig, isModelAllowed } from '../env';
 import { errorResult, textResult, toolError, warningNote, type ToolContext } from '../gateway';
 import { encodeJobId } from '../jobs';
-import { findModel } from '../models';
-import { estimateResult, estimateVideo, type VideoQuery } from '../pricing';
+import { capabilitiesOf, fetchModels, findModel, type GatewayModel } from '../models';
+import { estimateResult, estimateVideo, money, type VideoQuery } from '../pricing';
+import {
+  describeSeconds,
+  fitSeconds,
+  minSeconds,
+  rateAt,
+  RESOLUTIONS,
+  resolutionsOf,
+  secondsAllowed,
+  secondsOf,
+  sizeOf,
+  type Resolution,
+} from '../video-specs';
 import { GET_VIDEO_WAIT_S } from './get-video';
 
 type StartOptions = Omit<Parameters<typeof startVideo>[0], 'model' | 'n' | 'providerOptions'> & {
@@ -103,14 +115,79 @@ type Args = {
   reference_urls?: string[];
   duration?: number;
   aspect_ratio?: string;
+  resolution?: Resolution;
   sound?: boolean;
   estimate_only?: boolean;
 };
 
+type Mode = 'text_to_video' | 'image_to_video' | 'reference_to_video';
+const CAPABILITY: Record<Mode, string> = { text_to_video: 't2v', image_to_video: 'i2v', reference_to_video: 'r2v' };
+const MODE_NAME: Record<Mode, string> = { text_to_video: 'from text', image_to_video: 'from a picture', reference_to_video: 'from references' };
+const NOT_STARTED = 'Nothing was generated or charged. Tell the user before generating anything.';
+
+/** One option line: rate at a resolution, plus the shortest clip and its price when the lengths are known. */
+function optionLine(model: GatewayModel, resolution: Resolution, audio?: boolean): string {
+  const rate = rateAt(model, resolution, audio);
+  const price = rate !== undefined ? `${money(rate)}/s` : 'no per-second list price';
+  const allowed = secondsOf(model);
+  const shortest = allowed
+    ? `; ${describeSeconds(allowed)}, shortest ${minSeconds(allowed)} s${rate !== undefined ? ` = ${money(rate * minSeconds(allowed))}` : ''}`
+    : '; lengths not documented';
+  return `${model.id} at ${resolution}: ${price}${shortest}`;
+}
+
+/** Up to five other models that can make this kind of video at `resolution` (or at any chosen resolution), cheapest first. */
+async function alternatives(exclude: string, mode: Mode, resolution: Resolution | undefined, audio?: boolean): Promise<string> {
+  const found = (await fetchModels())
+    .filter((m) => m.type === 'video' && m.id !== exclude && isModelAllowed(m.id) && capabilitiesOf(m).includes(CAPABILITY[mode]))
+    .flatMap((m) => {
+      const offered = resolutionsOf(m);
+      const pick = resolution ?? offered.find((r) => rateAt(m, r, audio) !== undefined) ?? offered[0];
+      if (!pick || !offered.includes(pick)) return [];
+      return [{ m, pick, rate: rateAt(m, pick, audio) ?? Infinity }];
+    })
+    .sort((a, b) => a.rate - b.rate)
+    .slice(0, 5);
+  if (found.length === 0) return `No other model here can make a video ${MODE_NAME[mode]}${resolution ? ` at ${resolution}` : ' with a chosen resolution'}.`;
+  return [`Models that can${resolution ? ` make ${resolution}` : ' choose the resolution'} ${MODE_NAME[mode]}, cheapest first:`, ...found.map(({ m, pick }) => `- ${optionLine(m, pick, audio)}`)].join('\n');
+}
+
+/**
+ * Checks the resolution and length against what the model documents, before
+ * anything is spent. A refusal names what the model does offer, its shortest
+ * clip and price, and other models that can do what was asked.
+ */
+async function checkOptions(info: GatewayModel, mode: Mode, resolution: Resolution | undefined, duration: number | undefined, audio?: boolean) {
+  const allowed = secondsOf(info);
+  if (duration !== undefined && allowed && !secondsAllowed(allowed, duration)) {
+    return errorResult(`"${info.id}" makes clips of ${describeSeconds(allowed)}, so ${duration} s is not possible; the shortest is ${minSeconds(allowed)} s. ${NOT_STARTED}`);
+  }
+  if (allowed && minSeconds(allowed) > getConfig().maxVideoSeconds) {
+    return errorResult(`"${info.id}" makes clips of at least ${minSeconds(allowed)} s, above this server's limit of ${getConfig().maxVideoSeconds}s (MAX_VIDEO_SECONDS). ${NOT_STARTED}`);
+  }
+  if (!resolution) return undefined;
+  const offered = resolutionsOf(info);
+  if (offered.length === 0) {
+    return errorResult(
+      [`"${info.id}" does not let you choose the resolution; it always uses its own. ${NOT_STARTED} Suggest one of these instead:`, await alternatives(info.id, mode, resolution, audio)].join('\n'),
+    );
+  }
+  if (!offered.includes(resolution)) {
+    return errorResult(
+      [
+        `"${info.id}" does not offer ${resolution}. ${NOT_STARTED} What it offers:`,
+        ...offered.map((r) => `- ${optionLine(info, r, audio)}`),
+        await alternatives(info.id, mode, resolution, audio),
+      ].join('\n'),
+    );
+  }
+  return undefined;
+}
+
 export const startVideoTool = {
   name: 'start_video',
   description:
-    `Start an asynchronous AI Gateway video and return a job_id immediately. Then call get_video with that job_id until it is done (usually 1–5 minutes); each call waits up to ${GET_VIDEO_WAIT_S} s, so no pause is needed between calls. Text-to-video needs only a prompt. image_url animates a picture (i2v models); add end_image_url to move from the first picture to the last (Veo, Kling, Seedance). reference_urls (pictures or videos of characters or objects) makes a new scene with them (r2v models such as "alibaba/wan-v2.6-r2v": call them character1, character2… in the prompt). For dialogue, write the lines in the prompt and set sound (models with audio, e.g. Veo 3.1, HeyGen). Links must be https; links returned by this server work. ${NO_BLIND_RETRY}`,
+    `Start an asynchronous AI Gateway video and return a job_id immediately. Then call get_video with that job_id until it is done (usually 1–5 minutes); each call waits up to ${GET_VIDEO_WAIT_S} s, so no pause is needed between calls. Set resolution (480p, 720p, 1080p, 4k) to pick the size and price; only some models allow it (list_models shows each model's resolutions and lengths), and a model that can't make the asked resolution or length is refused before anything is charged, with alternatives to offer the user. Before a paid run, tell the user the length and price; estimate_only gives the model's shortest clip and its price. Text-to-video needs only a prompt. image_url animates a picture (i2v models); add end_image_url to move from the first picture to the last (Veo, Kling, Seedance). reference_urls (pictures or videos of characters or objects) makes a new scene with them (r2v models such as "alibaba/wan-v2.6-r2v": call them character1, character2… in the prompt). For dialogue, write the lines in the prompt and set sound (models with audio, e.g. Veo 3.1, HeyGen). Links must be https; links returned by this server work. ${NO_BLIND_RETRY}`,
   inputSchema: z.object({
     model: z.string().describe('Video model id from list_models with type "video", e.g. "google/veo-3.1-fast-generate-001"'),
     prompt: z.string().min(1),
@@ -119,16 +196,29 @@ export const startVideoTool = {
     reference_urls: z.array(httpsUrl).min(1).max(4).optional().describe('Reference pictures or videos for reference-to-video (r2v)'),
     duration: z.number().int().positive().optional().describe('Length in seconds; supported values vary by model'),
     aspect_ratio: z.string().regex(/^\d+:\d+$/).optional().describe('e.g. "16:9" or "9:16"'),
+    resolution: z.enum(RESOLUTIONS as [Resolution, ...Resolution[]]).optional().describe('Output size. Lower is cheaper. Only some models let you choose; list_models shows which.'),
     sound: z.boolean().optional().describe('Generate audio with the video (models that support it). Costs more on some models.'),
     estimate_only: estimateOnly,
   }),
-  async run({ model, prompt, image_url, end_image_url, reference_urls, duration, aspect_ratio, sound, estimate_only }: Args, ctx: ToolContext) {
+  async run({ model, prompt, image_url, end_image_url, reference_urls, duration, aspect_ratio, resolution, sound, estimate_only }: Args, ctx: ToolContext) {
     const tooLong = checkDuration(duration);
     if (tooLong) return tooLong;
     if (end_image_url && !image_url) return errorResult('end_image_url needs image_url as the first frame.');
     if (reference_urls && image_url) return errorResult('Use either image_url (animate a picture) or reference_urls (new scene with these characters), not both.');
-    const seconds = duration ?? Math.min(getConfig().maxVideoSeconds, 8);
-    const mode = image_url ? 'image_to_video' : reference_urls ? 'reference_to_video' : 'text_to_video';
+    const mode: Mode = image_url ? 'image_to_video' : reference_urls ? 'reference_to_video' : 'text_to_video';
+
+    // Unknown or non-video models are reported by startVideoJob.
+    const info = isModelAllowed(model) ? await findModel(model).catch(() => undefined) : undefined;
+    const isVideo = info?.type === 'video';
+    if (isVideo) {
+      const refused = await checkOptions(info, mode, resolution, duration, sound);
+      if (refused) return refused;
+    }
+    const { maxVideoSeconds } = getConfig();
+    const allowed = isVideo ? secondsOf(info) : undefined;
+    const fallback = Math.min(maxVideoSeconds, 8);
+    const seconds = duration ?? (allowed ? fitSeconds(allowed, fallback, maxVideoSeconds) : fallback);
+    const size = isVideo && resolution ? sizeOf(info, resolution) : undefined;
 
     return startVideoJob(
       'start_video',
@@ -146,10 +236,11 @@ export const startVideoTool = {
         ...(reference_urls ? { inputReferences: reference_urls.map(reference) } : {}),
         duration: seconds,
         aspectRatio: aspect_ratio as `${number}:${number}` | undefined,
+        ...(size ? { resolution: size } : {}),
         generateAudio: sound,
       },
       ctx,
-      estimate_only ? { seconds, audio: sound, mode } : undefined,
+      estimate_only ? { seconds, audio: sound, mode, resolution, lengthAndResolution: true } : undefined,
     );
   },
 };

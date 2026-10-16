@@ -14,7 +14,7 @@ export function BlobPanel({ links, secretSet }: { links: DashboardLinks; secretS
     return (
       <ActionSteps
         actions={[{ label: 'Create Blob store', href: links.storage }]}
-        hints={[create, 'Don’t redeploy yet: you redeploy once, after setting MCP_SECRET in the next step.']}
+        hints={[create, 'Don’t redeploy yet: you redeploy once, after setting your secret in the next step.']}
       />
     );
   }

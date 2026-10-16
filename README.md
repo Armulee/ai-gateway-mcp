@@ -124,7 +124,7 @@ You need a [Vercel](https://vercel.com) account and a GitHub, GitLab or Bitbucke
   <tr>
     <td width="33%" valign="top">
       <h3>1. Deploy</h3>
-      <p>Click the button. Vercel copies the repo and makes your private storage. Your new page then makes <a href="#mcp_secret"><code>MCP_SECRET</code></a>. Choose <b>Set up with your agent</b>: copy one prompt into Claude with the Vercel connector and it adds the secret (and storage, if missing) and redeploys. Or choose <b>Set up manually</b> and follow the steps.</p>
+      <p>Click the button. Vercel copies the repo and makes your private storage. Your new page then makes your <a href="#your-secret">secret</a>. Choose <b>Set up with your agent</b>: copy one prompt into Claude with the Vercel connector and it adds the secret's fingerprint (and storage, if missing) and redeploys. Or choose <b>Set up manually</b> and follow the steps.</p>
     </td>
     <td width="33%" valign="top">
       <h3>2. Open your copy</h3>
@@ -164,8 +164,8 @@ Open your copy and it shows where you are: an arch of six stones, one per step. 
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <img src="docs/readme/secret.jpg" alt="Set MCP_SECRET: done, with a button to make a new secret in the browser.">
-      <p><b>A secret you can't lose.</b> Made and saved in your browser the moment you reach the step, never sent anywhere, with your link ready to copy. Add it in Vercel as a Config variable, redeploy once (it covers the storage too), and the page checks your link by itself. Or press <b>Copy setup prompt</b> and paste it into Claude with the Vercel connector: it adds the secret and redeploys for you.</p>
+      <img src="docs/readme/secret.jpg" alt="Set your secret: done, with a button to make a new secret in the browser.">
+      <p><b>A secret that never leaves your browser.</b> Made and saved there the moment you reach the step, with your link ready to copy. Vercel only gets its fingerprint (<code>MCP_SECRET_SHA256</code>), which can't open your connector: add it, redeploy once (it covers the storage too), and the page checks your link by itself. Or press <b>Copy setup prompt</b> and paste it into Claude with the Vercel connector: it adds the fingerprint and redeploys for you.</p>
     </td>
     <td width="50%" valign="top">
       <img src="docs/readme/chat.jpg" alt="Add it to your chat app, with tabs for Claude, ChatGPT and other apps, and a test prompt to copy.">
@@ -174,7 +174,7 @@ Open your copy and it shows where you are: an arch of six stones, one per step. 
   </tr>
 </table>
 
-Once every step is done, the guide steps aside for good. From then on your page opens on the brand and goes straight to your usage. If anything comes undone later (say `MCP_SECRET` is removed), the guide comes back by itself.
+Once every step is done, the guide steps aside for good. From then on your page opens on the brand and goes straight to your usage. If anything comes undone later (say `MCP_SECRET_SHA256` is removed), the guide comes back by itself.
 
 <p align="center">
   <img src="docs/readme/intro.webp" width="100%" alt="With setup done: a point of light, the arch built outward from it, the arch shrinking into the logo as the name appears, then flying to the corner as the usage page opens.">
@@ -274,7 +274,7 @@ Your chat app picks these for you; you never have to name them. Every tool retur
 
 - **Your link works like a password that spends money.** Anyone who has it can use your AI Gateway credits. Keep it private.
 - **Set an AI Gateway budget.** Only Vercel's budget limits your total spend.
-- **If the link leaks, change `MCP_SECRET`** in Project Settings → Environment Variables and redeploy. The old link stops working at once.
+- **If the link leaks, make a new secret** on your setup page, put its fingerprint in Project Settings → Environment Variables and redeploy. The old link stops working at once.
 - **Your usage is yours.** Anyone can open your setup page, but the numbers only appear for someone who has your secret.
 
 <details>
@@ -284,7 +284,7 @@ Your chat app picks these for you; you never have to name them. Every tool retur
 
 - **Your connector URL works like a password that spends money.** Anyone who has it can use your AI Gateway credits and generate content under your Vercel account.
 - **Set an AI Gateway budget.** This server caps each call (`MAX_VIDEO_SECONDS`, `MAX_IMAGES_PER_CALL`, `MAX_SPEECH_CHARACTERS`, `ALLOWED_MODELS`), but only Vercel's budget limits your total spend. Tools that start from your own video (`motion_control`, `upscale_video`, `edit_video`) follow its length, which the per-call caps cannot see.
-- **Rotate the secret if the URL leaks.** Change `MCP_SECRET` and redeploy. The old URL stops working right away, and any unfinished video jobs are abandoned.
+- **Rotate the secret if the URL leaks.** Set a new fingerprint (or `MCP_SECRET`) and redeploy. The old URL stops working right away, and any unfinished video jobs are abandoned.
 - **Optional: rate-limit the endpoint.** Guessing is hopeless, but every wrong request still counts toward your project's usage. If your plan includes Vercel Firewall rate limiting, add a rule for paths starting with `/mcp/` (for example, by IP). Do not turn on Attack Challenge Mode for it: Claude's and ChatGPT's servers cannot solve the challenge, so your connector would stop working.
 - **Files are private, but links are not.** Pictures, videos and audio are stored in a private Blob store. Anyone who holds one of the links returned in chat can open that file until the link expires (`SIGNED_URL_TTL_HOURS`).
 - **Usage stats need the secret.** `POST /api/stats` checks it in constant time and answers 404 otherwise. Remembering the secret in a browser lets anyone using that browser see your usage; "Forget" removes it.
@@ -295,19 +295,23 @@ Your chat app picks these for you; you never have to name them. Every tool retur
 
 ## Reference
 
-### MCP_SECRET
+### Your secret
 
 Your connector link is your deployment's address plus the secret. The setup page builds it in your browser:
 
 ```
-https://<your-project>.vercel.app/mcp/<MCP_SECRET>
+https://<your-project>.vercel.app/mcp/<your-secret>
 ```
 
-`MCP_SECRET` is a random value of at least 32 characters. The Deploy button doesn't ask for it: a fresh copy starts with the endpoint off, and its setup page makes one in your browser, links to the project's Environment Variables, and remembers it so your link is filled in after the redeploy. You can also make your own, for example with `openssl rand -hex 32`. Use URL-safe characters only; hex is ideal.
+The secret is a random value of at least 32 characters. The Deploy button doesn't ask for it: a fresh copy starts with the endpoint off, and its setup page makes one in your browser and remembers it there, so your link is filled in after the redeploy.
+
+Vercel never gets the secret itself, only its SHA-256 fingerprint as `MCP_SECRET_SHA256`. A fingerprint can't be turned back into the secret, so anyone who can read your environment variables, or the chat you pasted the setup prompt into, still can't use your connector. The other side of this: Vercel can't show you your secret either. If you lose the browser that holds it (and it isn't in your phone or your chat app's connector settings), make a new one and redeploy.
+
+To do it yourself: make a secret with `openssl rand -hex 32`, and set `MCP_SECRET_SHA256` to the output of `printf %s '<your-secret>' | shasum -a 256` (the hex part). For local development a plain `MCP_SECRET=<your-secret>` is simpler; the fingerprint wins when both are set. Use URL-safe characters only; hex is ideal.
 
 A random 64-character hex secret holds 256 bits: guessing it over the network is not possible in practice, and every wrong guess gets the same 404 as any unknown URL, compared in constant time. Secrets typed by hand are the weak spot, so the endpoint also stays off when the secret has fewer than 8 different characters or repeats one short block (`aaaa…`, `passwordpassword…`).
 
-claude.ai custom connectors only support OAuth or no auth, and they can't send custom headers, so the secret goes in the URL path. If `MCP_SECRET` is missing or shorter than 32 characters, the MCP endpoint is disabled. A wrong secret gets the same 404 page as any unknown URL.
+claude.ai custom connectors only support OAuth or no auth, and they can't send custom headers, so the secret goes in the URL path. If no secret is set (or a plain `MCP_SECRET` is shorter than 32 characters, or the fingerprint isn't 64 hex characters), the MCP endpoint is disabled. A wrong secret gets the same 404 page as any unknown URL.
 
 <details>
 <summary><b>Configuration</b></summary>
@@ -316,7 +320,8 @@ claude.ai custom connectors only support OAuth or no auth, and they can't send c
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `MCP_SECRET` | none (required) | Secret part of the connector URL. Must be at least 32 characters. |
+| `MCP_SECRET_SHA256` | none (this or `MCP_SECRET` required) | SHA-256 fingerprint (hex) of the secret in the connector URL. Set by the setup page; wins over `MCP_SECRET`. |
+| `MCP_SECRET` | none | The secret itself, at least 32 characters. Simpler for local development. |
 | `MAX_VIDEO_SECONDS` | `8` | Longest video `start_video` and `extend_video` accept. |
 | `MAX_IMAGES_PER_CALL` | `4` | Highest `n` that `generate_image` and `edit_image` accept. |
 | `MAX_SPEECH_CHARACTERS` | `5000` | Longest text `generate_speech` accepts in one call. |
@@ -335,7 +340,7 @@ Vercel sets the Blob variables (`BLOB_STORE_ID`, plus `BLOB_READ_WRITE_TOKEN` as
 
 ```bash
 npm install
-vercel link && vercel env pull   # pulls MCP_SECRET, Blob and a 12-hour OIDC token into .env.local
+vercel link && vercel env pull   # pulls MCP_SECRET_SHA256, Blob and a 12-hour OIDC token into .env.local
 # or put AI_GATEWAY_API_KEY=... and MCP_SECRET=... in .env.local
 npm run dev
 ```
@@ -363,7 +368,7 @@ Two development-only addresses preview states you cannot reach without a deploym
 - **Stack:** Next.js (App Router) and TypeScript. MCP is served over Streamable HTTP using [`mcp-handler`](https://github.com/vercel/mcp-handler) v2, and model calls go through the [AI SDK](https://ai-sdk.dev) with the AI Gateway provider.
 - **Secret check:** `proxy.ts` rejects a wrong secret before routing by rewriting it to the standard 404 page. The route handler then checks the secret again, in constant time.
 - **Media in, media out:** files you give a tool are downloaded by the server (https only, size-capped), so this server's own private links work as input. Video jobs send theirs as links, since AI Gateway keeps a job's start request small.
-- **Video jobs:** no database. Each `job_id` holds the model and the AI Gateway job id, signed with a key derived from `MCP_SECRET` so it can't be forged.
+- **Video jobs:** no database. Each `job_id` holds the model and the AI Gateway job id, signed with a key derived from the fingerprint (or `MCP_SECRET`) and only accepted from callers holding the secret, so it can't be forged.
 
 </details>
 

@@ -28,7 +28,7 @@ async function rpc(url: string, body: object, protocolVersion?: string): Promise
     body: JSON.stringify(body),
   });
   if (res.status === 404) {
-    throw new Error('This secret does not match MCP_SECRET on this deployment, or the endpoint is off (see “Set MCP_SECRET”).');
+    throw new Error('This secret does not match this deployment, or the endpoint is off (see “Set your secret”).');
   }
   if (!res.ok) throw new Error(`The endpoint answered HTTP ${res.status}.`);
   const text = await res.text();
@@ -80,7 +80,7 @@ export function ConnectorPanel() {
       <div className={`link-field${secret ? ' is-filled' : ''}`}>
         <label className="link-prefix" htmlFor="mcp-secret">
           {host}/mcp/
-          <span className="sr-only"> followed by your MCP_SECRET</span>
+          <span className="sr-only"> followed by your secret</span>
         </label>
         <div className="link-input">
           <input
@@ -88,7 +88,7 @@ export function ConnectorPanel() {
             type={reveal ? 'text' : 'password'}
             autoComplete="off"
             spellCheck={false}
-            placeholder="paste your MCP_SECRET"
+            placeholder="paste your secret"
             aria-describedby="mcp-secret-help"
             value={secret}
             onChange={(e) => {

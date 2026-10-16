@@ -24,11 +24,11 @@ An open-source MCP server that lets people call any Vercel AI Gateway model (tex
 - Next.js (App Router) on Vercel, TypeScript.
 - MCP over Streamable HTTP with `mcp-handler` v2 (`@modelcontextprotocol/server` v2, zod v4). No Redis, stateless.
 - Endpoint: `/mcp/[secret]`. claude.ai custom connectors only support OAuth or no auth, and cannot send custom headers, so the secret lives in the path.
-  - Compare against env `MCP_SECRET` with a constant-time comparison. Return 404 on mismatch: `proxy.ts` rewrites wrong secrets to the standard 404 page, and the route checks again.
+  - The deployment holds `MCP_SECRET_SHA256`, the secret's SHA-256 fingerprint (hex), which is what the setup page and its agent prompt set; `MCP_SECRET` (the secret itself) still works for local dev and older copies, and the fingerprint wins when both are set. So Vercel, its env var readers and any agent transcript never hold the secret. Compare SHA-256 digests in constant time (`lib/secret.ts`). Return 404 on mismatch: `proxy.ts` rewrites wrong secrets to the standard 404 page, and the route checks again.
   - Never log the secret or full request URLs.
 - AI calls through the AI SDK with the AI Gateway provider.
 - Media storage: a **private** Vercel Blob store in the user's own team. Auth via OIDC (`BLOB_STORE_ID`), `BLOB_READ_WRITE_TOKEN` as fallback. Files are shared with presigned URLs that expire (`SIGNED_URL_TTL_HOURS`, default 24, max 168).
-- Video jobs are stateless: `job_id` = model + AI Gateway job id, HMAC-signed with a key derived from `MCP_SECRET`. No database.
+- Video jobs are stateless: `job_id` = model + AI Gateway job id, HMAC-signed with a key derived from the fingerprint (or `MCP_SECRET`). The fingerprint isn't secret, but job ids are only accepted from callers who presented the secret. No database.
 
 ## Website
 
@@ -37,9 +37,9 @@ Two repos:
 - **`armulee/ai-gateway-mcp-landing`** is the project's own website (black-and-white scrollytelling story). Its buttons open Vercel's clone flow for this repo directly; it has no setup or secret pages of its own. The waitlist for the hosted version belongs there; its storage is not decided yet: ask before choosing.
 
 Setup page at `/` (every self-hoster lands here on their own deployment):
-- A guide in steps, each with a code-drawn motion graphic: deploy, AI Gateway via OIDC, Blob (checked on the server), `MCP_SECRET` (generated in the browser, with a link to the project's Environment Variables), then test the link and add it to a chat app (confirmed in the owner's browser). Shows what is done and what is next.
-- The secret step comes after storage so one redeploy applies both. Until `MCP_SECRET` is set, the page makes the secret and saves it in that browser as soon as the step shows (reloads keep it), shows the link, and suggests the Vercel **Config** type so it can be looked up later. A saved secret is only checked once the server has `MCP_SECRET`, and a 404 never deletes it (only Forget does): earlier, a reload during the redeploy wiped it and owners had to rotate. After the redeploy the link is checked by itself and the chat-app install buttons turn on; they stay off until the link works.
-- While storage or `MCP_SECRET` is missing, the overview offers two buttons instead of "Go to the next step": **Set up with your agent** opens a panel (`components/setup/agent-panel.tsx`) with three moves (copy the prompt, paste it into Claude with the Vercel connector, reload) beside a code-drawn chat that plays the agent's tool calls (decoration only, secret masked; final state under reduced motion). **Set up manually** links to the next step and unfolds the guide, which waits folded until then (`guide-fold.tsx`; any link to a step unfolds it; open without JavaScript). The prompt (`lib/agent-prompt.ts`) creates a private Blob store if there is none, sets `MCP_SECRET` readable (`encrypted`, not `sensitive`) unless it is already set (never a silent rotation), and redeploys once. It holds the secret; the page sends nothing. The panel and the secret step share one draft secret (`draftSecret()` in `setup-store.ts`).
+- A guide in steps, each with a code-drawn motion graphic: deploy, AI Gateway via OIDC, Blob (checked on the server), the secret (generated in the browser; its fingerprint goes to the project's Environment Variables), then test the link and add it to a chat app (confirmed in the owner's browser). Shows what is done and what is next.
+- The secret step comes after storage so one redeploy applies both. Until the secret is set, the page makes it and saves it in that browser as soon as the step shows (reloads keep it), shows the link, and shows the fingerprint to paste as `MCP_SECRET_SHA256` (any env var type: it can't open the connector). The secret can't be looked up in Vercel; a lost one is replaced (make a new one, redeploy), and the phone QR hands it to another device. A saved secret is only checked once the server has its secret, and a 404 never deletes it (only Forget does): earlier, a reload during the redeploy wiped it and owners had to rotate. After the redeploy the link is checked by itself and the chat-app install buttons turn on; they stay off until the link works.
+- While storage or the secret is missing, the overview offers two buttons instead of "Go to the next step": **Set up with your agent** opens a panel (`components/setup/agent-panel.tsx`) with three moves (copy the prompt, paste it into Claude with the Vercel connector, reload) beside a code-drawn chat that plays the agent's tool calls (decoration only; final state under reduced motion). **Set up manually** links to the next step and unfolds the guide, which waits folded until then (`guide-fold.tsx`; any link to a step unfolds it; open without JavaScript). The prompt (`lib/agent-prompt.ts`) creates a private Blob store if there is none, sets `MCP_SECRET_SHA256` unless a secret is already set (never a silent rotation), and redeploys once. It holds only the fingerprint, never the secret; the page sends nothing. The panel and the secret step share one draft secret (`draftSecret()` in `setup-store.ts`).
 - The secret step keeps the same prompt. For a working link there is **Open on your phone**: a QR code drawn in the browser with `uqr` of `/#pair=<secret>`. The page saves that secret and removes it from the address bar at once; the caption says it stays in the phone's history, so scan it only with your own phone.
 - Never render the secret or the full connector URL by default. The owner pastes the secret into a field; the URL is built in the browser, "Test connection" calls the MCP endpoint's tools list, and the secret may be remembered in that browser (localStorage) with a way to forget it.
 - Usage stats, unlocked with the secret via `POST /api/stats` (constant-time check, 404 when wrong): team credits, and this connector's spend per day, per model and per chat app from AI Gateway's spend report filtered by the tags every call carries. No database. The report is paid-plan only: on Hobby the page and `check_credits` say so (`PAID_PLAN_NOTE`) and still show credits.
@@ -49,10 +49,10 @@ Setup page at `/` (every self-hoster lands here on their own deployment):
 
 Threat: a leaked connector URL lets anyone spend the owner's Gateway credits and generate content under their Vercel account. Defaults:
 
-- `MCP_SECRET` must be at least 32 characters and not easy to guess (at least 8 different characters, not one short block repeated). If missing, shorter or weak, the MCP endpoint refuses to run and the setup page shows the error.
+- The secret must be at least 32 characters and not easy to guess (at least 8 different characters, not one short block repeated). A plain `MCP_SECRET` that fails this turns the endpoint off and the setup page shows the error; with a fingerprint, the same rules apply to each secret presented, and a `MCP_SECRET_SHA256` that isn't 64 hex characters turns the endpoint off.
 - Wrong secret returns 404, identical to any unknown route. Constant-time comparison.
 - Never log the secret, full request URLs or auth headers.
-- Rotation: change `MCP_SECRET` and redeploy; the old URL dies. Document this in the README and on the setup page.
+- Rotation: make a new secret, set its fingerprint (or `MCP_SECRET`) and redeploy; the old URL dies. Document this in the README and on the setup page.
 - Per-call caps via env with safe defaults: `MAX_VIDEO_SECONDS` (default 8), `MAX_IMAGES_PER_CALL` (default 4), `MAX_SPEECH_CHARACTERS` (default 5000), optional `ALLOWED_MODELS` allowlist (comma separated; empty means all).
 - The real spend cap is the AI Gateway budget, which Vercel enforces. The setup page and README must tell owners to set one.
 - Blob store is private; uploads use unguessable paths. Say plainly that anyone holding a returned link can view that file until the link expires.
@@ -126,7 +126,7 @@ Verified (Oct 2026):
 
 Still unverified (check on a real deployment):
 - Whether `topaz/wonder-3.5` (upscale_image) and each edit model accept input images through `generateImage`, and which speech models honour `voice`/`instructions`. Speech and transcription were checked against the Gateway (tts-1 → whisper-1 round trip).
-- Whether an agent's `create_storage_stores_blob` with `projectId` connects the store like the Deploy button does (same env vars), and whether `encrypted` env vars show as **Config** in the dashboard.
+- Whether an agent's `create_storage_stores_blob` with `projectId` connects the store like the Deploy button does (same env vars).
 - Whether video providers can fetch this server's presigned Blob links (needed by every video tool that takes a file).
 - Exact Gateway error shape for "out of credits" and "video not on plan" (matched by status/message today).
 - Whether the deployment's OIDC token may call the spend report on a paid plan and the generation lookup (`getGenerationInfo`) on Vercel (the lookup works locally), and whether image and video calls honour request `tags` like text calls do.
@@ -137,7 +137,7 @@ Still unverified (check on a real deployment):
 
 - Deploy button that clones the repo without asking for `MCP_SECRET`: the fresh copy starts with its endpoint off, and the setup page makes the secret in the browser (remembered there), links to the project's Environment Variables, and asks for one redeploy. Secrets never travel in URLs (Vercel's `envDefaults` and URL fragments end up in browser history).
 - The Deploy button creates and connects a private Blob store itself (`stores=[{"type":"blob","access":"private"}]`).
-- Steps: deploy → open `https://<app>.vercel.app` → make `MCP_SECRET`, add it in Vercel, redeploy → test the link (already filled in) → add it to Claude or ChatGPT (one-click install link for Claude).
+- Steps: deploy → open `https://<app>.vercel.app` → make the secret, add its fingerprint (`MCP_SECRET_SHA256`) in Vercel or let an agent do it, redeploy → test the link (already filled in) → add it to Claude or ChatGPT (one-click install link for Claude).
 - Warnings: anyone with the URL can spend your credits, so keep it private. Set an AI Gateway budget. Video needs enough paid Gateway credits (whether the free monthly credit covers video is unverified, so the README does not claim it).
 - License: MIT.
 

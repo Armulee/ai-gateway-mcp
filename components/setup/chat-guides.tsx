@@ -100,7 +100,7 @@ function Installs({ installs }: { installs: Install[] }) {
           ? 'Each opens the app with your link filled in; you confirm there. Your link goes to that app, the same as pasting it.'
           : secret.trim()
             ? 'These turn on once your link works: finish the redeploy and reload this page, or test it above.'
-            : 'These turn on once your link works: set MCP_SECRET above and redeploy, or paste your secret under “Test your link”.'}
+            : 'These turn on once your link works: set your secret above and redeploy, or paste it under “Test your link”.'}
       </p>
     </div>
   );

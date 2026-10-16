@@ -39,17 +39,20 @@ const SECRET_PROBLEM = {
   missing: 'A new copy starts without one',
   too_short: `Shorter than ${MIN_SECRET_LENGTH} characters`,
   weak: 'Too easy to guess (typed by hand or repeating). Make a new one below',
+  bad_fingerprint: 'MCP_SECRET_SHA256 is not a fingerprint (64 hex characters). Copy it again from below',
 };
 
 function checkSecret(): ServerStep {
   const status = secretStatus();
   return {
     id: 'secret',
-    title: 'Set MCP_SECRET',
+    title: 'Set your secret',
     state: status === 'ok' ? 'done' : 'todo',
     detail:
       status === 'ok'
-        ? `Set and at least ${MIN_SECRET_LENGTH} characters long. The MCP endpoint is on.`
+        ? process.env.MCP_SECRET_SHA256
+          ? 'Vercel holds only its fingerprint, so your secret lives in your browser and your chat app. The MCP endpoint is on. Only a secret made here (64 hex characters) opens it.'
+          : `Set and at least ${MIN_SECRET_LENGTH} characters long. The MCP endpoint is on.`
         : `${SECRET_PROBLEM[status]}, so your MCP endpoint is off. It takes three clicks.`,
   };
 }

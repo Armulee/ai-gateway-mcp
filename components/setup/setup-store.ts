@@ -1,6 +1,6 @@
 'use client';
 
-import { useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { OPEN_COOKIE } from '@/lib/site';
 import type { Stats } from '@/lib/stats';
 
@@ -113,7 +113,26 @@ export function setSecret(secret: string) {
   set({ secret, connected: false, stats: { state: 'locked' } });
 }
 
-/** 32 random bytes as hex: a new MCP_SECRET, made in this browser. */
+/** The SHA-256 fingerprint (hex) of a secret: what goes into Vercel as MCP_SECRET_SHA256 (lib/secret.ts). */
+export async function fingerprintOf(secret: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret));
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** A secret's fingerprint, worked out in this browser; empty until it is ready, or for no secret. */
+export function useFingerprint(secret: string): string {
+  const [print, setPrint] = useState({ of: '', value: '' });
+  useEffect(() => {
+    let live = true;
+    if (secret) void fingerprintOf(secret).then((value) => live && setPrint({ of: secret, value }));
+    return () => {
+      live = false;
+    };
+  }, [secret]);
+  return secret && print.of === secret ? print.value : '';
+}
+
+/** 32 random bytes as hex: a new secret, made in this browser. */
 export function randomSecret(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');

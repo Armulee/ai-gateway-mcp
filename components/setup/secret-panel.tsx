@@ -7,14 +7,16 @@ import { agentPrompt } from '@/lib/agent-prompt';
 import type { DashboardLinks } from '@/lib/site';
 import { ActionSteps } from './action-steps';
 import { CopyButton } from './copy-button';
-import { adoptGeneratedSecret, draftSecret, randomSecret, savedSecret, useSetup } from './setup-store';
+import { adoptGeneratedSecret, draftSecret, randomSecret, savedSecret, useFingerprint, useSetup } from './setup-store';
 
 gsap.registerPlugin(DrawSVGPlugin);
 
-// Makes a secret in the browser and points to where it goes in Vercel. The
-// value never leaves this page: the owner pastes it into Vercel themselves,
-// since this app holds no token that could write Environment Variables. The
-// link is shown right away. Until MCP_SECRET is set, the secret is made and
+// Makes a secret in the browser and points to where its fingerprint goes in
+// Vercel (MCP_SECRET_SHA256, see lib/secret.ts). The secret never leaves this
+// page: Vercel, and any agent asked to set it, only get the fingerprint, which
+// can't open the connector. The owner pastes it themselves, since this app
+// holds no token that could write Environment Variables. The link is shown
+// right away. Until the secret is set, it is made and
 // saved in this browser as soon as the step shows (reloads keep the same
 // one), so after the redeploy the link is already there: nobody has to
 // remember it or rotate it just to get their link back.
@@ -44,7 +46,7 @@ function decode(el: HTMLElement, value: string) {
   });
 }
 
-/** Under "Set MCP_SECRET": one button that makes a secret, then opens the steps to put it in Vercel. */
+/** Under "Set your secret": one button that makes a secret, then opens the steps to put its fingerprint in Vercel. */
 export function SecretPanel({ isSet, blobDone, links }: { isSet: boolean; blobDone: boolean; links: DashboardLinks }) {
   const id = useId();
   const [secret, setSecret] = useState('');
@@ -72,6 +74,8 @@ export function SecretPanel({ isSet, blobDone, links }: { isSet: boolean; blobDo
     if (!isSet) adoptGeneratedSecret(value);
     setSecret(value);
   };
+  // Vercel gets only this: the secret's fingerprint, worked out here.
+  const print = useFingerprint(secret);
   const panel = useRef<HTMLDivElement>(null);
   const code = useRef<HTMLElement>(null);
   const wasOpen = useRef(false);
@@ -79,11 +83,11 @@ export function SecretPanel({ isSet, blobDone, links }: { isSet: boolean; blobDo
   useEffect(() => {
     const el = panel.current;
     const out = code.current;
-    if (!secret || !el || !out) return;
+    if (!print || !el || !out) return;
     const opening = !wasOpen.current;
     wasOpen.current = true;
     if (!motionOk()) {
-      out.textContent = secret;
+      out.textContent = print;
       return;
     }
     const tl = gsap.timeline();
@@ -95,14 +99,14 @@ export function SecretPanel({ isSet, blobDone, links }: { isSet: boolean; blobDo
         0.08,
       );
     }
-    tl.add(decode(out, secret), opening ? 0.25 : 0)
+    tl.add(decode(out, print), opening ? 0.25 : 0)
       .fromTo(el.querySelector('[data-trace]'), { drawSVG: '0% 0%', opacity: 1 }, { drawSVG: '0% 100%', duration: 1, ease: 'power2.inOut' }, opening ? 0.25 : 0)
       .to(el.querySelector('[data-trace]'), { opacity: 0, duration: 0.6 }, '>-0.1')
       .fromTo(el.querySelector('[data-sweep]'), { xPercent: -100, opacity: 1 }, { xPercent: 260, opacity: 0, duration: 1.2, ease: 'power2.inOut' }, opening ? 0.4 : 0.15);
     return () => {
       tl.progress(1).kill();
     };
-  }, [secret]);
+  }, [print]);
 
   const open = secret !== '';
   const link = origin && secret ? `${origin}/mcp/${secret}` : '';
@@ -111,11 +115,12 @@ export function SecretPanel({ isSet, blobDone, links }: { isSet: boolean; blobDo
     <div className={`generator${isSet ? ' is-set' : ''}`}>
       {isSet && !hasSaved && !open && (
         <p className="gen-find">
-          This browser doesn&apos;t have your secret. Find it in{' '}
+          This browser doesn&apos;t have your secret, and{' '}
           <a href={links.envVars} target="_blank" rel="noopener noreferrer">
-            Vercel → Environment Variables
+            Vercel
           </a>{' '}
-          (readable if it was saved as Config) and paste it under &ldquo;Test your link&rdquo;, or make a new one here.
+          only holds its fingerprint, which can&apos;t be turned back into it. If you have it elsewhere (another browser, your chat
+          app&apos;s connector), paste it under &ldquo;Test your link&rdquo;. Otherwise make a new one here.
         </p>
       )}
       <button
@@ -145,11 +150,11 @@ export function SecretPanel({ isSet, blobDone, links }: { isSet: boolean; blobDo
             </svg>
             <span className="secret-sweep" data-sweep aria-hidden="true" />
             <figcaption className="secret-label">
-              <span>MCP_SECRET</span>
-              {open && <CopyButton value={secret} onCopy={() => adoptGeneratedSecret(secret)} />}
+              <span>MCP_SECRET_SHA256</span>
+              {print && <CopyButton value={print} onCopy={() => adoptGeneratedSecret(secret)} />}
             </figcaption>
             <code ref={code} className="secret-value" aria-hidden="true" />
-            <span className="sr-only">{secret}</span>
+            <span className="sr-only">{print}</span>
           </figure>
 
           {link && (
@@ -168,9 +173,11 @@ export function SecretPanel({ isSet, blobDone, links }: { isSet: boolean; blobDo
           <div className="gen-agent" data-rise>
             <p className="gen-link-text">
               <span className="gen-link-label">Or let your AI agent do it</span>
-              <span>Paste this into Claude or Claude Code with the Vercel connector: it adds the secret and redeploys for you.</span>
+              <span>Paste this into Claude or Claude Code with the Vercel connector: it adds the fingerprint and redeploys for you.</span>
             </p>
-            <CopyButton value={agentPrompt({ secret, origin, project: links.project, blobDone })} label="Copy setup prompt" onCopy={() => adoptGeneratedSecret(secret)} />
+            {print && (
+              <CopyButton value={agentPrompt({ fingerprint: print, origin, project: links.project, blobDone })} label="Copy setup prompt" onCopy={() => adoptGeneratedSecret(secret)} />
+            )}
           </div>
 
           <div data-rise>
@@ -181,8 +188,8 @@ export function SecretPanel({ isSet, blobDone, links }: { isSet: boolean; blobDo
               ]}
               hints={[
                 <>
-                  Copy it, then {links.direct ? 'add' : 'pick this project and add'} it as <code>MCP_SECRET</code>. Choose type{' '}
-                  <b>Config</b> so you can look it up in Vercel later.
+                  Copy it, then {links.direct ? 'add' : 'pick this project and add'} it as <code>MCP_SECRET_SHA256</code>. It&apos;s a
+                  fingerprint of your secret: it can&apos;t open your connector, so any type is fine.
                 </>,
                 'Redeploy once: it applies the secret and the storage. Then reload this page: your link is checked by itself.',
               ]}

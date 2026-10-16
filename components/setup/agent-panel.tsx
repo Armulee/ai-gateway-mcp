@@ -6,12 +6,13 @@ import { agentPrompt } from '@/lib/agent-prompt';
 import { scrollToHash } from '../motion/smooth-scroll';
 import type { DashboardLinks } from '@/lib/site';
 import { CopyButton } from './copy-button';
-import { draftSecret, useSetup } from './setup-store';
+import { draftSecret, useFingerprint, useSetup } from './setup-store';
 
 // "Set up with your agent": three moves on the left (copy, paste, reload) and,
 // on the right, a little code-drawn chat that plays what the agent will do:
 // your prompt goes in, its Vercel tool calls tick off one by one, then "Live".
-// The chat is decoration (aria-hidden) and never shows the secret.
+// The chat is decoration (aria-hidden). Neither it nor the prompt holds the
+// secret: only its fingerprint, which can't open the connector.
 
 const VERCEL_MCP_URL = 'https://vercel.com/docs/agent-resources/vercel-mcp';
 
@@ -32,12 +33,12 @@ export function AgentPanel({ id, open, blobDone, secretSet, links }: { id: strin
 
   const tools = [
     !blobDone && { name: 'create_storage_stores_blob', what: 'private storage' },
-    !secretSet && { name: 'create_project_env', what: 'MCP_SECRET' },
+    !secretSet && { name: 'create_project_env', what: 'fingerprint' },
     { name: 'create_deployment', what: 'redeploy' },
   ].filter((tool): tool is { name: string; what: string } => Boolean(tool));
   const does = [!blobDone && 'connects your storage', !secretSet && 'adds your secret', 'redeploys once'].filter(Boolean).join(', ').replace(/, (?=[^,]*$)/, ' and ');
-  const value = secretSet ? '' : secret.trim();
-  const prompt = origin && (value || secretSet) ? agentPrompt({ secret: value, origin, project: links.project, blobDone }) : '';
+  const print = useFingerprint(secretSet ? '' : secret.trim());
+  const prompt = origin && (print || secretSet) ? agentPrompt({ fingerprint: print, origin, project: links.project, blobDone }) : '';
   const project = links.project ? `"${links.project.name}"` : 'my project';
 
   // Opening plays the panel in, then the chat: prompt, tool calls, "Live".
@@ -92,7 +93,11 @@ export function AgentPanel({ id, open, blobDone, secretSet, links }: { id: strin
             <span className="agent-num">1</span>
             <div>
               <b>Copy the prompt</b>
-              <p>{secretSet ? 'Your secret is already set, so it leaves it alone.' : 'It holds your new secret, also saved in this browser. Paste it only into your own chat.'}</p>
+              <p>
+                {secretSet
+                  ? 'Your secret is already set, so it leaves it alone.'
+                  : 'It holds only a fingerprint of your secret, which can’t open your connector. The secret itself stays in this browser.'}
+              </p>
               {prompt ? (
                 <CopyButton value={prompt} label="Copy setup prompt" primary />
               ) : (
@@ -137,7 +142,7 @@ export function AgentPanel({ id, open, blobDone, secretSet, links }: { id: strin
         </div>
         <div className="chat-bubble is-you" data-you>
           Use the Vercel connector on {project}…
-          {!secretSet && <code>MCP_SECRET=••••••••••••</code>}
+          {!secretSet && <code>MCP_SECRET_SHA256={print ? `${print.slice(0, 12)}…` : '…'}</code>}
         </div>
         <ul className="chat-tools">
           {tools.map((tool) => (

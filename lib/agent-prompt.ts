@@ -2,19 +2,20 @@ import type { VercelProject } from './site';
 
 // The setup prompt for an AI agent with Vercel access (Claude or Claude Code
 // with the Vercel connector, or the vercel CLI). It does every step that
-// happens in Vercel after the deploy: storage (when missing), MCP_SECRET and
-// one redeploy. Adding the link to a chat app stays a click on the setup page.
-// The prompt carries the secret, which goes to that chat anyway once the link
-// is added as a connector.
+// happens in Vercel after the deploy: storage (when missing), the secret's
+// fingerprint (MCP_SECRET_SHA256) and one redeploy. Adding the link to a chat
+// app stays a click on the setup page. The prompt carries only the
+// fingerprint, which can't open the connector, so the chat transcript and
+// the agent's tool calls never hold the secret itself.
 
 export function agentPrompt({
-  secret,
+  fingerprint,
   origin,
   project,
   blobDone,
 }: {
-  /** Empty when MCP_SECRET is already set: the prompt then leaves it alone. */
-  secret: string;
+  /** Empty when the secret is already set: the prompt then leaves it alone. */
+  fingerprint: string;
   origin: string;
   project?: VercelProject;
   blobDone: boolean;
@@ -22,14 +23,14 @@ export function agentPrompt({
   const where = project ? `my Vercel project "${project.name}" (team "${project.owner}")` : `the Vercel project that serves ${origin}`;
   const steps = [
     !blobDone && 'Create a private Blob store and connect it to this project for Production and Preview. Skip this if the project already has one.',
-    secret &&
-      'Add the environment variable MCP_SECRET with the value below for Production and Preview. Make it readable later (type "encrypted", not "sensitive"). If it already exists, update it.',
+    fingerprint &&
+      'Add the environment variable MCP_SECRET_SHA256 with the value below for Production and Preview. It is a fingerprint of my secret, not the secret, so any type is fine. If it already exists, update it.',
     'Redeploy the latest Production deployment once and wait until it is ready.',
-    secret ? "Tell me when it's live. Don't repeat the secret back to me." : "Tell me when it's live.",
+    "Tell me when it's live.",
   ].filter(Boolean);
   return [
     `Use the Vercel connector (or the vercel CLI) on ${where}. Do these in order:`,
     ...steps.map((step, i) => `${i + 1}. ${step}`),
-    ...(secret ? ['', `MCP_SECRET=${secret}`] : []),
+    ...(fingerprint ? ['', `MCP_SECRET_SHA256=${fingerprint}`] : []),
   ].join('\n');
 }

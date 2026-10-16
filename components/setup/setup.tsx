@@ -139,7 +139,7 @@ export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: Serv
                   </>
                 ),
               },
-              { line: 'Leaked? Change it.', detail: 'Change MCP_SECRET in Environment Variables and redeploy. The old link stops working at once.' },
+              { line: 'Leaked? Change it.', detail: 'Make a new secret on this page, put its fingerprint in Vercel and redeploy. The old link stops working at once.' },
               { line: `Links last ${linkTtlHours} hours.`, detail: 'Pictures, video and audio stay in your private Blob store. Each link you get in chat expires.' },
             ].map((rule) => (
               <li key={rule.line} className="rule" data-rule>

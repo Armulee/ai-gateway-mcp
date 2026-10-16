@@ -33,13 +33,13 @@ export function DemoClip() {
       <h2 className="section-title">In your chat</h2>
       <p className="demo-clip-lede">
         Ask in plain words. Claude picks the cheapest model on AI Gateway, makes the picture, then turns it into a video: <b>$0.007</b> for the picture,
-        and <b>$0.05–$0.25</b> in the catalog for five seconds of video.
+        and <b>$0.09</b> for five seconds of video.
       </p>
       <figure className="demo-clip">
         <video ref={ref} className="demo-clip-video" src="/demo/in-claude.mp4" poster="/demo/in-claude.jpg" width={1280} height={720} muted loop playsInline controls={controls} preload="metadata">
           A recording of Claude making a watercolour fox picture, then a short video of it, with this connector.
         </video>
-        <figcaption>Recorded from a real chat on claude.ai, October 2026. Waiting while models work is shortened.</figcaption>
+        <figcaption>Recorded from a real chat on claude.ai, October 2026. Waiting while models work is sped up.</figcaption>
       </figure>
     </section>
   );

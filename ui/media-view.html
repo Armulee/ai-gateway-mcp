@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Gateway media</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: var(--color-background-primary, transparent);
+        --text: var(--color-text-primary, CanvasText);
+        --muted: var(--color-text-secondary, GrayText);
+        --line: var(--color-border-secondary, rgba(127, 127, 127, 0.3));
+        --chip: var(--color-background-secondary, rgba(127, 127, 127, 0.12));
+        --radius: var(--border-radius-lg, 12px);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 14px/1.4 var(--font-sans, system-ui, -apple-system, sans-serif);
+        -webkit-text-size-adjust: 100%;
+      }
+      #root {
+        display: grid;
+        gap: 8px;
+        padding: 2px;
+        max-width: 100%;
+      }
+      .head,
+      .note {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        overflow-wrap: anywhere;
+      }
+      /* One column on a phone, two or more as the chat gets wider. */
+      .grid {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+      }
+      .grid.single {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .card {
+        margin: 0;
+        min-width: 0;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
+        background: var(--chip);
+      }
+      .card.wide {
+        grid-column: 1 / -1;
+      }
+      /* No vh units: the host sizes this frame to its content, so a height
+         tied to the frame would keep growing it. */
+      .card img,
+      .card video {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: 560px;
+        object-fit: contain;
+        background: #000;
+      }
+      .card.is-image img {
+        cursor: zoom-in;
+      }
+      .card.wide img {
+        cursor: zoom-out;
+        max-height: none;
+      }
+      .card audio {
+        display: block;
+        width: 100%;
+        padding: 8px;
+      }
+      figcaption {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        padding: 6px 8px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-left: auto;
+      }
+      .btn {
+        min-height: 32px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        border-radius: var(--border-radius-full, 999px);
+        background: transparent;
+        color: var(--text);
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .btn.primary {
+        background: var(--color-background-inverse, var(--text));
+        color: var(--color-text-inverse, Canvas);
+        border-color: transparent;
+      }
+      .btn:focus-visible {
+        outline: 2px solid var(--color-ring-primary, Highlight);
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="root" aria-live="polite"></main>
+    <script>
+      /* bundled ui/media-view.ts */
+    </script>
+  </body>
+</html>

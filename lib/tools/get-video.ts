@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { BLOB_MISSING_MESSAGE, blobConfigured, exists, extensionFor, saveMedia, signedUrl } from '../blob';
 import { billedCost, errorResult, textResult, toolError, type ToolContext } from '../gateway';
 import { decodeJobId, videoPath, type VideoJob } from '../jobs';
+import type { MediaView } from '../ui/media-types';
 
 type VideoData =
   | { type: 'url'; url: string; mediaType: string }
@@ -19,11 +20,14 @@ async function readBytes(video: VideoData): Promise<Buffer> {
 
 async function linksMessage(job: VideoJob, pathnames: string[], cost?: number) {
   const lines = [`Video ready (${job.model})${cost != null ? `, cost: $${cost}` : ''}.`];
+  const view: MediaView = { source: 'result', model: job.model, cost, items: [] };
   for (const [i, pathname] of pathnames.entries()) {
     const { url, expiresAt } = await signedUrl(pathname);
     lines.push(`Video ${i + 1}: ${url} (link expires ${expiresAt}; call get_video again for a fresh link)`);
+    view.items.push({ kind: 'video', url, expiresAt });
   }
-  return textResult(lines.join('\n'));
+  // structuredContent feeds the MCP Apps view (a player); the text stays for every other host.
+  return { ...textResult(lines.join('\n')), structuredContent: view };
 }
 
 export const getVideoTool = {

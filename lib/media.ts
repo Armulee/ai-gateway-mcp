@@ -62,20 +62,32 @@ export class MediaError extends Error {}
  * Saves generated media to Blob and returns readable link lines, or a note
  * saying why there are none. Media is stored unmodified.
  */
-export async function storeAndLink(folder: string, files: Media[], label: string): Promise<{ links: string[]; notes: string[] }> {
-  if (!blobConfigured()) return { links: [], notes: [`No Blob store connected, so the ${label.toLowerCase()} is inline only.`] };
+export async function storeAndLink(
+  folder: string,
+  files: Media[],
+  label: string,
+): Promise<{ links: string[]; notes: string[]; stored: { url: string; expiresAt: string }[] }> {
+  if (!blobConfigured()) return { links: [], notes: [`No Blob store connected, so the ${label.toLowerCase()} is inline only.`], stored: [] };
   try {
     const links: string[] = [];
+    const stored: { url: string; expiresAt: string }[] = [];
     for (const [i, file] of files.entries()) {
       const pathname = randomPath(folder, extensionFor(file.mediaType));
       await saveMedia(pathname, Buffer.from(file.bytes), file.mediaType);
       const { url, expiresAt } = await signedUrl(pathname);
       links.push(`${files.length > 1 ? `${label} ${i + 1}` : label}: ${url} (expires ${expiresAt})`);
+      stored.push({ url, expiresAt });
     }
-    return { links, notes: [] };
+    return { links, notes: [], stored };
   } catch {
-    return { links: [], notes: [`Saving to Blob failed, so the ${label.toLowerCase()} is inline only.`] };
+    return { links: [], notes: [`Saving to Blob failed, so the ${label.toLowerCase()} is inline only.`], stored: [] };
   }
+}
+
+/** A cost as a number for the media view, or undefined. */
+export function costNumber(cost: unknown): number | undefined {
+  const n = Number(cost);
+  return cost != null && Number.isFinite(n) ? n : undefined;
 }
 
 export function readCost(providerMetadata: unknown): unknown {

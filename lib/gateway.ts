@@ -27,11 +27,20 @@ export type ToolContext = {
 /** Every call from this MCP carries this tag, so its spend can be reported on its own. */
 export const STATS_TAG = 'ai-gateway-mcp';
 
-/** The chat app making the current MCP request, set per request by the route. */
-const requestClient = new AsyncLocalStorage<string>();
+/**
+ * Who is calling, set per request by the route: the chat app, and the
+ * connector URL (it holds the secret: never log it) for the MCP Apps view's
+ * sandbox domain.
+ */
+export type RequestInfo = { client: string; connectorUrl?: string };
+const requestInfo = new AsyncLocalStorage<RequestInfo>();
 
-export function withClient<T>(client: string, run: () => T): T {
-  return requestClient.run(client, run);
+export function withRequest<T>(info: RequestInfo, run: () => T): T {
+  return requestInfo.run(info, run);
+}
+
+export function currentRequest(): RequestInfo {
+  return requestInfo.getStore() ?? { client: 'other' };
 }
 
 /**
@@ -49,7 +58,7 @@ export function clientFromUserAgent(userAgent: string | null): string {
 }
 
 export function instanceContext(): ToolContext {
-  const client = requestClient.getStore() ?? 'other';
+  const { client } = currentRequest();
   return {
     gateway,
     keyPrefix: 'instance',

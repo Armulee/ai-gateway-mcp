@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { BLOB_MISSING_MESSAGE, blobConfigured, signedUrl } from '../blob';
 import { errorResult, STATS_TAG, textResult, toolError, type ToolContext } from '../gateway';
 import { PAID_PLAN_NOTE, readSpend } from '../stats';
+import type { MediaKind, MediaView } from '../ui/media-types';
 
 const usd = (n: number) => `$${n.toFixed(2)}`;
 const isoDay = (date: Date) => date.toISOString().slice(0, 10);
@@ -73,14 +74,21 @@ export const listFilesTool = {
       if (blobs.length === 0) return textResult(kind ? `No ${kind} files yet.` : 'No files yet.');
 
       const newest = blobs.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime()).slice(0, limit);
+      const view: MediaView = { source: 'files', items: [] };
       const lines = await Promise.all(
-        newest.map(async (blob) => {
+        newest.map(async (blob, i) => {
           const { url, expiresAt } = await signedUrl(blob.pathname);
-          const kb = Math.max(1, Math.round(blob.size / 1024));
-          return `${blob.uploadedAt.toISOString().slice(0, 16).replace('T', ' ')} | ${blob.pathname.split('/')[0]} | ${kb} KB | ${url} (expires ${expiresAt})`;
+          const sizeKb = Math.max(1, Math.round(blob.size / 1024));
+          const folder = blob.pathname.split('/')[0];
+          const kind = (Object.keys(FOLDERS) as Kind[]).find((k) => FOLDERS[k] === `${folder}/`) ?? 'image';
+          view.items[i] = { kind: kind as MediaKind, url, expiresAt, sizeKb, uploadedAt: blob.uploadedAt.toISOString() };
+          return `${blob.uploadedAt.toISOString().slice(0, 16).replace('T', ' ')} | ${folder} | ${sizeKb} KB | ${url} (expires ${expiresAt})`;
         }),
       );
-      return textResult(`${newest.length} of ${blobs.length} file(s), newest first. date | folder | size | link\n${lines.join('\n')}`);
+      return {
+        ...textResult(`${newest.length} of ${blobs.length} file(s), newest first. date | folder | size | link\n${lines.join('\n')}`),
+        structuredContent: view,
+      };
     } catch (error) {
       return toolError(error, 'Blob store', 'files');
     }

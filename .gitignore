@@ -155,3 +155,6 @@ next-env.d.ts
 
 # Local Claude Code settings (launch.json holds a test MCP_SECRET)
 .claude/
+
+# Built by scripts/build-ui.mjs
+lib/ui/media-view.generated.ts

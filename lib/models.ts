@@ -3,7 +3,17 @@
 const MODELS_URL = 'https://ai-gateway.vercel.sh/v1/models';
 const CACHE_MS = 5 * 60 * 1000;
 
-type PriceTier = { size?: string; resolution?: string; mode?: string; audio?: boolean; cost?: string; cost_per_second?: string };
+type PriceTier = {
+  size?: string;
+  quality?: string;
+  style?: string;
+  operation?: string;
+  resolution?: string;
+  mode?: string;
+  audio?: boolean;
+  cost?: string;
+  cost_per_second?: string;
+};
 
 export type GatewayModel = {
   id: string;
@@ -17,6 +27,7 @@ export type GatewayModel = {
     image?: string;
     image_dimension_quality_pricing?: PriceTier[];
     video_duration_pricing?: PriceTier[];
+    video_token_pricing?: { tiers?: Record<string, { cost_per_million_tokens?: string } | string | undefined>[] };
   } & Record<string, unknown>;
 };
 
@@ -72,10 +83,21 @@ export function capabilitiesOf(model: GatewayModel): string[] {
 
 const perMillion = (perToken: string) => `$${+(Number(perToken) * 1e6).toFixed(4)}/M`;
 
-/** One short human-readable price line, or undefined when the catalog has none. */
-export function priceOf(model: GatewayModel): string | undefined {
+/** Said instead of a price, so a chat never reads a missing price as free. */
+export const PRICE_NOT_LISTED = 'price not listed by AI Gateway';
+
+/** A tier's own name from whichever fields it has: "2048x2048 low", "vector_illustration", "web-grounding". */
+const tierLabel = (t: PriceTier) => [t.size, t.quality, t.style, t.operation].filter(Boolean).join(' ');
+
+/**
+ * One short human-readable price line. FLUX.2, Prodia and FLUX 3 Video have
+ * no price in the catalog at all ("0" input and output), so they read as not
+ * listed rather than free.
+ */
+export function priceOf(model: GatewayModel): string {
   const p = model.pricing;
-  if (!p) return undefined;
+  if (!p) return PRICE_NOT_LISTED;
+  const tokens = Number(p.input) > 0 || Number(p.output) > 0 ? `${perMillion(p.input ?? '0')} in, ${perMillion(p.output ?? '0')} out` : undefined;
   const video = p.video_duration_pricing;
   if (video?.length) {
     if (video.every((t) => t.resolution)) {
@@ -88,14 +110,30 @@ export function priceOf(model: GatewayModel): string | undefined {
     const [min, max] = [Math.min(...costs), Math.max(...costs)];
     return min === max ? `$${min}/s` : `$${min}–$${max}/s depending on mode/audio`;
   }
-  if (p.image_dimension_quality_pricing?.length) {
-    return p.image_dimension_quality_pricing.map((t) => `${t.size} $${t.cost}`).join(', ') + ' per image';
+  const videoTokens = (p.video_token_pricing?.tiers ?? [])
+    .flatMap((tier) => Object.values(tier).map((v) => (typeof v === 'object' ? Number(v?.cost_per_million_tokens) : NaN)))
+    .filter(Number.isFinite);
+  if (videoTokens.length) {
+    const [min, max] = [Math.min(...videoTokens), Math.max(...videoTokens)];
+    return `${min === max ? `$${min}` : `$${min}–$${max}`} per million video tokens (depends on resolution and input)`;
   }
-  if (p.image) return `$${p.image} per image`;
+  const tiers = p.image_dimension_quality_pricing ?? [];
+  if (p.image || tiers.length) {
+    // Sized tiers are per image; tiers without a size (a style, a quality, an extra like web grounding) are named as they are.
+    const sized = tiers.filter((t) => t.size).map((t) => `${tierLabel(t)} $${t.cost}`);
+    const other = tiers.filter((t) => !t.size).map((t) => `${tierLabel(t) || 'other'} $${t.cost}`);
+    return [
+      p.image ? `$${p.image} per image` : undefined,
+      sized.length ? `${sized.join(', ')}${p.image ? '' : ' per image'}` : undefined,
+      tokens,
+      other.length ? other.join(', ') : undefined,
+    ]
+      .filter(Boolean)
+      .join('; ');
+  }
   const perChar = Number(p.speech_input_character_cost);
   if (perChar > 0) return `$${+(perChar * 1000).toFixed(4)} per 1K characters`;
   const perSecond = Number(p.transcription_duration_cost_per_second);
   if (perSecond > 0) return `$${+(perSecond * 60).toFixed(4)} per minute of audio`;
-  if (p.input && p.output) return `${perMillion(p.input)} in, ${perMillion(p.output)} out`;
-  return undefined;
+  return tokens ?? PRICE_NOT_LISTED;
 }

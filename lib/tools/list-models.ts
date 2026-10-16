@@ -28,7 +28,7 @@ export const listModels = {
 
       const lines = rows.slice(0, MAX_RESULTS).map(({ model, kinds }) => {
         const caps = capabilitiesOf(model).join(',');
-        return [model.id, kinds.join('+'), caps || '-', priceOf(model) ?? '-'].join(' | ');
+        return [model.id, kinds.join('+'), caps || '-', priceOf(model)].join(' | ');
       });
       const more = rows.length > MAX_RESULTS ? `\n…and ${rows.length - MAX_RESULTS} more; narrow with query.` : '';
       return textResult(`${rows.length} model(s). id | type | capabilities | price\n${lines.join('\n')}${more}`);

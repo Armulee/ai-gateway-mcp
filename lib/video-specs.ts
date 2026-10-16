@@ -2,8 +2,12 @@ import type { GatewayModel } from './models';
 
 // What each video model family accepts for resolution and length, from
 // Vercel's AI Gateway video docs (text-to-video, image-to-video and
-// reference-to-video pages, Oct 2026). A model missing here may still take a
-// resolution, but nothing documents how, so start_video refuses to pass one.
+// reference-to-video pages, Oct 2026). The {width}x{height} values come from
+// the AI SDK provider packages, which map them to the provider's tiers and
+// pass anything else through unchanged: BytePlus rejected the docs' 854x480
+// for Seedance (Oct 16 2026), its map has 864x480; Alibaba's has 832x480.
+// A model missing here may still take a resolution, but nothing documents
+// how, so start_video refuses to pass one.
 
 export type Resolution = '480p' | '720p' | '1080p' | '4k';
 export const RESOLUTIONS: Resolution[] = ['480p', '720p', '1080p', '4k'];
@@ -22,7 +26,8 @@ type Spec = {
 const P480 = '854x480';
 const P720 = '1280x720';
 const P1080 = '1920x1080';
-const SEEDANCE = { '480p': P480, '720p': P720, '1080p': P1080 } as const;
+const SEEDANCE = { '480p': '864x480', '720p': P720, '1080p': P1080 } as const;
+const WAN = { '480p': '832x480', '720p': P720, '1080p': P1080 } as const;
 
 // First match wins, so narrower patterns come first.
 const SPECS: [RegExp, Spec][] = [
@@ -32,10 +37,11 @@ const SPECS: [RegExp, Spec][] = [
   [/^bytedance\/seedance-2\.0/, { sizes: SEEDANCE }],
   [/^spacexai\/grok-imagine-video/, { sizes: { '480p': P480, '720p': P720, '1080p': P1080 }, defaultResolution: '480p', seconds: { min: 1, max: 15 } }],
   [/^google\/veo-/, { sizes: { '720p': P720, '1080p': P1080, '4k': '3840x2160' }, defaultResolution: '720p', seconds: [4, 6, 8] }],
-  [/^alibaba\/wan-v2\.5/, { sizes: { '480p': '848x480', '720p': P720, '1080p': P1080 }, seconds: [5, 10] }],
+  [/^alibaba\/wan-v2\.5/, { sizes: WAN, seconds: [5, 10] }],
   [/^alibaba\/wan-v2\.6-r2v/, { sizes: { '720p': P720, '1080p': P1080 }, seconds: { min: 2, max: 10 } }],
   [/^alibaba\/wan-v2\.6-t2v/, { sizes: { '720p': P720, '1080p': P1080 }, seconds: { min: 2, max: 15 } }],
   [/^alibaba\/wan-v2\.[67]/, { sizes: { '720p': P720, '1080p': P1080 } }],
+  [/^alibaba\/wan-v3/, { sizes: WAN }],
   [/^klingai\/kling-v3/, { seconds: { min: 3, max: 15 } }],
   [/^klingai\/kling-v2/, { seconds: [5, 10] }],
 ];

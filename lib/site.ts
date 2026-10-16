@@ -6,9 +6,8 @@ export const REPO_URL = 'https://github.com/armulee/ai-gateway-mcp';
 export const DEPLOY_URL =
   'https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Farmulee%2Fai-gateway-mcp&project-name=gateway-mcp&repository-name=gateway-mcp&stores=%5B%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22private%22%7D%5D';
 
-// The project's website (the landing lives in its own repo). Points at that
-// repo until the site has its own address.
-export const LANDING_URL = 'https://github.com/armulee/ai-gateway-mcp-landing';
+// The project's website (the landing lives in its own repo, which is private).
+export const LANDING_URL = 'https://ai-gateway-mcp-landing.vercel.app';
 
 /** Shown wherever this connector's spend would be, when the team's plan has no usage report (lib/stats.ts). */
 export const PAID_PLAN_NOTE =

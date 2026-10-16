@@ -1,6 +1,8 @@
+import { isDemo } from '@/lib/demo';
 import { DEPLOY_URL, LANDING_URL, REPO_URL, type DashboardLinks } from '@/lib/site';
 import type { ServerStep, StepId } from '@/lib/status';
 import { CosmosCanvas } from '../cosmos/cosmos-canvas';
+import { DemoBanner } from '../demo-banner';
 import { StarDefs } from '../motion/star-defs';
 import { OrbitNav } from '../orbit/orbit-nav';
 import { SiteNav } from '../site-nav';
@@ -51,6 +53,7 @@ function StepExtra({ id }: { id: StepId }) {
 }
 
 export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: ServerStep[]; open: boolean; guide: boolean; linkTtlHours: number; links: DashboardLinks }) {
+  const demo = isDemo();
   const views: StepView[] = steps.map(({ id, title, state, optional }) => ({ id, title, state, optional }));
   const isDone = (id: StepId) => steps.some((s) => s.id === id && s.state === 'done');
   // Storage or MCP_SECRET still missing: the overview offers the agent, and the guide waits folded.
@@ -79,9 +82,10 @@ export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: Serv
         }
       />
       <OrbitNav chapters={chapters} label="Setup steps" />
-      <PhonePair />
+      {/* The demo has no secret to hand to a phone; its banner takes the bottom of the screen instead. */}
+      {demo ? <DemoBanner /> : <PhonePair />}
 
-      <main className="setup">
+      <main className={`setup${demo ? ' is-demo' : ''}`}>
         {guide ? (
           <section className="setup-hero" id="overview" data-chapter="overview">
             <Progress steps={views} settled={open} guide={guide} agent={agent} />

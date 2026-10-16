@@ -2993,3 +2993,102 @@ html:has(.setup)::-webkit-scrollbar {
     font-size: 0.8125rem;
   }
 }
+
+/* Public demo (DEMO_MODE, demo-banner.tsx): a white pill floating at the
+   bottom, the page's one inverted element. The footer leaves it room. */
+.demo-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 32px);
+  padding: 6px 6px 6px 8px;
+  border-radius: 999px;
+  background: #fff;
+  color: #000;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  box-shadow: 0 10px 40px rgba(255, 255, 255, 0.14);
+}
+
+.demo-chip {
+  padding: 5px 9px;
+  border: 1px solid #000;
+  border-radius: 999px;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.demo-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.demo-text-short {
+  display: none;
+}
+
+.demo-cta {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: #000;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s var(--ease-out);
+}
+
+.demo-cta:hover {
+  background: #222;
+}
+
+/* The shared Vercel mark is drawn for white buttons; this one is black. */
+.demo-cta .btn-icon {
+  filter: invert(1);
+}
+
+.demo-cta:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+}
+
+.setup.is-demo .setup-footer {
+  padding-bottom: 104px;
+}
+
+@media (max-width: 720px) {
+  .demo-banner {
+    gap: 10px;
+    font-size: 0.8125rem;
+  }
+
+  .demo-text-long {
+    display: none;
+  }
+
+  .demo-text-short {
+    display: inline;
+  }
+
+  .demo-cta {
+    padding: 8px 14px;
+  }
+
+  .demo-cta .btn-icon {
+    display: none;
+  }
+}

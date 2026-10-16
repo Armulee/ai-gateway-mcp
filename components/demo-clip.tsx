@@ -29,7 +29,7 @@ export function DemoClip() {
   }, []);
 
   return (
-    <section className="setup-section is-first" id="in-chat" data-chapter="in-chat">
+    <section className="setup-section demo-clip-section" id="in-chat" data-chapter="in-chat">
       <h2 className="section-title">In your chat</h2>
       <p className="demo-clip-lede">
         Ask in plain words. Claude picks the cheapest model on AI Gateway, makes the picture, then turns it into a video: <b>$0.007</b> for the picture,

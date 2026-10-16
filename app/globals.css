@@ -3126,3 +3126,66 @@ html:has(.setup)::-webkit-scrollbar {
   color: var(--dim);
   font-size: 0.8125rem;
 }
+
+/* Public demo: the opening borrowed from the landing site (demo-hero.tsx).
+   The eclipse is drawn by the cosmos canvas above the text. */
+.demo-hero {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 0 clamp(72px, 13vh, 132px);
+  text-align: center;
+}
+
+.demo-hero-title {
+  font-size: clamp(2.75rem, 1.2rem + 5vw, 5.75rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.demo-hero-title span {
+  color: var(--muted);
+}
+
+.demo-hero-lede {
+  max-width: 34rem;
+  margin-top: 24px;
+  color: var(--muted);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+.demo-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.demo-hero-cue {
+  margin-top: 40px;
+  color: var(--dim);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.demo-hero-cue::after {
+  content: '';
+  display: block;
+  width: 1px;
+  height: 36px;
+  margin: 12px auto 0;
+  background: linear-gradient(var(--line-strong), transparent);
+}
+
+.demo-clip-section {
+  margin-top: clamp(48px, 8vh, 96px);
+}

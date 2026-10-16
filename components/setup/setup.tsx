@@ -4,6 +4,7 @@ import type { ServerStep, StepId } from '@/lib/status';
 import { CosmosCanvas } from '../cosmos/cosmos-canvas';
 import { DemoBanner } from '../demo-banner';
 import { DemoClip } from '../demo-clip';
+import { DemoHero } from '../demo-hero';
 import { StarDefs } from '../motion/star-defs';
 import { OrbitNav } from '../orbit/orbit-nav';
 import { SiteNav } from '../site-nav';
@@ -61,8 +62,8 @@ export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: Serv
   const agent = isDone('blob') && isDone('secret') ? undefined : { blobDone: isDone('blob'), secretSet: isDone('secret'), links };
   // With the gateway open the guide is gone (unless asked for with ?steps), and so are its stars on the rail.
   const chapters = [
-    // The open intro replaces the overview: the page starts at usage.
-    ...(guide ? [{ id: 'overview', label: 'Overview' }] : []),
+    // The open intro replaces the overview: the page starts at usage. The demo opens on its own hero.
+    ...(guide ? [{ id: 'overview', label: 'Overview' }] : demo ? [{ id: 'overview', label: 'Intro' }] : []),
     ...(!guide ? [] : steps.map((step) => ({ id: step.id, label: RAIL_LABELS[step.id], done: step.state === 'done' }))),
     // The public demo opens with a real chat recording.
     ...(demo ? [{ id: 'in-chat', label: 'In chat' }] : []),
@@ -93,6 +94,8 @@ export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: Serv
           <section className="setup-hero" id="overview" data-chapter="overview">
             <Progress steps={views} settled={open} guide={guide} agent={agent} />
           </section>
+        ) : demo ? (
+          <DemoHero />
         ) : (
           <OpenIntro steps={views} />
         )}

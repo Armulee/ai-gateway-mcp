@@ -6,6 +6,7 @@ import openai from '@lobehub/icons-static-svg/icons/openai.svg';
 import { assetUrl } from '@/lib/asset-url';
 import { useEffect, useState } from 'react';
 import { CopyButton } from './copy-button';
+import { PhonePair } from './phone-pair';
 import { appsInUse, restoreChatAdded, setChatAdded, useSetup } from './setup-store';
 
 // How to add the link in each chat app. Menu names move around between
@@ -65,12 +66,25 @@ const GUIDES: { app: string; icon: string; steps: string[]; installs: Install[] 
   },
 ];
 
-/** The buttons under a guide: live once a secret is pasted, so the link is never built from nothing. */
+/**
+ * The owner's own tick for this step, for when usage can't confirm it (plans
+ * without a usage report, or an app added by hand). Clicking an install
+ * button ticks it too; clicking this again unticks it.
+ */
+function AddedToggle() {
+  const { chatAdded } = useSetup();
+  return (
+    <button type="button" className="btn btn-small btn-ghost" aria-pressed={chatAdded} onClick={() => setChatAdded(!chatAdded)}>
+      {chatAdded ? '✓ Added' : 'I’ve added it'}
+    </button>
+  );
+}
+
+/** The buttons under a guide: installs, live once the link works, then "I've added it". */
 function Installs({ installs }: { installs: Install[] }) {
   const { secret, connected } = useSetup();
   const [origin, setOrigin] = useState('');
   useEffect(() => setOrigin(window.location.origin), []);
-  if (installs.length === 0) return null;
   // Only a link that works: the secret saved before the redeploy would add a dead connector.
   const url = connected && secret.trim() && origin ? `${origin}/mcp/${encodeURIComponent(secret.trim())}` : '';
   return (
@@ -88,16 +102,21 @@ function Installs({ installs }: { installs: Install[] }) {
               key={install.label}
               className="btn btn-small btn-primary"
               href={install.href(url)}
+              // Clicking means adding: tick the step (the owner can untick it if they cancel there).
+              onClick={() => setChatAdded(true)}
               {...(install.href(url).startsWith('https:') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
             >
               {install.label}
             </a>
           ),
         )}
+        <AddedToggle />
       </div>
       <p className="action-hint">
-        {url
-          ? 'Each opens the app with your link filled in; you confirm there. Your link goes to that app, the same as pasting it.'
+        {installs.length === 0
+          ? 'Added it? Tick it here.'
+          : url
+          ? 'Each opens the app with your link filled in; you confirm there, and the step ticks itself. Your link goes to that app, the same as pasting it.'
           : secret.trim()
             ? 'These turn on once your link works: finish the redeploy and reload this page, or test it above.'
             : 'These turn on once your link works: set your secret above and redeploy, or paste it under “Test your link”.'}
@@ -110,7 +129,7 @@ function Installs({ installs }: { installs: Install[] }) {
 const TEST_PROMPT =
   'Use the AI Gateway connector: call list_models to find a cheap text model, then call generate_text with it to say hello in five words.';
 
-/** Proves the link works in a chat app: a prompt to try it, and a manual tick for when usage can't confirm it. */
+/** Proves the link works in a chat app: a prompt to try it, and what usage has seen. */
 function ChatCheck({ used }: { used: string[] }) {
   const { chatAdded, stats } = useSetup();
   useEffect(restoreChatAdded, []);
@@ -120,25 +139,17 @@ function ChatCheck({ used }: { used: string[] }) {
     <div className="action-steps chat-check">
       <div className="action-row">
         <CopyButton value={TEST_PROMPT} label="Copy a test prompt" />
-        <button
-          type="button"
-          className={`btn btn-small ${chatAdded ? 'btn-ghost' : 'btn-primary'}`}
-          aria-pressed={chatAdded}
-          onClick={() => setChatAdded(!chatAdded)}
-        >
-          {chatAdded ? '✓ Added' : 'I’ve added it'}
-        </button>
       </div>
       <p className="action-hint" aria-live="polite">
         {used.length > 0
           ? `Seen in your usage: ${used.join(', ')}.`
           : noReport
             ? chatAdded
-              ? 'Ticked by you.'
-              : 'Paste the prompt in a new chat. Once it answers, tick this step yourself: your plan has no usage report to confirm it.'
+              ? 'Ticked. Paste the prompt in a new chat to try it.'
+              : 'Paste the prompt in a new chat to try it. Your plan has no usage report to confirm this step, so tick “I’ve added it” above.'
             : chatAdded
-              ? 'Ticked by you. Your usage will name the app once its first call comes in.'
-              : 'Paste the prompt in a new chat. This step ticks itself once the call shows in your usage, which can take a few minutes.'}
+              ? 'Ticked. Your usage will name the app once its first call comes in.'
+              : 'Paste the prompt in a new chat. This step ticks itself once the call shows in your usage (a few minutes), or tick “I’ve added it” above.'}
       </p>
     </div>
   );
@@ -180,6 +191,7 @@ export function ChatGuides() {
         <Installs installs={guide.installs} />
       </section>
       <ChatCheck used={used} />
+      <PhonePair />
     </>
   );
 }

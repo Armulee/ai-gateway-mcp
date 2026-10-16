@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { pulse } from '../cosmos/store';
 import { CopyButton } from './copy-button';
-import { PhonePair } from './phone-pair';
 import { forgetSecret, markConnected, setRemember, setSecret, useSetup } from './setup-store';
 
 // Runs in the browser only. The secret is only ever sent to this deployment:
@@ -152,8 +151,6 @@ export function ConnectorPanel() {
           </p>
         )}
       </div>
-
-      <PhonePair />
 
       <p className="field-help" id="mcp-secret-help">
         Sent only to this deployment, until you add the link to a chat app. No secret yet, or lost it? <a href="#secret">Make one</a>.

@@ -12,6 +12,7 @@ import { BlobPanel } from './blob-panel';
 import { SecretPanel } from './secret-panel';
 import { SetupMotion } from './setup-motion';
 import { OpenIntro } from './open-intro';
+import { PhonePair } from './phone-pair';
 import { SetupSession } from './setup-session';
 import { StatsPanel } from './stats-panel';
 import { StepArt } from './step-art';
@@ -123,6 +124,8 @@ export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: Serv
         <section className={`setup-section${guide ? '' : ' is-first'}`} id="usage" data-chapter="usage">
           <h2 className="section-title">Your usage</h2>
           <StatsPanel connectHref={guide ? '#connect' : '/?steps#connect'} />
+          {/* With the guide gone, its chat step is too: keep the way to the phone here. */}
+          {!guide && <PhonePair />}
         </section>
 
         <section className="setup-section" id="safety" data-chapter="safety">

@@ -76,6 +76,17 @@
         cursor: zoom-out;
         max-height: none;
       }
+      /* When a picture can't load in the host's frame: the file still opens in the browser. */
+      .placeholder {
+        display: grid;
+        place-items: center;
+        gap: 8px;
+        min-height: 140px;
+        padding: 16px;
+        color: var(--muted);
+        font-size: 12px;
+        text-align: center;
+      }
       .card audio {
         display: block;
         width: 100%;

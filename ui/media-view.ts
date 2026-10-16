@@ -30,25 +30,52 @@ function open(url: string) {
   void app.openLink({ url });
 }
 
-/** Inline images from the result itself (base64), so nothing is fetched twice. */
+/**
+ * Inline images from the result itself (base64), so nothing is fetched twice.
+ * Claude does not pass image parts on to the view (seen Oct 2026: the result
+ * arrived without them), so every item also falls back to its Blob link.
+ */
 function imageParts(result: Result): string[] {
   return (result.content ?? []).flatMap((part) => (part.type === 'image' ? [`data:${part.mimeType};base64,${part.data}`] : []));
 }
 
-function mediaFor(item: MediaItem, inline: string[]): HTMLElement | null {
-  const src = item.imagePart !== undefined ? inline[item.imagePart] : item.url;
-  if (!src) return null;
-  if (item.kind === 'image') {
-    const img = el('img', { src, alt: '', loading: 'lazy', decoding: 'async' });
-    img.addEventListener('click', () => img.closest('.card')?.classList.toggle('wide'));
-    return img;
+/** Where an item can be shown from, best first: its inline image, then its Blob link. */
+function sourcesFor(item: MediaItem, inline: string[]): string[] {
+  return [item.imagePart !== undefined ? inline[item.imagePart] : undefined, item.url].filter((src): src is string => Boolean(src));
+}
+
+/** Stands in when no source loads (e.g. the host's sandbox blocks it): the file still opens in the browser. */
+function placeholder(item: MediaItem): HTMLElement {
+  const tile = el('div', { className: 'placeholder' }, el('span', { textContent: `This ${item.kind} can't be shown here.` }));
+  if (item.url) {
+    const url = item.url;
+    tile.append(button(`Open ${item.kind}`, () => open(url)));
   }
-  if (item.kind === 'video') return el('video', { src, controls: true, playsInline: true, preload: 'metadata' });
-  return el('audio', { src, controls: true, preload: 'metadata' });
+  return tile;
+}
+
+function mediaFor(item: MediaItem, inline: string[]): HTMLElement | null {
+  const sources = sourcesFor(item, inline);
+  if (!sources.length) return null;
+  let tried = 0;
+  const media =
+    item.kind === 'image'
+      ? el('img', { src: sources[0], alt: '', loading: 'lazy', decoding: 'async' })
+      : item.kind === 'video'
+        ? el('video', { src: sources[0], controls: true, playsInline: true, preload: 'metadata' })
+        : el('audio', { src: sources[0], controls: true, preload: 'metadata' });
+  // A source that fails moves on to the next one, then to the placeholder.
+  media.addEventListener('error', () => {
+    tried += 1;
+    if (tried < sources.length) media.src = sources[tried];
+    else media.replaceWith(placeholder(item));
+  });
+  if (item.kind === 'image') media.addEventListener('click', () => media.closest('.card')?.classList.toggle('wide'));
+  return media;
 }
 
 function card(item: MediaItem, n: number, total: number, inline: string[]): HTMLElement | null {
-  const media = mediaFor(item, inline);
+  const media = mediaFor(item, inline) ?? (item.url ? placeholder(item) : null);
   if (!media) return null;
   const actions = el('div', { className: 'actions' });
   const name = total > 1 ? `${item.kind} ${n}` : `this ${item.kind}`;

@@ -3,6 +3,7 @@ import { DEPLOY_URL, LANDING_URL, REPO_URL, type DashboardLinks } from '@/lib/si
 import type { ServerStep, StepId } from '@/lib/status';
 import { CosmosCanvas } from '../cosmos/cosmos-canvas';
 import { DemoBanner } from '../demo-banner';
+import { DemoClip } from '../demo-clip';
 import { StarDefs } from '../motion/star-defs';
 import { OrbitNav } from '../orbit/orbit-nav';
 import { SiteNav } from '../site-nav';
@@ -63,6 +64,8 @@ export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: Serv
     // The open intro replaces the overview: the page starts at usage.
     ...(guide ? [{ id: 'overview', label: 'Overview' }] : []),
     ...(!guide ? [] : steps.map((step) => ({ id: step.id, label: RAIL_LABELS[step.id], done: step.state === 'done' }))),
+    // The public demo opens with a real chat recording.
+    ...(demo ? [{ id: 'in-chat', label: 'In chat' }] : []),
     { id: 'usage', label: 'Usage' },
     { id: 'safety', label: 'Safety' },
   ];
@@ -126,7 +129,9 @@ export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: Serv
         </GuideFold>
         )}
 
-        <section className={`setup-section${guide ? '' : ' is-first'}`} id="usage" data-chapter="usage">
+        {demo && <DemoClip />}
+
+        <section className={`setup-section${guide || demo ? '' : ' is-first'}`} id="usage" data-chapter="usage">
           <h2 className="section-title">Your usage</h2>
           <StatsPanel connectHref={guide ? '#connect' : '/?steps#connect'} />
         </section>

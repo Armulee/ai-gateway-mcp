@@ -3092,3 +3092,37 @@ html:has(.setup)::-webkit-scrollbar {
     display: none;
   }
 }
+
+/* Public demo: the chat recording (demo-clip.tsx). */
+.demo-clip-lede {
+  max-width: 38rem;
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+.demo-clip-lede b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.demo-clip {
+  margin: 32px 0 0;
+}
+
+.demo-clip-video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.demo-clip figcaption {
+  margin-top: 12px;
+  color: var(--dim);
+  font-size: 0.8125rem;
+}

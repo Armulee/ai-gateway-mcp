@@ -31,6 +31,11 @@
 
 **The provider's own price, right inside your chat. No markup, no subscription, no API key.** Add this connector to Claude, ChatGPT or any MCP app and it can make pictures, video and voice with 400+ models on [Vercel AI Gateway](https://vercel.com/docs/ai-gateway): Veo, Kling, Seedance, Nano Banana, GPT Image, FLUX and more. You run your own copy on your own Vercel account, so every call is paid from your own Gateway credits at the price the provider sets.
 
+<p align="center">
+  <img src="docs/readme/in-claude.webp" width="100%" alt="A chat on claude.ai: asked to paint a little fox collecting stars in watercolour the cheapest way, Claude compares prices, picks Recraft v4.1 Flash and shows the picture for $0.007. Asked to turn it into a short video the cheapest way, it picks HeyGen Video 1 and the five-second video plays in the chat.">
+  <sub>A real chat on claude.ai, October 2026: a picture for $0.007, then a five-second video (HeyGen Video 1, $0.05–$0.25 in the catalog). Waiting while models work is shortened. <a href="https://ai-gateway-mcp-demo.vercel.app">See the demo</a>.</sub>
+</p>
+
 ## What you can make
 
 Ask in plain words. Your chat does the thinking and the writing with everything it already knows about you; the connector makes the pictures, the video and the voice.

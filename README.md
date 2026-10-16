@@ -29,7 +29,7 @@
 
 <br>
 
-**Your chat app already writes. Now it can make pictures, video and voice too.** Add this connector to Claude, ChatGPT or any MCP app and it can use every model on [Vercel AI Gateway](https://vercel.com/docs/ai-gateway): Veo, Kling, FLUX, Nano Banana, GPT Image, Seedance and hundreds more. You run your own copy on your own Vercel account, so every call is paid from your own credits at the provider's own price. No subscription, no API key, no extra fees.
+**The provider's own price, right inside your chat. No markup, no subscription, no API key.** Add this connector to Claude, ChatGPT or any MCP app and it can make pictures, video and voice with 400+ models on [Vercel AI Gateway](https://vercel.com/docs/ai-gateway): Veo, Kling, Seedance, Nano Banana, GPT Image, FLUX and more. You run your own copy on your own Vercel account, so every call is paid from your own Gateway credits at the price the provider sets.
 
 ## What you can make
 

@@ -159,13 +159,13 @@ Open your copy and it shows where you are: an arch of six stones, one per step. 
     </td>
     <td width="50%" valign="top">
       <img src="docs/readme/connect.jpg" alt="Get your link and test it: the secret pasted and hidden, and a passing test listing all 15 tools.">
-      <p><b>Your link, tested.</b> In the browser that made your secret it's checked by itself; anywhere else, paste it once and test it.</p>
+      <p><b>Your link, tested.</b> In the browser that made your secret it's checked by itself; anywhere else, paste it once and test it. <b>Open on your phone</b> shows a QR code that opens your page on your phone with the secret already saved. Claude on your phone needs none of this: connectors added on claude.ai show up there by themselves.</p>
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
       <img src="docs/readme/secret.jpg" alt="Set MCP_SECRET: done, with a button to make a new secret in the browser.">
-      <p><b>A secret you can't lose.</b> Made and saved in your browser the moment you reach the step, never sent anywhere, with your link ready to copy. Add it in Vercel as a Config variable, redeploy once (it covers the storage too), and the page checks your link by itself.</p>
+      <p><b>A secret you can't lose.</b> Made and saved in your browser the moment you reach the step, never sent anywhere, with your link ready to copy. Add it in Vercel as a Config variable, redeploy once (it covers the storage too), and the page checks your link by itself. Or press <b>Copy setup prompt</b> and paste it into Claude with the Vercel connector: it adds the secret and redeploys for you.</p>
     </td>
     <td width="50%" valign="top">
       <img src="docs/readme/chat.jpg" alt="Add it to your chat app, with tabs for Claude, ChatGPT and other apps, and a test prompt to copy.">

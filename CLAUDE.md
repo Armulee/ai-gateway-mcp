@@ -39,6 +39,7 @@ Two repos:
 Setup page at `/` (every self-hoster lands here on their own deployment):
 - A guide in steps, each with a code-drawn motion graphic: deploy, AI Gateway via OIDC, Blob (checked on the server), `MCP_SECRET` (generated in the browser, with a link to the project's Environment Variables), then test the link and add it to a chat app (confirmed in the owner's browser). Shows what is done and what is next.
 - The secret step comes after storage so one redeploy applies both. Until `MCP_SECRET` is set, the page makes the secret and saves it in that browser as soon as the step shows (reloads keep it), shows the link, and suggests the Vercel **Config** type so it can be looked up later. A saved secret is only checked once the server has `MCP_SECRET`, and a 404 never deletes it (only Forget does): earlier, a reload during the redeploy wiped it and owners had to rotate. After the redeploy the link is checked by itself and the chat-app install buttons turn on; they stay off until the link works.
+- Two shortcuts on the secret step and the link test: **Copy setup prompt** (text for an AI agent with the Vercel connector or CLI that sets `MCP_SECRET` as Config and redeploys; it holds the secret, nothing is sent) and, for a working link, **Open on your phone**: a QR code drawn in the browser with `uqr` of `/#pair=<secret>`. The page saves that secret and removes it from the address bar at once; the caption says it stays in the phone's history, so scan it only with your own phone.
 - Never render the secret or the full connector URL by default. The owner pastes the secret into a field; the URL is built in the browser, "Test connection" calls the MCP endpoint's tools list, and the secret may be remembered in that browser (localStorage) with a way to forget it.
 - Usage stats, unlocked with the secret via `POST /api/stats` (constant-time check, 404 when wrong): team credits, and this connector's spend per day, per model and per chat app from AI Gateway's spend report filtered by the tags every call carries. No database. The report is paid-plan only: on Hobby the page and `check_credits` say so (`PAID_PLAN_NOTE`) and still show credits.
 - How-to for Claude, ChatGPT and other MCP apps; set a Gateway budget; rotate the secret.
@@ -157,6 +158,6 @@ Still unverified (check on a real deployment):
 
 ## Working rules
 
-- Build v1 only. Ask before adding dependencies beyond Next.js, the AI SDK, the MCP handler, MCP Apps (`@modelcontextprotocol/ext-apps`), Vercel Blob, zod and esbuild (dev, for the viewer).
+- Build v1 only. Ask before adding dependencies beyond Next.js, the AI SDK, the MCP handler, MCP Apps (`@modelcontextprotocol/ext-apps`), Vercel Blob, zod, esbuild (dev, for the viewer) and `uqr` (the phone QR code).
 - Ask before changing scope or architecture.
 - Keep it small. This is meant to ship in half a day.

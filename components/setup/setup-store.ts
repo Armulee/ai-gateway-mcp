@@ -80,6 +80,30 @@ export function restoreSecret(secretSet: boolean) {
   }
 }
 
+/** The address part the "Open on your phone" QR code uses to hand the secret over (phone-pair.tsx). */
+export const PAIR_PREFIX = '#pair=';
+
+/**
+ * Takes a secret handed over by the phone QR code: saves it in this browser
+ * (if Remember is on) and removes it from the address bar at once. True when
+ * there was one.
+ */
+export function adoptFromPairLink(): boolean {
+  const { hash, pathname, search } = window.location;
+  if (!hash.startsWith(PAIR_PREFIX)) return false;
+  let secret = '';
+  try {
+    secret = decodeURIComponent(hash.slice(PAIR_PREFIX.length)).trim();
+  } catch {
+    // A mangled link: nothing to take.
+  }
+  history.replaceState(null, '', pathname + search);
+  if (!secret) return false;
+  set({ secret, connected: false, stats: { state: 'locked' } });
+  if (state.remember) storage()?.setItem(KEY, secret);
+  return true;
+}
+
 /** The secret kept in this browser, if any. */
 export function savedSecret(): string {
   return storage()?.getItem(KEY) ?? '';

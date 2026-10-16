@@ -1739,6 +1739,50 @@ html:not(.motion-ok) .step-body-inner {
   color: var(--muted);
 }
 
+/* "Open on your phone" (phone-pair.tsx). */
+.phone-pair {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.phone-qr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 14px;
+  margin: 0;
+}
+
+.phone-qr-code {
+  width: min(200px, 100%);
+  height: auto;
+  border-radius: 10px;
+  flex: none;
+}
+
+.phone-qr figcaption {
+  flex: 1 1 220px;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+/* The agent shortcut, between the link and the manual steps. */
+.gen-agent {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin: 14px 0 4px;
+  padding: 12px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
 /* When MCP_SECRET is set but this browser doesn't hold it. */
 .gen-find {
   margin: 0 0 12px;

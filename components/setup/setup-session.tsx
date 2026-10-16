@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { clearGatewayOpen, markGatewayOpen, restoreChatAdded, restoreSecret, useSetup } from './setup-store';
+import { adoptFromPairLink, clearGatewayOpen, loadStats, markGatewayOpen, restoreChatAdded, restoreSecret, useSetup } from './setup-store';
 import { useStepStates, type StepView } from './steps';
 
 /**
@@ -18,7 +18,12 @@ export function SetupSession({ steps, open }: { steps: StepView[]; open: boolean
   const secretSet = steps.some((step) => step.id === 'secret' && step.state === 'done');
 
   useEffect(() => {
-    restoreSecret(secretSet);
+    // Opened from the phone QR code: take that secret, then check it like a remembered one.
+    if (adoptFromPairLink()) {
+      if (secretSet) void loadStats();
+    } else {
+      restoreSecret(secretSet);
+    }
     restoreChatAdded();
   }, [secretSet]);
 

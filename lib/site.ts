@@ -19,7 +19,7 @@ export const GATEWAY_DASHBOARD_URL = `https://vercel.com/d?to=${encodeURICompone
 export const VERCEL_PRICING_URL = 'https://vercel.com/pricing';
 
 export type VercelProject = { owner: string; name: string };
-export type DashboardLinks = { envVars: string; deployments: string; storage: string; direct: boolean };
+export type DashboardLinks = { envVars: string; deployments: string; storage: string; direct: boolean; project?: VercelProject };
 
 /**
  * Pages of the owner's project in the Vercel dashboard. With the team and
@@ -31,7 +31,7 @@ export function dashboardLinks(project?: VercelProject): DashboardLinks {
     project
       ? `https://vercel.com/${encodeURIComponent(project.owner)}/${encodeURIComponent(project.name)}/${path}`
       : `https://vercel.com/d?to=${encodeURIComponent(`/[team]/[project]/${path}`)}`;
-  return { envVars: at('settings/environment-variables'), deployments: at('deployments'), storage: at('stores'), direct: Boolean(project) };
+  return { envVars: at('settings/environment-variables'), deployments: at('deployments'), storage: at('stores'), direct: Boolean(project), project };
 }
 
 /**

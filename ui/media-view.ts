@@ -41,7 +41,11 @@ function imageParts(result: Result): string[] {
 
 /** Where an item can be shown from, best first: its inline image, then its Blob link. */
 function sourcesFor(item: MediaItem, inline: string[]): string[] {
-  return [item.imagePart !== undefined ? inline[item.imagePart] : undefined, item.url].filter((src): src is string => Boolean(src));
+  // Safari on iPhone leaves a video black until it plays; a start time makes it
+  // draw the first frame as the preview. The fragment never reaches Blob, so
+  // the signed link still works.
+  const url = item.kind === 'video' && item.url && !item.url.includes('#') ? `${item.url}#t=0.001` : item.url;
+  return [item.imagePart !== undefined ? inline[item.imagePart] : undefined, url].filter((src): src is string => Boolean(src));
 }
 
 /** Stands in when no source loads (e.g. the host's sandbox blocks it): the file still opens in the browser. */

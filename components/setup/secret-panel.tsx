@@ -3,10 +3,11 @@
 import { gsap } from 'gsap';
 import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin';
 import { useEffect, useId, useRef, useState } from 'react';
+import { agentPrompt } from '@/lib/agent-prompt';
 import type { DashboardLinks } from '@/lib/site';
 import { ActionSteps } from './action-steps';
 import { CopyButton } from './copy-button';
-import { adoptGeneratedSecret, savedSecret } from './setup-store';
+import { adoptGeneratedSecret, draftSecret, randomSecret, savedSecret, useSetup } from './setup-store';
 
 gsap.registerPlugin(DrawSVGPlugin);
 
@@ -19,11 +20,6 @@ gsap.registerPlugin(DrawSVGPlugin);
 // remember it or rotate it just to get their link back.
 
 const HEX = '0123456789abcdef';
-
-function randomSecret(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(32));
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
-}
 
 function motionOk() {
   return document.documentElement.classList.contains('motion-ok');
@@ -48,26 +44,8 @@ function decode(el: HTMLElement, value: string) {
   });
 }
 
-/**
- * A prompt for an AI agent with Vercel access (Claude or Claude Code with the
- * Vercel connector, or the vercel CLI): it sets MCP_SECRET and redeploys, so
- * the owner never opens the dashboard. It carries the secret, which goes to
- * that chat anyway once the link is added as a connector.
- */
-function agentPrompt(secret: string, origin: string, links: DashboardLinks): string {
-  const where = links.project ? `my Vercel project "${links.project.name}" (team "${links.project.owner}")` : `the Vercel project that serves ${origin}`;
-  return [
-    `Use the Vercel connector (or the vercel CLI) on ${where}:`,
-    '1. Set the environment variable MCP_SECRET to the value below for Production and Preview, type Config. If it already exists, update it.',
-    '2. Redeploy the latest Production deployment and wait until it is ready.',
-    "3. Tell me when it's live. Don't repeat the value back to me.",
-    '',
-    `MCP_SECRET=${secret}`,
-  ].join('\n');
-}
-
 /** Under "Set MCP_SECRET": one button that makes a secret, then opens the steps to put it in Vercel. */
-export function SecretPanel({ isSet, links }: { isSet: boolean; links: DashboardLinks }) {
+export function SecretPanel({ isSet, blobDone, links }: { isSet: boolean; blobDone: boolean; links: DashboardLinks }) {
   const id = useId();
   const [secret, setSecret] = useState('');
   const [origin, setOrigin] = useState('');
@@ -78,11 +56,15 @@ export function SecretPanel({ isSet, links }: { isSet: boolean; links: Dashboard
     const saved = savedSecret();
     setHasSaved(Boolean(saved));
     if (isSet) return;
-    // Not set yet: show the saved one, or make one and keep it right away.
-    const value = saved || randomSecret();
-    if (!saved) adoptGeneratedSecret(value);
-    setSecret(value);
+    // Not set yet: show the one in use (also in the agent card), or make one and keep it right away.
+    setSecret(draftSecret());
   }, [isSet]);
+
+  // Before MCP_SECRET is set, follow the page's secret (pasted or remade elsewhere on the page).
+  const current = useSetup().secret.trim();
+  useEffect(() => {
+    if (!isSet && current) setSecret(current);
+  }, [isSet, current]);
 
   /** A fresh secret. Before MCP_SECRET is set it is saved at once; when rotating, on copy (the old link still works until the redeploy). */
   const makeAnother = () => {
@@ -188,7 +170,7 @@ export function SecretPanel({ isSet, links }: { isSet: boolean; links: Dashboard
               <span className="gen-link-label">Or let your AI agent do it</span>
               <span>Paste this into Claude or Claude Code with the Vercel connector: it adds the secret and redeploys for you.</span>
             </p>
-            <CopyButton value={agentPrompt(secret, origin, links)} label="Copy setup prompt" onCopy={() => adoptGeneratedSecret(secret)} />
+            <CopyButton value={agentPrompt({ secret, origin, project: links.project, blobDone })} label="Copy setup prompt" onCopy={() => adoptGeneratedSecret(secret)} />
           </div>
 
           <div data-rise>

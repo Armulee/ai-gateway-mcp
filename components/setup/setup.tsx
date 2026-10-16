@@ -5,6 +5,7 @@ import { StarDefs } from '../motion/star-defs';
 import { OrbitNav } from '../orbit/orbit-nav';
 import { SiteNav } from '../site-nav';
 import { VercelBadge, VercelMark } from '../vercel-badge';
+import { GuideFold } from './guide-fold';
 import { ChatGuides } from './chat-guides';
 import { ConnectorPanel } from './connector-panel';
 import { BlobPanel } from './blob-panel';
@@ -50,6 +51,9 @@ function StepExtra({ id }: { id: StepId }) {
 
 export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: ServerStep[]; open: boolean; guide: boolean; linkTtlHours: number; links: DashboardLinks }) {
   const views: StepView[] = steps.map(({ id, title, state, optional }) => ({ id, title, state, optional }));
+  const isDone = (id: StepId) => steps.some((s) => s.id === id && s.state === 'done');
+  // Storage or MCP_SECRET still missing: the overview offers the agent, and the guide waits folded.
+  const agent = isDone('blob') && isDone('secret') ? undefined : { blobDone: isDone('blob'), secretSet: isDone('secret'), links };
   // With the gateway open the guide is gone (unless asked for with ?steps), and so are its stars on the rail.
   const chapters = [
     // The open intro replaces the overview: the page starts at usage.
@@ -78,13 +82,14 @@ export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: Serv
       <main className="setup">
         {guide ? (
           <section className="setup-hero" id="overview" data-chapter="overview">
-            <Progress steps={views} settled={open} guide={guide} />
+            <Progress steps={views} settled={open} guide={guide} agent={agent} />
           </section>
         ) : (
           <OpenIntro steps={views} />
         )}
 
         {guide && (
+        <GuideFold steps={views} folded={Boolean(agent)}>
         <GuideFocus steps={views}>
           {steps.map((step, i) => (
             <GuideStep key={step.id} steps={views} index={i}>
@@ -101,8 +106,8 @@ export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: Serv
                   </a>
                 )}
                 {step.id === 'gateway' && <StepExtra id={step.id} />}
-                {step.id === 'secret' && <SecretPanel isSet={step.state === 'done'} links={links} />}
-                {step.id === 'blob' && step.state !== 'done' && <BlobPanel links={links} secretSet={steps.some((s) => s.id === 'secret' && s.state === 'done')} />}
+                {step.id === 'secret' && <SecretPanel isSet={step.state === 'done'} blobDone={isDone('blob')} links={links} />}
+                {step.id === 'blob' && step.state !== 'done' && <BlobPanel links={links} secretSet={isDone('secret')} />}
               </div>
               {(step.id === 'connect' || step.id === 'chat') && (
                 <div className="guide-extra" data-guide-copy>
@@ -112,6 +117,7 @@ export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: Serv
             </GuideStep>
           ))}
         </GuideFocus>
+        </GuideFold>
         )}
 
         <section className={`setup-section${guide ? '' : ' is-first'}`} id="usage" data-chapter="usage">

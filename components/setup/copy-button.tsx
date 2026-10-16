@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 
-export function CopyButton({ value, label = 'Copy', onCopy }: { value: string; label?: string; onCopy?: () => void }) {
+export function CopyButton({ value, label = 'Copy', onCopy, primary = false }: { value: string; label?: string; onCopy?: () => void; primary?: boolean }) {
   const [copied, setCopied] = useState(false);
   return (
     <button
       type="button"
-      className="btn btn-ghost btn-small"
+      className={`btn ${primary ? 'btn-primary' : 'btn-ghost'} btn-small`}
       onClick={async () => {
         await navigator.clipboard.writeText(value);
         onCopy?.();

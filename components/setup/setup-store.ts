@@ -113,6 +113,23 @@ export function setSecret(secret: string) {
   set({ secret, connected: false, stats: { state: 'locked' } });
 }
 
+/** 32 random bytes as hex: a new MCP_SECRET, made in this browser. */
+export function randomSecret(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * The secret to set while MCP_SECRET isn't: the one already in use on this
+ * page, else the saved one, else a new one, kept at once. The agent card and
+ * the secret step both call it, so they always show the same value.
+ */
+export function draftSecret(): string {
+  const value = state.secret.trim() || savedSecret() || randomSecret();
+  if (value !== state.secret || !savedSecret()) adoptGeneratedSecret(value);
+  return value;
+}
+
 /** A secret just made under "Set MCP_SECRET": fill it in, and keep it (if allowed) so it is still there after the redeploy. */
 export function adoptGeneratedSecret(secret: string) {
   setSecret(secret);

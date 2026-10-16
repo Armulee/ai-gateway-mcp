@@ -1,8 +1,10 @@
 'use client';
 
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useId, useRef, useState } from 'react';
+import type { DashboardLinks } from '@/lib/site';
 import type { StepId, StepState } from '@/lib/status';
 import { isReload, scrollToHash } from '../motion/smooth-scroll';
+import { AgentPanel } from './agent-panel';
 import { appsInUse, useSetup } from './setup-store';
 
 export type StepView = { id: StepId; title: string; state: StepState; optional?: boolean };
@@ -244,8 +246,13 @@ export function settle(steps: StepView[], live: LiveState[]): LiveState[] {
   return steps.map((step, i) => (step.optional ? (live[i] === 'done' ? 'done' : 'todo') : 'done'));
 }
 
+/** While storage or MCP_SECRET is missing: the two ways to finish, offered in the overview. */
+export type AgentChoice = { blobDone: boolean; secretSet: boolean; links: DashboardLinks };
+
 /** The overview: the arch on one side, where you are and what to do next on the other. */
-export function Progress({ steps, settled = false, guide = true }: { steps: StepView[]; settled?: boolean; guide?: boolean }) {
+export function Progress({ steps, settled = false, guide = true, agent }: { steps: StepView[]; settled?: boolean; guide?: boolean; agent?: AgentChoice }) {
+  const panelId = useId();
+  const [agentOpen, setAgentOpen] = useState(false);
   const live = useStepStates(steps);
   const states = settled ? settle(steps, live) : live;
   const done = states.filter((s) => s === 'done').length;
@@ -273,15 +280,39 @@ export function Progress({ steps, settled = false, guide = true }: { steps: Step
         <p className="setup-lead">
           {next === -1
             ? 'Every model on AI Gateway now runs from your chat app. Your usage is below.'
-            : `Six steps, one stone each. Next: ${steps[next].title.toLowerCase()}.`}
+            : agent
+              ? 'Hand the rest to your AI agent in one prompt, or follow the steps yourself.'
+              : `Six steps, one stone each. Next: ${steps[next].title.toLowerCase()}.`}
         </p>
-        <a className="btn btn-primary" href={next === -1 ? '#usage' : `#${steps[next].id}`} data-magnetic>
-          {next === -1 ? 'See your usage' : 'Go to the next step'}
-        </a>
+        {agent && next !== -1 ? (
+          <div className="setup-choice">
+            <button
+              type="button"
+              className={`btn ${agentOpen ? 'btn-ghost' : 'btn-primary'}`}
+              aria-expanded={agentOpen}
+              aria-controls={panelId}
+              onClick={() => setAgentOpen((o) => !o)}
+              data-magnetic
+            >
+              <svg className="gen-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3c.6 4.6 3.4 7.4 8 8-4.6.6-7.4 3.4-8 8-.6-4.6-3.4-7.4-8-8 4.6-.6 7.4-3.4 8-8z" />
+              </svg>
+              Set up with your agent
+            </button>
+            <a className="btn btn-ghost" href={`#${steps[next].id}`}>
+              Set up manually
+            </a>
+          </div>
+        ) : (
+          <a className="btn btn-primary" href={next === -1 ? '#usage' : `#${steps[next].id}`} data-magnetic>
+            {next === -1 ? 'See your usage' : 'Go to the next step'}
+          </a>
+        )}
       </div>
       <div className="progress-art" data-arch-stage>
         <GatewayArch steps={steps} states={states} guide={guide} />
       </div>
+      {agent && next !== -1 && <AgentPanel id={panelId} open={agentOpen} {...agent} />}
     </div>
   );
 }

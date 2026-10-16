@@ -1739,6 +1739,296 @@ html:not(.motion-ok) .step-body-inner {
   color: var(--muted);
 }
 
+/* The two ways to finish, in the overview (steps.tsx Progress). */
+.setup-choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 2rem;
+}
+
+.progress-copy .setup-choice .btn {
+  margin-top: 0;
+  gap: 0.5em;
+}
+
+/* "Set up with your agent" (agent-panel.tsx): the moves, and a chat that plays them. */
+.agent-panel {
+  position: relative;
+  grid-column: 1 / -1;
+  justify-self: stretch;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(24px, 4vw, 56px);
+  padding: clamp(20px, 3.5vw, 40px);
+  border: 1px solid var(--line-strong);
+  border-radius: 28px;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(255, 255, 255, 0.08), transparent 55%),
+    rgba(10, 10, 12, 0.84);
+  backdrop-filter: blur(8px);
+  text-align: left;
+  overflow: hidden;
+}
+
+.agent-panel[hidden] {
+  display: none;
+}
+
+/* A thin light along the top edge. */
+.agent-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 12% auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+}
+
+.agent-kicker {
+  margin: 0;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.agent-heading {
+  margin: 0.6rem 0 1.75rem;
+  font-size: clamp(1.75rem, 1rem + 2.4vw, 2.75rem);
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+}
+
+.agent-heading .dim {
+  color: var(--dim);
+}
+
+.agent-flow {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 20px;
+}
+
+.agent-flow li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 14px;
+}
+
+/* The thread from one move to the next. */
+.agent-flow li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 15.5px;
+  top: 38px;
+  bottom: -16px;
+  width: 1px;
+  background: linear-gradient(var(--line-strong), transparent);
+}
+
+.agent-num {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.8125rem;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.agent-flow li:first-child .agent-num {
+  background: var(--text);
+  border-color: var(--text);
+  color: #0a0a0a;
+}
+
+.agent-flow b {
+  display: block;
+  padding-top: 5px;
+  font-weight: 600;
+}
+
+.agent-flow p {
+  margin: 0.25rem 0 0.7rem;
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.agent-flow p a {
+  color: var(--text);
+}
+
+/* The chat window: decoration, drawn in code. */
+.agent-chat {
+  margin: 0;
+  padding-bottom: 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: #050505;
+  box-shadow: 0 40px 90px -40px rgba(255, 255, 255, 0.16);
+  font-size: 0.875rem;
+  overflow: hidden;
+}
+
+.chat-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  color: var(--dim);
+  font-size: 0.75rem;
+}
+
+.chat-bar i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.chat-bar span {
+  margin-left: 8px;
+}
+
+.chat-bubble {
+  width: fit-content;
+  max-width: 88%;
+  margin: 14px 14px 0;
+  padding: 10px 14px;
+  border-radius: 16px;
+  line-height: 1.45;
+}
+
+.chat-bubble.is-you {
+  margin-left: auto;
+  background: var(--text);
+  color: #0a0a0a;
+  border-bottom-right-radius: 4px;
+}
+
+.chat-bubble.is-you code {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  opacity: 0.55;
+}
+
+.chat-bubble.is-agent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-bottom-left-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.live-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 12px #fff;
+}
+
+.chat-tools {
+  list-style: none;
+  margin: 14px 14px 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.chat-tools li {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.chat-tools code {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+}
+
+.tool-what {
+  margin-left: auto;
+  white-space: nowrap;
+  color: var(--dim);
+  font-size: 0.75rem;
+}
+
+.tool-state {
+  position: relative;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+}
+
+.chat-tools li.is-running .tool-state {
+  border-top-color: #fff;
+  animation: tool-spin 0.7s linear infinite;
+}
+
+.chat-tools li.is-done .tool-state {
+  background: #fff;
+  border-color: #fff;
+}
+
+.chat-tools li.is-done .tool-state::after {
+  content: '';
+  position: absolute;
+  left: 4.5px;
+  top: 1.5px;
+  width: 4px;
+  height: 7px;
+  border: solid #000;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+
+@keyframes tool-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 760px) {
+  .setup-choice {
+    justify-content: center;
+  }
+
+  .agent-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+.guide-wrap {
+  display: contents;
+}
+
+.guide-wrap.is-folded {
+  display: none;
+}
+
 /* "Open on your phone" (phone-pair.tsx). */
 .phone-pair {
   display: grid;

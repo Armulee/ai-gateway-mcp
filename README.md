@@ -124,7 +124,7 @@ You need a [Vercel](https://vercel.com) account and a GitHub, GitLab or Bitbucke
   <tr>
     <td width="33%" valign="top">
       <h3>1. Deploy</h3>
-      <p>Click the button. Vercel copies the repo and makes your private storage. Your new page then makes <a href="#mcp_secret"><code>MCP_SECRET</code></a>: add it in Vercel and redeploy.</p>
+      <p>Click the button. Vercel copies the repo and makes your private storage. Your new page then makes <a href="#mcp_secret"><code>MCP_SECRET</code></a>. Choose <b>Set up with your agent</b>: copy one prompt into Claude with the Vercel connector and it adds the secret (and storage, if missing) and redeploys. Or choose <b>Set up manually</b> and follow the steps.</p>
     </td>
     <td width="33%" valign="top">
       <h3>2. Open your copy</h3>

@@ -7,6 +7,7 @@ import { errorResult, textResult, toolError, warningNote, type ToolContext } fro
 import { encodeJobId } from '../jobs';
 import { findModel } from '../models';
 import { estimateResult, estimateVideo, type VideoQuery } from '../pricing';
+import { GET_VIDEO_WAIT_S } from './get-video';
 
 type StartOptions = Omit<Parameters<typeof startVideo>[0], 'model' | 'n' | 'providerOptions'> & {
   providerOptions?: Record<string, Record<string, unknown>>;
@@ -53,7 +54,7 @@ export async function startVideoJob(
       [
         `Video job started with ${model}.`,
         `job_id: ${jobId}`,
-        "Call get_video with this job_id in about 30 seconds, and again until it reports done. Fetch it soon: the provider's copy expires.",
+        `Call get_video with this job_id until it reports done (usually 1–5 minutes). Each call waits up to ${GET_VIDEO_WAIT_S} s, so call it right away. Fetch it soon: the provider's copy expires.`,
         ...notes,
       ].join('\n'),
     );
@@ -109,7 +110,7 @@ type Args = {
 export const startVideoTool = {
   name: 'start_video',
   description:
-    `Start an asynchronous AI Gateway video and return a job_id immediately. Then call get_video with that job_id every ~30 seconds until it is done (usually 1–5 minutes). Text-to-video needs only a prompt. image_url animates a picture (i2v models); add end_image_url to move from the first picture to the last (Veo, Kling, Seedance). reference_urls (pictures or videos of characters or objects) makes a new scene with them (r2v models such as "alibaba/wan-v2.6-r2v": call them character1, character2… in the prompt). For dialogue, write the lines in the prompt and set sound (models with audio, e.g. Veo 3.1, HeyGen). Links must be https; links returned by this server work. ${NO_BLIND_RETRY}`,
+    `Start an asynchronous AI Gateway video and return a job_id immediately. Then call get_video with that job_id until it is done (usually 1–5 minutes); each call waits up to ${GET_VIDEO_WAIT_S} s, so no pause is needed between calls. Text-to-video needs only a prompt. image_url animates a picture (i2v models); add end_image_url to move from the first picture to the last (Veo, Kling, Seedance). reference_urls (pictures or videos of characters or objects) makes a new scene with them (r2v models such as "alibaba/wan-v2.6-r2v": call them character1, character2… in the prompt). For dialogue, write the lines in the prompt and set sound (models with audio, e.g. Veo 3.1, HeyGen). Links must be https; links returned by this server work. ${NO_BLIND_RETRY}`,
   inputSchema: z.object({
     model: z.string().describe('Video model id from list_models with type "video", e.g. "google/veo-3.1-fast-generate-001"'),
     prompt: z.string().min(1),

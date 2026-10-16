@@ -18,6 +18,15 @@ async function readBytes(video: VideoData): Promise<Buffer> {
   return Buffer.from(await res.arrayBuffer());
 }
 
+/**
+ * How long one get_video call waits for a pending job. Chat apps can't pause
+ * between calls, so they ask again at once; waiting here keeps that to a few
+ * calls per video instead of dozens.
+ */
+const WAIT_MS = 40_000;
+const POLL_MS = 5_000;
+export const GET_VIDEO_WAIT_S = WAIT_MS / 1000;
+
 async function linksMessage(job: VideoJob, pathnames: string[], cost?: number) {
   const lines = [`Video ready (${job.model})${cost != null ? `, cost: $${cost}` : ''}.`];
   const view: MediaView = { source: 'result', model: job.model, cost, items: [] };
@@ -44,18 +53,24 @@ export const getVideoTool = {
       return errorResult('This job_id is not valid for this server. It may be mistyped, or MCP_SECRET was rotated after the job started.');
     }
 
+    // Stored by an earlier call: answered from Blob once the provider's copy is gone.
+    const stored = videoPath(job, 0, 'mp4', ctx.keyPrefix);
     try {
-      // Already stored by an earlier call: just issue a fresh link.
-      const stored = videoPath(job, 0, 'mp4', ctx.keyPrefix);
-      if (await exists(stored)) return linksMessage(job, [stored]);
-
-      const status = await getVideoStatus(ctx.gateway.videoModel(job.model), {
-        operation: { gatewayJobId: job.gatewayJobId },
-      });
+      // Blob is only touched once the job is over, so waiting costs no Blob operations.
+      const checkStatus = () => getVideoStatus(ctx.gateway.videoModel(job.model), { operation: { gatewayJobId: job.gatewayJobId } });
+      const deadline = Date.now() + WAIT_MS;
+      let status = await checkStatus();
+      while (status.status === 'pending' && Date.now() + POLL_MS < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, POLL_MS));
+        status = await checkStatus();
+      }
       if (status.status === 'pending') {
-        return textResult(`Still generating with ${job.model}. Call get_video again in about 30 seconds.`);
+        return textResult(
+          `Still generating with ${job.model} (this call waited ${GET_VIDEO_WAIT_S} s). Call get_video again; each call waits up to ${GET_VIDEO_WAIT_S} s, so there is no need to pause first.`,
+        );
       }
       if (status.status === 'error') {
+        if (await exists(stored)) return linksMessage(job, [stored]);
         return errorResult(`Video generation with "${job.model}" failed: ${status.error}`);
       }
 
@@ -67,10 +82,11 @@ export const getVideoTool = {
         pathnames.push(pathname);
       }
       if (pathnames.length === 0) return errorResult(`"${job.model}" finished but returned no video.`);
-      // Only known the first time: a stored video is answered without asking the Gateway again.
       const cost = await billedCost(ctx, (status.providerMetadata?.gateway as { generationId?: unknown } | undefined)?.generationId);
       return linksMessage(job, pathnames, cost);
     } catch (error) {
+      // The provider's job may be gone while the copy in Blob is still there.
+      if (await exists(stored).catch(() => false)) return linksMessage(job, [stored]);
       return toolError(error, job.model, 'video');
     }
   },

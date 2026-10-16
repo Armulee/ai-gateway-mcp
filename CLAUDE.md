@@ -77,6 +77,7 @@ Threat: a leaked connector URL lets anyone spend the owner's Gateway credits and
 5. `get_video({ job_id })`
    - Return status. When done, upload the video to Blob and return the URL, plus the billed cost from `gateway.getGenerationInfo({ id: generationId })` (async video metadata carries no cost); leave the cost out if the lookup fails.
    - If Blob is not configured, return a clear error telling the user to connect a Blob store.
+   - Chat apps can't pause between calls (Claude polled a 5 s clip a dozen times in a row), so each call checks the status every 5 s for up to 40 s before answering "still generating". Blob is only touched once the job is over (a Blob `head` is an advanced operation, scarce on Hobby). Whether every chat app waits 40 s for a tool reply is unverified.
 
 6. `edit_image({ model, prompt, image_urls, mask_url?, size_or_aspect?, n? })` and `upscale_image({ image_url, model?, prompt? })`
    - Image models take the inputs as `generateImage({ prompt: { images, text, mask } })`; image-capable LLMs as image parts of one message.

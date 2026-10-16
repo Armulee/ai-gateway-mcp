@@ -24,7 +24,7 @@ async function editImages({ model, prompt, images, mask, size_or_aspect, n, tool
   const info = await findModel(model);
   if (!info) return errorResult(`Unknown model "${model}". Call list_models with type "image" to see image models.`);
   if (!kindsOf(info).includes('image')) return errorResult(`Model "${model}" does not make images. Call list_models with type "image".`);
-  if (estimate) return estimateResult(model, estimateImage(info, info.type === 'image' ? n : 1, sizeOptions.priceSize));
+  if (estimate) return estimateResult(model, estimateImage(info, info.type === 'image' ? n : 1, sizeOptions.priceSize), sizeOptions.notes);
 
   let output: GeneratedFile[];
   let cost: unknown;

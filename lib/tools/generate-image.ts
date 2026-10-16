@@ -29,8 +29,33 @@ const FLUX3_RESOLUTIONS = [
   [4096, '4k'],
 ] as const;
 
+// Models that take only an exact pixel size: a ratio is ignored with a warning
+// ("aspectRatio is not supported. Use size instead."), so ratios are mapped to
+// the nearest size they accept. Sizes from the AI SDK's OpenAI provider and
+// Recraft's API reference (1K for V4 and V4.1, 2K for their Pro models).
+const RECRAFT_V3 = ['1024x1024', '2048x1024', '1024x2048', '1536x1024', '1024x1536', '1365x1024', '1024x1365', '1280x1024', '1024x1280', '1024x1707', '1434x1024', '1024x1434', '1820x1024', '1024x1820'];
+const RECRAFT_1K = ['1024x1024', '1536x768', '768x1536', '1280x832', '832x1280', '1216x896', '896x1216', '1152x896', '896x1152', '832x1344', '1280x896', '896x1280', '1344x768', '768x1344'];
+const RECRAFT_2K = ['2048x2048', '3072x1536', '1536x3072', '2560x1664', '1664x2560', '2432x1792', '1792x2432', '2304x1792', '1792x2304', '1664x2688', '2560x1792', '1792x2560', '2688x1536', '1536x2688'];
+
+function fixedSizes(model: string): string[] | undefined {
+  if (model.startsWith('openai/gpt-image')) return ['1024x1024', '1536x1024', '1024x1536'];
+  if (!model.startsWith('recraft/')) return undefined;
+  if (/recraft-v[23]\b/.test(model)) return RECRAFT_V3;
+  return model.endsWith('-pro') ? RECRAFT_2K : RECRAFT_1K;
+}
+
+/** The listed size closest in shape to w:h, then in area. */
+function nearestSize(sizes: string[], w: number, h: number): string {
+  const score = (size: string) => {
+    const [sw, sh] = size.split('x').map(Number);
+    return Math.abs(Math.log(sw / sh / (w / h))) * 10 + Math.abs(Math.log((sw * sh) / (w * h)));
+  };
+  return sizes.reduce((best, size) => (score(size) < score(best) ? size : best));
+}
+
 /**
- * Size options for an image model call from "16:9" or "1024x1024". FLUX 3
+ * Size options for an image model call from "16:9" or "1024x1024". Size-only
+ * models (fixedSizes) get the nearest size they accept. FLUX 3
  * ignores `size` and picks its output from a resolution class
  * (providerOptions.blackForestLabs.resolution), so a WxH goes as its aspect
  * ratio plus the class nearest to its pixel area.
@@ -38,10 +63,18 @@ const FLUX3_RESOLUTIONS = [
 export function imageSizeOptions(model: string, value: string | undefined): SizeOptions {
   const v = value?.trim();
   if (!v) return { providerOptions: {}, notes: [] };
-  if (/^\d+:\d+$/.test(v)) return { aspectRatio: v as `${number}:${number}`, providerOptions: {}, notes: [] };
+  const ratio = /^(\d+):(\d+)$/.exec(v);
   const match = /^(\d+)x(\d+)$/.exec(v);
-  if (!match) return { invalid: true };
-  const [w, h] = [Number(match[1]), Number(match[2])];
+  if (!ratio && !match) return { invalid: true };
+  const [w, h] = (ratio ?? match)!.slice(1, 3).map(Number);
+
+  const sizes = fixedSizes(model);
+  if (sizes && w && h && !sizes.includes(v)) {
+    const size = nearestSize(sizes, w, h);
+    const why = ratio ? 'takes an exact size, not a ratio' : `takes only ${sizes.length} sizes`;
+    return { size: size as `${number}x${number}`, providerOptions: {}, notes: [`"${model}" ${why}: ${v} goes as ${size}.`], priceSize: size };
+  }
+  if (ratio) return { aspectRatio: v as `${number}:${number}`, providerOptions: {}, notes: [] };
   if (!model.startsWith('bfl/flux-3') || !w || !h) return { size: v as `${number}x${number}`, providerOptions: {}, notes: [], priceSize: v };
 
   const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
@@ -79,7 +112,7 @@ export const generateImageTool = {
       const info = await findModel(model);
       if (!info) return errorResult(`Unknown model "${model}". Call list_models with type "image" to see image models.`);
       if (!kindsOf(info).includes('image')) return errorResult(`Model "${model}" does not generate images. Call list_models with type "image".`);
-      if (estimate_only) return estimateResult(model, estimateImage(info, info.type === 'image' ? n : 1, sizeOptions.priceSize));
+      if (estimate_only) return estimateResult(model, estimateImage(info, info.type === 'image' ? n : 1, sizeOptions.priceSize), sizeOptions.notes);
 
       let images: GeneratedFile[];
       let cost: unknown;

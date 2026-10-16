@@ -12,7 +12,9 @@ gsap.registerPlugin(DrawSVGPlugin);
 
 // Makes a secret in the browser and points to where it goes in Vercel. The
 // value never leaves this page: the owner pastes it into Vercel themselves,
-// since this app holds no token that could write Environment Variables.
+// since this app holds no token that could write Environment Variables. The
+// link is shown right away and kept in this browser on copy, so nobody has
+// to rotate the secret after the redeploy just to get their link back.
 
 const HEX = '0123456789abcdef';
 
@@ -48,6 +50,8 @@ function decode(el: HTMLElement, value: string) {
 export function SecretPanel({ isSet, links }: { isSet: boolean; links: DashboardLinks }) {
   const id = useId();
   const [secret, setSecret] = useState('');
+  const [origin, setOrigin] = useState('');
+  useEffect(() => setOrigin(window.location.origin), []);
   const panel = useRef<HTMLDivElement>(null);
   const code = useRef<HTMLElement>(null);
   const wasOpen = useRef(false);
@@ -81,6 +85,7 @@ export function SecretPanel({ isSet, links }: { isSet: boolean; links: Dashboard
   }, [secret]);
 
   const open = secret !== '';
+  const link = origin && secret ? `${origin}/mcp/${secret}` : '';
 
   return (
     <div className={`generator${isSet ? ' is-set' : ''}`}>
@@ -118,6 +123,18 @@ export function SecretPanel({ isSet, links }: { isSet: boolean; links: Dashboard
             <span className="sr-only">{secret}</span>
           </figure>
 
+          {link && (
+            <div className="gen-link" data-rise>
+              <p className="gen-link-text">
+                <span className="gen-link-label">Your link</span>
+                <code className="gen-link-value">
+                  {origin.replace(/^https?:\/\//, '')}/mcp/{secret.slice(0, 6)}…
+                </code>
+              </p>
+              <CopyButton value={link} label="Copy link" onCopy={() => adoptGeneratedSecret(secret)} />
+            </div>
+          )}
+
           <div data-rise>
             <ActionSteps
               actions={[
@@ -126,9 +143,10 @@ export function SecretPanel({ isSet, links }: { isSet: boolean; links: Dashboard
               ]}
               hints={[
                 <>
-                  Copy it, then {links.direct ? 'add' : 'pick this project and add'} it as <code>MCP_SECRET</code>.
+                  Copy it, then {links.direct ? 'add' : 'pick this project and add'} it as <code>MCP_SECRET</code>. It&apos;s kept in this
+                  browser, and the link above works after the redeploy.
                 </>,
-                'Redeploy, then reload this page. Your link below is already filled in.',
+                'Redeploy once: it applies the secret and the storage. Then reload this page; your link is already filled in.',
               ]}
             />
           </div>

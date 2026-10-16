@@ -1739,6 +1739,34 @@ html:not(.motion-ok) .step-body-inner {
   color: var(--muted);
 }
 
+/* The link, right under the new secret: shortened on screen, copied in full. */
+.gen-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-top: 12px;
+}
+
+.gen-link-text {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  min-width: 0;
+}
+
+.gen-link-label {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.gen-link-value {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
 .secret-value {
   min-height: 2.8em;
   font-family: var(--font-mono), monospace;

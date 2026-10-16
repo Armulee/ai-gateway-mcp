@@ -165,7 +165,7 @@ Open your copy and it shows where you are: an arch of six stones, one per step. 
   <tr>
     <td width="50%" valign="top">
       <img src="docs/readme/secret.jpg" alt="Set MCP_SECRET: done, with a button to make a new secret in the browser.">
-      <p><b>A secret in one click.</b> Made in your browser and never sent anywhere, with links straight to your project's settings.</p>
+      <p><b>A secret in one click.</b> Made in your browser and never sent anywhere, with your link ready to copy at once and links straight to your project's settings. It comes after storage, so one redeploy sets up both.</p>
     </td>
     <td width="50%" valign="top">
       <img src="docs/readme/chat.jpg" alt="Add it to your chat app, with tabs for Claude, ChatGPT and other apps, and a test prompt to copy.">

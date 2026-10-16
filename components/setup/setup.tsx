@@ -102,7 +102,7 @@ export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: Serv
                 )}
                 {step.id === 'gateway' && <StepExtra id={step.id} />}
                 {step.id === 'secret' && <SecretPanel isSet={step.state === 'done'} links={links} />}
-                {step.id === 'blob' && step.state !== 'done' && <BlobPanel links={links} />}
+                {step.id === 'blob' && step.state !== 'done' && <BlobPanel links={links} secretSet={steps.some((s) => s.id === 'secret' && s.state === 'done')} />}
               </div>
               {(step.id === 'connect' || step.id === 'chat') && (
                 <div className="guide-extra" data-guide-copy>

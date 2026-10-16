@@ -5,8 +5,12 @@ import { MIN_SECRET_LENGTH } from './env';
 import { secretStatus } from './secret';
 
 // The setup page's checklist. The server checks what it can (deployment,
-// secret, AI Gateway, Blob); the two last steps (testing the link and
+// AI Gateway, Blob, secret); the two last steps (testing the link and
 // adding it to a chat app) are confirmed in the owner's browser.
+//
+// The secret comes after storage so one redeploy applies both, and the
+// secret step shows the link at once (kept in that browser): owners who set
+// the secret, redeployed and forgot it had to rotate it to get their link.
 
 export type StepId = 'deploy' | 'secret' | 'gateway' | 'blob' | 'connect' | 'chat';
 export type StepState = 'done' | 'todo';
@@ -94,10 +98,15 @@ export async function getSetupSteps(): Promise<ServerStep[]> {
   const [gatewayStep, blobStep] = await Promise.all([checkGateway(), checkBlob()]);
   const steps: ServerStep[] = [
     checkDeploy(),
-    checkSecret(),
     gatewayStep,
     blobStep,
-    { id: 'connect', title: 'Get your link and test it', state: 'todo', detail: 'Paste your secret to build the link, then test it.' },
+    checkSecret(),
+    {
+      id: 'connect',
+      title: 'Test your link',
+      state: 'todo',
+      detail: 'Made your secret on this page? Your link is already filled in. Otherwise paste the secret. Then test it.',
+    },
     { id: 'chat', title: 'Add it to your chat app', state: 'todo', detail: 'Add the link as a connector in Claude, ChatGPT or another MCP app.' },
   ];
   cache = { at: Date.now(), steps };

@@ -266,7 +266,7 @@ Your chat app picks these for you; you never have to name them. Every tool retur
 | `check_credits()` | Shows the team's AI Gateway credits and what this connector spent in the last 30 days. The spend part needs AI Gateway's usage report, which Vercel offers on paid plans only; on Hobby it says so, and each reply still shows what that call cost. |
 | `list_files({ kind?, limit? })` | Lists the pictures, videos and audio this connector made, newest first, with fresh expiring links. |
 
-**Inline viewer.** In chat apps that support [MCP Apps](https://github.com/modelcontextprotocol/ext-apps) (Claude on the web, desktop and phone), `generate_image`, `edit_image`, `upscale_image`, `get_video` and `list_files` show their result right in the conversation: a picture grid, a video player and audio players, with Download, Upscale and Extend. Upscale and Extend ask the chat to run the tool, so nothing is spent behind your back. Other apps get the same pictures and links as plain content.
+**Inline viewer.** In chat apps that support [MCP Apps](https://github.com/modelcontextprotocol/ext-apps) (Claude on the web, desktop and phone), `generate_image`, `edit_image`, `upscale_image`, `get_video` and `list_files` show their result right in the conversation: a picture grid, a video player and audio players, with Download, Upscale and Extend. Upscale and Extend ask the chat to run the tool, so nothing is spent behind your back. Other apps get the same pictures and links as plain content. If the Claude desktop app shows "Unable to reach AI Gateway" where the viewer should be after you change the connector URL (for example after rotating the secret), quit it fully (Cmd+Q on a Mac) and open it again.
 
 </details>
 

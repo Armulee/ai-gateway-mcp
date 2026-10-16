@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useId, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { DashboardLinks } from '@/lib/site';
 import type { StepId, StepState } from '@/lib/status';
 import { isReload, scrollToHash } from '../motion/smooth-scroll';
@@ -251,7 +251,7 @@ export type AgentChoice = { blobDone: boolean; secretSet: boolean; links: Dashbo
 
 /** The overview: the arch on one side, where you are and what to do next on the other. */
 export function Progress({ steps, settled = false, guide = true, agent }: { steps: StepView[]; settled?: boolean; guide?: boolean; agent?: AgentChoice }) {
-  const panelId = useId();
+  const panelId = 'agent-setup';
   const [agentOpen, setAgentOpen] = useState(false);
   const live = useStepStates(steps);
   const states = settled ? settle(steps, live) : live;

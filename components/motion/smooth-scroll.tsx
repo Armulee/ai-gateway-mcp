@@ -16,10 +16,10 @@ export function scrollToY(y: number, immediate = false) {
 }
 
 /** Scrolls to an in-page anchor, smoothly when Lenis is running. */
-export function scrollToHash(hash: string) {
+export function scrollToHash(hash: string, offset = -16) {
   const target = document.querySelector<HTMLElement>(hash);
   if (!target) return;
-  if (lenis) lenis.scrollTo(target, { offset: -16 });
+  if (lenis) lenis.scrollTo(target, { offset });
   else target.scrollIntoView();
 }
 

@@ -3,6 +3,7 @@
 import { gsap } from 'gsap';
 import { useEffect, useRef, useState } from 'react';
 import { agentPrompt } from '@/lib/agent-prompt';
+import { scrollToHash } from '../motion/smooth-scroll';
 import type { DashboardLinks } from '@/lib/site';
 import { CopyButton } from './copy-button';
 import { draftSecret, useSetup } from './setup-store';
@@ -43,6 +44,9 @@ export function AgentPanel({ id, open, blobDone, secretSet, links }: { id: strin
   useEffect(() => {
     const el = root.current;
     if (!open || !el) return;
+    // Bring the panel up under the nav as it opens (smoothly, unless motion is reduced).
+    // Its scroll-margin-top keeps it clear of the nav, for Lenis and plain scrolling alike.
+    scrollToHash(`#${el.id}`, 0);
     const rows = Array.from(el.querySelectorAll<HTMLElement>('[data-tool]'));
     const reset = () => rows.forEach((row) => row.classList.remove('is-running', 'is-done'));
     if (!motionOk()) {

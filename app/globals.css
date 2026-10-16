@@ -1772,6 +1772,10 @@ html:not(.motion-ok) .step-body-inner {
   overflow: hidden;
 }
 
+.agent-panel {
+  scroll-margin-top: 88px;
+}
+
 .agent-panel[hidden] {
   display: none;
 }

@@ -41,7 +41,7 @@ function imageParts(result: Result): string[] {
 
 /** Where an item can be shown from, best first: its inline image, then its Blob link. */
 function sourcesFor(item: MediaItem, inline: string[]): string[] {
-  // Safari on iPhone leaves a video black until it plays; a start time makes it
+  // WebKit on iPhone (Claude's app, Safari) leaves a video black until it plays; a start time makes it
   // draw the first frame as the preview. The fragment never reaches Blob, so
   // the signed link still works.
   const url = item.kind === 'video' && item.url && !item.url.includes('#') ? `${item.url}#t=0.001` : item.url;

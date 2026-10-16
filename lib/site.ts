@@ -10,6 +10,14 @@ export const DEPLOY_URL =
 // repo until the site has its own address.
 export const LANDING_URL = 'https://github.com/armulee/ai-gateway-mcp-landing';
 
+/** Shown wherever this connector's spend would be, when the team's plan has no usage report (lib/stats.ts). */
+export const PAID_PLAN_NOTE =
+  "This connector's own spend needs AI Gateway's usage report, which Vercel offers on paid plans. This team's plan doesn't include it.";
+
+/** AI Gateway's overview in the Vercel dashboard, where the team's totals show. */
+export const GATEWAY_DASHBOARD_URL = `https://vercel.com/d?to=${encodeURIComponent('/[team]/~/ai-gateway')}&title=${encodeURIComponent('Open AI Gateway')}`;
+export const VERCEL_PRICING_URL = 'https://vercel.com/pricing';
+
 export type VercelProject = { owner: string; name: string };
 export type DashboardLinks = { envVars: string; deployments: string; storage: string; direct: boolean };
 

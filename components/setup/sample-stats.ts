@@ -16,6 +16,7 @@ export function sampleStats(): Stats {
   });
   return {
     credits: { balance: 41.37, totalUsed: 58.63 },
+    paidPlanOnly: false,
     days,
     models: [
       { model: 'google/veo-3.1-fast-generate-001', name: 'Veo 3.1 Fast Generate', cost: 19.2, requests: 24 },

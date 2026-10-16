@@ -3,6 +3,7 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useEffect, useRef, useState } from 'react';
+import { GATEWAY_DASHBOARD_URL, PAID_PLAN_NOTE, VERCEL_PRICING_URL } from '@/lib/site';
 import type { Stats, Usage } from '@/lib/stats';
 import { INTRO_DONE } from './open-intro';
 import { loadStats, useSetup } from './setup-store';
@@ -245,12 +246,28 @@ function Ready({ stats }: { stats: Stats }) {
   return (
     <div ref={ref} className="usage">
       <div className="usage-hero">
-        <p className="usage-total" data-usage-rise>
-          <span data-total>{stats.days ? usd(total.cost) : '–'}</span>
-        </p>
-        <p className="usage-sub" data-usage-rise>
-          spent through this connector in the last 30 days{stats.days ? `, over ${total.requests.toLocaleString('en-US')} calls` : ''}.
-        </p>
+        {stats.paidPlanOnly ? (
+          <p className="usage-sub" data-usage-rise>
+            {PAID_PLAN_NOTE} Each reply in chat shows what that call cost. See the team&apos;s totals in{' '}
+            <a href={GATEWAY_DASHBOARD_URL} target="_blank" rel="noopener noreferrer">
+              AI Gateway
+            </a>
+            , or{' '}
+            <a href={VERCEL_PRICING_URL} target="_blank" rel="noopener noreferrer">
+              compare Vercel plans
+            </a>
+            .
+          </p>
+        ) : (
+          <>
+            <p className="usage-total" data-usage-rise>
+              <span data-total>{stats.days ? usd(total.cost) : '–'}</span>
+            </p>
+            <p className="usage-sub" data-usage-rise>
+              spent through this connector in the last 30 days{stats.days ? `, over ${total.requests.toLocaleString('en-US')} calls` : ''}.
+            </p>
+          </>
+        )}
         {stats.credits && (
           <p className="usage-credits" data-usage-rise>
             Your Vercel team has <b>{usd(stats.credits.balance)}</b> of AI Gateway credits left.
@@ -286,7 +303,7 @@ function Ready({ stats }: { stats: Stats }) {
         </p>
       ))}
       <p className="stat-footnote">
-        Only calls made through this connector are counted. Updated {new Date(stats.generatedAt).toLocaleTimeString()}.{' '}
+        {stats.paidPlanOnly ? '' : 'Only calls made through this connector are counted. '}Updated {new Date(stats.generatedAt).toLocaleTimeString()}.{' '}
         <button type="button" className="link-button" onClick={() => void loadStats()}>
           Refresh
         </button>

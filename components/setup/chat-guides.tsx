@@ -111,8 +111,10 @@ const TEST_PROMPT =
 
 /** Proves the link works in a chat app: a prompt to try it, and a manual tick for when usage can't confirm it. */
 function ChatCheck({ used }: { used: string[] }) {
-  const { chatAdded } = useSetup();
+  const { chatAdded, stats } = useSetup();
   useEffect(restoreChatAdded, []);
+  // Without a usage report (Hobby plans), only the owner can tick this step.
+  const noReport = stats.state === 'ready' && stats.stats.paidPlanOnly;
   return (
     <div className="action-steps chat-check">
       <div className="action-row">
@@ -129,9 +131,13 @@ function ChatCheck({ used }: { used: string[] }) {
       <p className="action-hint" aria-live="polite">
         {used.length > 0
           ? `Seen in your usage: ${used.join(', ')}.`
-          : chatAdded
-            ? 'Ticked by you. Your usage will name the app once its first call comes in.'
-            : 'Paste the prompt in a new chat. This step ticks itself once the call shows in your usage, which can take a few minutes.'}
+          : noReport
+            ? chatAdded
+              ? 'Ticked by you.'
+              : 'Paste the prompt in a new chat. Once it answers, tick this step yourself: your plan has no usage report to confirm it.'
+            : chatAdded
+              ? 'Ticked by you. Your usage will name the app once its first call comes in.'
+              : 'Paste the prompt in a new chat. This step ticks itself once the call shows in your usage, which can take a few minutes.'}
       </p>
     </div>
   );

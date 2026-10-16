@@ -201,7 +201,7 @@ Nothing from this project: it is free and MIT licensed, with no plan and no fee.
 | 1,000 words read aloud | `openai/tts-1-hd` | about $0.17 |
 | An hour of speech written down | `openai/whisper-1` | $0.36 |
 
-<sub>From the AI Gateway catalog, October 2026. The catalog is a guide, not the bill: the provider's charge can differ. <code>bfl/flux-3-image</code> lists $0.024 for a 1024x1024 picture, but Black Forest Labs billed $0.048, which AI Gateway passed on with no surcharge. Each call reports its actual cost; ask <code>list_models</code> for today's catalog.</sub>
+<sub>From the AI Gateway catalog, October 2026. The catalog is a guide, not the bill: the provider's charge can differ. In October 2026 <code>bfl/flux-3-image</code> was listed at $0.024 for a 1024x1024 picture while Black Forest Labs billed $0.048 (passed on with no surcharge); the catalog has since been corrected. Each call reports its actual cost; ask <code>list_models</code> for today's catalog.</sub>
 
 This project is not made by or affiliated with Vercel. Version 1 means you run your own copy, so setup is as short as I could make it: the goal is for everyone to use AI at the price providers actually set.
 
@@ -251,7 +251,7 @@ Your chat app picks these for you; you never have to name them. Every tool retur
 | --- | --- |
 | `list_models({ type?, query? })` | Lists the models in the AI Gateway catalog with their type (`text`, `image`, `video`, `speech`, `transcription`), capabilities (`t2v`, `i2v`, …) and catalog price. |
 | `generate_text({ model, prompt, system?, max_tokens?, file_urls? })` | Generates text. Returns the text plus its cost when AI Gateway reports one. With `file_urls` (https links to images, videos, audio or PDFs, up to 10 files and 20 MB in total) the model reads them too, e.g. `google/gemini-3.5-flash-lite` summarizing a video. Pick a model tagged `vision`, `video-input`, `audio-input` or `file-input` in `list_models`. |
-| `generate_image({ model, prompt, size_or_aspect?, n?, estimate_only? })` | Works with image models (`bfl/flux-2-pro`, `openai/gpt-image-2`, …) and image-capable LLMs (`google/gemini-3-pro-image`). Images come back inline, and as expiring links when Blob is connected. |
+| `generate_image({ model, prompt, size_or_aspect?, n?, estimate_only? })` | Works with image models (`bfl/flux-2-pro`, `openai/gpt-image-2`, …) and image-capable LLMs (`google/gemini-3-pro-image`). Images come back inline, and as expiring links when Blob is connected. Models that take only exact sizes (Recraft, OpenAI) get the nearest size for a ratio like `16:9`, and the reply says which. |
 | `edit_image({ model, prompt, image_urls, mask_url?, size_or_aspect?, n?, estimate_only? })` | Changes existing images from an instruction. Works with edit-capable image models (`bfl/flux-kontext-pro`, `openai/gpt-image-2`, …) and image-capable LLMs. Takes https links; links this server returned work too, because it downloads the inputs itself. |
 | `upscale_image({ image_url, model?, prompt?, estimate_only? })` | Makes an image sharper and larger. Uses `topaz/wonder-3.5` unless you name another model. |
 | `start_video({ model, prompt, image_url?, end_image_url?, reference_urls?, duration?, aspect_ratio?, sound?, estimate_only? })` | Starts a video job and returns a `job_id` right away: text-to-video, image-to-video, first-to-last frame, or reference-to-video with up to 4 pictures or clips of your characters. |
@@ -259,12 +259,14 @@ Your chat app picks these for you; you never have to name them. Every tool retur
 | `upscale_video({ video_url, resolution?, model?, estimate_only? })` | Makes a video sharper and larger and cleans up noise (Topaz Proteus by default). |
 | `edit_video({ video_url, prompt, estimate_only? })` | Changes an existing video from an instruction (Grok Imagine Video, up to 720p). |
 | `extend_video({ video_url, prompt, duration?, estimate_only? })` | Continues a video from its last frame (Grok Imagine Video). |
-| `estimate_only: true` | On the image and video tools: returns the price from the AI Gateway catalog instead of running. Nothing is generated or charged. Often a range, because resolution or audio is left to the model's defaults; token-priced models (e.g. `openai/gpt-image-2`, Seedance 2) have no estimate. The provider can bill more than the catalog price: `bfl/flux-3-image` is listed at $0.024 for 1024x1024 but was billed $0.048. |
+| `estimate_only: true` | On the image and video tools: returns the price from the AI Gateway catalog instead of running. Nothing is generated or charged. Often a range, because resolution or audio is left to the model's defaults; token-priced models (e.g. `openai/gpt-image-2`, Seedance 2) have no estimate. The provider can bill more than the catalog price: `bfl/flux-3-image` was once listed at half of what was billed. |
 | `get_video({ job_id })` | For every video tool above: reports whether the job is still generating. When it finishes, the video is saved to your Blob store and you get an expiring link; call it again later for a fresh one. |
 | `generate_speech({ model, text, voice?, instructions?, speed?, language?, format? })` | Turns text into speech (`openai/tts-1-hd`, `google/gemini-3.8-flash-tts`, `fish-audio/s2-pro`, …). The audio comes back inline and as an expiring link. |
 | `transcribe({ model, audio_url, timestamps? })` | Turns speech in an audio or video file (up to 25 MB) into text, optionally with timestamps. |
-| `check_credits()` | Shows the team's AI Gateway credits and what this connector spent in the last 30 days. |
+| `check_credits()` | Shows the team's AI Gateway credits and what this connector spent in the last 30 days. The spend part needs AI Gateway's usage report, which Vercel offers on paid plans only; on Hobby it says so, and each reply still shows what that call cost. |
 | `list_files({ kind?, limit? })` | Lists the pictures, videos and audio this connector made, newest first, with fresh expiring links. |
+
+**Inline viewer.** In chat apps that support [MCP Apps](https://github.com/modelcontextprotocol/ext-apps) (Claude on the web, desktop and phone), `generate_image`, `edit_image`, `upscale_image`, `get_video` and `list_files` show their result right in the conversation: a picture grid, a video player and audio players, with Download, Upscale and Extend. Upscale and Extend ask the chat to run the tool, so nothing is spent behind your back. Other apps get the same pictures and links as plain content.
 
 </details>
 
@@ -356,7 +358,8 @@ Two development-only addresses preview states you cannot reach without a deploym
 <br>
 
 - **Setup page:** `/` checks the deployment live and guides each step, then hides the guide once every required step is done (a `gateway-open` cookie, ignored whenever a server check fails). Black and white, drawn in code, with motion that rests finished under reduced motion. `/setup` redirects there.
-- **Usage stats:** every call from this server carries AI Gateway tags (`ai-gateway-mcp`, `tool:<name>`, `client:<app>`, the app guessed from its User-Agent). The setup page reads AI Gateway's own spend report filtered by those tags, so there is no database.
+- **Usage stats:** every call from this server carries AI Gateway tags (`ai-gateway-mcp`, `tool:<name>`, `client:<app>`, the app guessed from its User-Agent). The setup page reads AI Gateway's own spend report filtered by those tags, so there is no database. The report is a paid-plan feature: on Hobby, Vercel answers 403 and the page says so instead (credits still show). Keeping our own log in Blob was ruled out: Hobby includes 2,000 Blob advanced operations a month, and going over blocks Blob for 30 days.
+- **Inline viewer:** one MCP Apps resource, `ui://gateway-mcp/media.html`, built from `ui/` by `scripts/build-ui.mjs` (esbuild, before `dev`, `build` and `typecheck`). Its CSP allows `https://*.blob.vercel-storage.com` for images and media.
 - **Stack:** Next.js (App Router) and TypeScript. MCP is served over Streamable HTTP using [`mcp-handler`](https://github.com/vercel/mcp-handler) v2, and model calls go through the [AI SDK](https://ai-sdk.dev) with the AI Gateway provider.
 - **Secret check:** `proxy.ts` rejects a wrong secret before routing by rewriting it to the standard 404 page. The route handler then checks the secret again, in constant time.
 - **Media in, media out:** files you give a tool are downloaded by the server (https only, size-capped), so this server's own private links work as input. Video jobs send theirs as links, since AI Gateway keeps a job's start request small.

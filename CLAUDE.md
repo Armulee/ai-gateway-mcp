@@ -39,7 +39,7 @@ Two repos:
 Setup page at `/` (every self-hoster lands here on their own deployment):
 - A guide in steps, each with a code-drawn motion graphic: deploy, `MCP_SECRET` (generated in the browser, with a link to the project's Environment Variables), AI Gateway via OIDC, Blob (checked on the server), then test the link and add it to a chat app (confirmed in the owner's browser). Shows what is done and what is next.
 - Never render the secret or the full connector URL by default. The owner pastes the secret into a field; the URL is built in the browser, "Test connection" calls the MCP endpoint's tools list, and the secret may be remembered in that browser (localStorage) with a way to forget it.
-- Usage stats, unlocked with the secret via `POST /api/stats` (constant-time check, 404 when wrong): team credits, and this connector's spend per day, per model and per chat app from AI Gateway's spend report filtered by the tags every call carries. No database.
+- Usage stats, unlocked with the secret via `POST /api/stats` (constant-time check, 404 when wrong): team credits, and this connector's spend per day, per model and per chat app from AI Gateway's spend report filtered by the tags every call carries. No database. The report is paid-plan only: on Hobby the page and `check_credits` say so (`PAID_PLAN_NOTE`) and still show credits.
 - How-to for Claude, ChatGPT and other MCP apps; set a Gateway budget; rotate the secret.
 
 ## Security
@@ -66,6 +66,7 @@ Threat: a leaked connector URL lets anyone spend the owner's Gateway credits and
    - Return images as MCP image content (base64) so they show in chat without storage.
    - If Blob is configured, also upload and return the URL.
    - FLUX 3 ignores `size`: a WxH goes as its aspect ratio plus `providerOptions.blackForestLabs.resolution` (the nearest class). AI SDK warnings are shown in the reply.
+   - Size-only models (`openai/gpt-image*`, `recraft/*`) ignore `aspectRatio`: a ratio, or a WxH they don't list, goes as their nearest listed size (`fixedSizes` in `lib/tools/generate-image.ts`, from the AI SDK OpenAI provider and Recraft's API reference), with a note.
 4. `start_video({ model, prompt, image_url?, duration?, aspect_ratio? })`
    - Video can take minutes, longer than a tool call or function should wait. Use AI Gateway's asynchronous video generation (start, then poll status). Return a `job_id` immediately.
 5. `get_video({ job_id })`
@@ -88,6 +89,11 @@ Threat: a leaked connector URL lets anyone spend the owner's Gateway credits and
 10. `estimate_only` on the image and video tools
    - Returns the price from the AI Gateway catalog (`lib/pricing.ts`) instead of running; nothing is called or charged, and no Blob store or input download is needed. Often a range (resolution, audio and mode are left to model defaults). Token-priced models get no estimate.
    - Every tool that starts a paid video job tells the chat app not to retry on its own after a timeout.
+11. MCP Apps inline viewer (`@modelcontextprotocol/ext-apps`)
+   - `generate_image`, `edit_image`, `upscale_image`, `get_video` and `list_files` register with `registerAppTool` and `_meta.ui.resourceUri = ui://gateway-mcp/media.html`. Their results add `structuredContent` (`MediaView`, `lib/ui/media-types.ts`); `content` stays unchanged for hosts without MCP Apps.
+   - The view (`ui/media-view.ts` + `ui/media-view.html`) is bundled by `scripts/build-ui.mjs` (esbuild, zod English locale only) into the gitignored `lib/ui/media-view.generated.ts` before `dev`, `build` and `typecheck`.
+   - Resource `_meta.ui`: CSP `resourceDomains: https://*.blob.vercel-storage.com`, `prefersBorder: false`, and for Claude only `domain` = first 32 hex of sha256(connector URL) + `.claudemcpcontent.com` (the URL holds the secret: hashed, never logged).
+   - Upscale and Extend in the view send a chat message (`app.sendMessage`) instead of calling tools, so spending stays with the model and the owner. No `vh` units in the view: the host sizes the frame to its content.
 
 Not offered, by design: 3D (no 3D models on AI Gateway), joining audio into video (needs ffmpeg), a talking-avatar tool (HeyGen Video on the Gateway is a general video model; put the dialogue in a `start_video` prompt), and app-level studios (ads, shorts, influencers, publishing). The chat app composes those from the tools above.
 
@@ -111,13 +117,16 @@ Verified (Oct 2026):
 - Image-only models use `generateImage` (base64); image-capable LLMs (Nano Banana) use `generateText` and return `files`.
 - Billing vs the catalog (real calls, Oct 15–16 2026): AI Gateway bills the provider's "market cost" with `surcharge_cost: 0`, but the catalog is not always that price. `bfl/flux-3-image` 1024x1024: catalog $0.024, billed $0.048 (BFL's own price). `google/veo-3.1-fast-generate-001` 4 s 720p with sound: billed $0.60 = catalog $0.15/s, though Vertex and the Gemini API list $0.10/s. `spacexai/grok-imagine-video` 2 s 720p: billed $0.14 = catalog $0.07/s; xAI's docs list $0.05/s. So provider pages are not a better source than the catalog.
 - `GET /v1/models/{id}/endpoints` (no auth) names the provider route Gateway uses (Veo goes through `vertex`). `gateway.getGenerationInfo({ id })` returns a generation's billed cost; it worked locally with the OIDC token.
+- AI Gateway's spend report (`GET /v1/report`, `getSpendReport`) answers 403 `Spend report access requires a paid plan` on Hobby, for both OIDC and API keys; credits work. A self-kept usage log in Blob is allowed by the AUP but unsafe on Hobby (2,000 Blob advanced operations a month, shared with media uploads; going over blocks Blob for 30 days), so there is none.
+- FLUX.2 (pro, max, flex, klein), `prodia/flux-fast-schnell` and `bfl/flux-3-video` have no price in the catalog (`input`/`output` "0"): `list_models` says "price not listed by AI Gateway". The FLUX 3 Image catalog price was corrected to $0.048 by Oct 16 2026.
 - Only BFL publishes prices as JSON-LD; Google, OpenAI, xAI, MiniMax, Alibaba, Recraft and Topaz have markdown docs; Kling and BytePlus render prices with JavaScript.
 
 Still unverified (check on a real deployment):
 - Whether `topaz/wonder-3.5` (upscale_image) and each edit model accept input images through `generateImage`, and which speech models honour `voice`/`instructions`. Speech and transcription were checked against the Gateway (tts-1 → whisper-1 round trip).
 - Whether video providers can fetch this server's presigned Blob links (needed by every video tool that takes a file).
 - Exact Gateway error shape for "out of credits" and "video not on plan" (matched by status/message today).
-- Whether the deployment's OIDC token may call AI Gateway's spend report (`getSpendReport`) and generation lookup (`getGenerationInfo`) on Vercel (both work locally), and whether image and video calls honour request `tags` like text calls do.
+- Whether the deployment's OIDC token may call the spend report on a paid plan and the generation lookup (`getGenerationInfo`) on Vercel (the lookup works locally), and whether image and video calls honour request `tags` like text calls do.
+- MCP Apps in real hosts: the inline viewer was tested with ext-apps' `AppBridge` in a browser (desktop and 375px), not yet in Claude (web, desktop, mobile) or ChatGPT, and the Blob CSP and Claude `domain` are untested there.
 - Which User-Agent each chat app sends (used to name the app in usage; unknown apps count as "other").
 
 ## Deploy experience (README)
@@ -147,6 +156,6 @@ Still unverified (check on a real deployment):
 
 ## Working rules
 
-- Build v1 only. Ask before adding dependencies beyond Next.js, the AI SDK, the MCP handler, Vercel Blob and zod.
+- Build v1 only. Ask before adding dependencies beyond Next.js, the AI SDK, the MCP handler, MCP Apps (`@modelcontextprotocol/ext-apps`), Vercel Blob, zod and esbuild (dev, for the viewer).
 - Ask before changing scope or architecture.
 - Keep it small. This is meant to ship in half a day.

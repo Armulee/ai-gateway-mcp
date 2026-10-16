@@ -1,4 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+import { isDemo } from './demo';
 import { MIN_SECRET_LENGTH } from './env';
 
 // The connector link carries a secret. The deployment can hold it two ways:
@@ -65,6 +66,8 @@ const sha256 = (value: string) => createHash('sha256').update(value).digest();
  * match, so a fingerprint of a guessable one is dead on arrival.
  */
 export function matchesSecret(candidate: string): boolean {
+  // The public demo never opens the connector or its usage, whatever is set.
+  if (isDemo()) return false;
   if (secretStatus() !== 'ok') return false;
   const print = fingerprint();
   if (print) return RANDOM_SECRET.test(candidate) && timingSafeEqual(sha256(candidate), Buffer.from(print, 'hex'));

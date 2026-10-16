@@ -3,6 +3,7 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useEffect, useRef, useState } from 'react';
+import { isDemo } from '@/lib/demo';
 import { GATEWAY_DASHBOARD_URL, PAID_PLAN_NOTE, VERCEL_PRICING_URL } from '@/lib/site';
 import type { Stats, Usage } from '@/lib/stats';
 import { INTRO_DONE } from './open-intro';
@@ -302,22 +303,31 @@ function Ready({ stats }: { stats: Stats }) {
           {problem}
         </p>
       ))}
+      {isDemo() ? (
+        <p className="stat-footnote">Sample numbers for this demo. Your own copy shows what your calls actually cost, from AI Gateway&apos;s own report.</p>
+      ) : (
       <p className="stat-footnote">
         {stats.paidPlanOnly ? '' : 'Only calls made through this connector are counted. '}Updated {new Date(stats.generatedAt).toLocaleTimeString()}.{' '}
         <button type="button" className="link-button" onClick={() => void loadStats()}>
           Refresh
         </button>
       </p>
+      )}
     </div>
   );
 }
 
-/** Development only: /?sample-stats previews the unlocked dashboard with made-up numbers. */
+/**
+ * Made-up numbers for the unlocked dashboard: always on the public demo
+ * (DEMO_MODE), and in development with /?sample-stats.
+ */
 function useSampleStats(): Stats | null {
   const [sample, setSample] = useState<Stats | null>(null);
   useEffect(() => {
-    if (process.env.NODE_ENV === 'production') return;
-    if (!new URLSearchParams(window.location.search).has('sample-stats')) return;
+    if (!isDemo()) {
+      if (process.env.NODE_ENV === 'production') return;
+      if (!new URLSearchParams(window.location.search).has('sample-stats')) return;
+    }
     void import('./sample-stats').then(({ sampleStats }) => setSample(sampleStats()));
   }, []);
   return sample;

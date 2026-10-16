@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Farmulee%2Fai-gateway-mcp&project-name=gateway-mcp&repository-name=gateway-mcp&env=MCP_SECRET&envDescription=A%20long%20random%20secret%20%28at%20least%2032%20characters%29.%20It%20becomes%20part%20of%20your%20connector%20URL%2C%20so%20keep%20it%20private.%20Generate%20one%20with%3A%20openssl%20rand%20-hex%2032&envLink=https%3A%2F%2Fgithub.com%2Farmulee%2Fai-gateway-mcp%23mcp_secret&stores=%5B%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22private%22%7D%5D"><img src="docs/readme/deploy.svg" width="460" alt="Deploy your own copy on Vercel, in one click"></a>
+  <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Farmulee%2Fai-gateway-mcp&project-name=gateway-mcp&repository-name=gateway-mcp&stores=%5B%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22private%22%7D%5D"><img src="docs/readme/deploy.svg" width="460" alt="Deploy your own copy on Vercel, in one click"></a>
 </p>
 
 <p align="center">
@@ -124,7 +124,7 @@ You need a [Vercel](https://vercel.com) account and a GitHub, GitLab or Bitbucke
   <tr>
     <td width="33%" valign="top">
       <h3>1. Deploy</h3>
-      <p>Click the button. Vercel copies the repo, makes your private storage and asks for <a href="#mcp_secret"><code>MCP_SECRET</code></a> (your copy can make one for you).</p>
+      <p>Click the button. Vercel copies the repo and makes your private storage. Your new page then makes <a href="#mcp_secret"><code>MCP_SECRET</code></a>: add it in Vercel and redeploy.</p>
     </td>
     <td width="33%" valign="top">
       <h3>2. Open your copy</h3>
@@ -138,7 +138,7 @@ You need a [Vercel](https://vercel.com) account and a GitHub, GitLab or Bitbucke
 </table>
 
 <p align="center">
-  <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Farmulee%2Fai-gateway-mcp&project-name=gateway-mcp&repository-name=gateway-mcp&env=MCP_SECRET&envDescription=A%20long%20random%20secret%20%28at%20least%2032%20characters%29.%20It%20becomes%20part%20of%20your%20connector%20URL%2C%20so%20keep%20it%20private.%20Generate%20one%20with%3A%20openssl%20rand%20-hex%2032&envLink=https%3A%2F%2Fgithub.com%2Farmulee%2Fai-gateway-mcp%23mcp_secret&stores=%5B%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22private%22%7D%5D"><img src="docs/readme/deploy.svg" width="380" alt="Deploy your own copy on Vercel, in one click"></a>
+  <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Farmulee%2Fai-gateway-mcp&project-name=gateway-mcp&repository-name=gateway-mcp&stores=%5B%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22private%22%7D%5D"><img src="docs/readme/deploy.svg" width="380" alt="Deploy your own copy on Vercel, in one click"></a>
 </p>
 
 Then set a **spend budget** in the Vercel dashboard (AI Gateway → Budgets). It is the real limit on what your link can ever spend.
@@ -301,7 +301,7 @@ Your connector link is your deployment's address plus the secret. The setup page
 https://<your-project>.vercel.app/mcp/<MCP_SECRET>
 ```
 
-`MCP_SECRET` is a random value of at least 32 characters, for example the output of `openssl rand -hex 32`. Use URL-safe characters only; hex is ideal. The setup page can also make one for you.
+`MCP_SECRET` is a random value of at least 32 characters. The Deploy button doesn't ask for it: a fresh copy starts with the endpoint off, and its setup page makes one in your browser, links to the project's Environment Variables, and remembers it so your link is filled in after the redeploy. You can also make your own, for example with `openssl rand -hex 32`. Use URL-safe characters only; hex is ideal.
 
 A random 64-character hex secret holds 256 bits: guessing it over the network is not possible in practice, and every wrong guess gets the same 404 as any unknown URL, compared in constant time. Secrets typed by hand are the weak spot, so the endpoint also stays off when the secret has fewer than 8 different characters or repeats one short block (`aaaa…`, `passwordpassword…`).
 

@@ -34,7 +34,7 @@ An open-source MCP server that lets people call any Vercel AI Gateway model (tex
 
 Two repos:
 - **This repo** is the app people deploy: the MCP server plus its setup page at `/` (`/setup` redirects there).
-- **`armulee/ai-gateway-mcp-landing`** is the project's own website (black-and-white scrollytelling story). Its setup buttons open Vercel's clone flow for this repo. The waitlist for the hosted version belongs there; its storage is not decided yet: ask before choosing.
+- **`armulee/ai-gateway-mcp-landing`** is the project's own website (black-and-white scrollytelling story). Its buttons open Vercel's clone flow for this repo directly; it has no setup or secret pages of its own. The waitlist for the hosted version belongs there; its storage is not decided yet: ask before choosing.
 
 Setup page at `/` (every self-hoster lands here on their own deployment):
 - A guide in steps, each with a code-drawn motion graphic: deploy, `MCP_SECRET` (generated in the browser, with a link to the project's Environment Variables), AI Gateway via OIDC, Blob (checked on the server), then test the link and add it to a chat app (confirmed in the owner's browser). Shows what is done and what is next.
@@ -122,9 +122,9 @@ Still unverified (check on a real deployment):
 
 ## Deploy experience (README)
 
-- Deploy button that clones the repo and prompts for `MCP_SECRET` (suggest a long random value).
+- Deploy button that clones the repo without asking for `MCP_SECRET`: the fresh copy starts with its endpoint off, and the setup page makes the secret in the browser (remembered there), links to the project's Environment Variables, and asks for one redeploy. Secrets never travel in URLs (Vercel's `envDefaults` and URL fragments end up in browser history).
 - The Deploy button creates and connects a private Blob store itself (`stores=[{"type":"blob","access":"private"}]`).
-- Steps: deploy → open `https://<app>.vercel.app` → copy `https://<app>.vercel.app/mcp/<MCP_SECRET>` → add as a custom connector in Claude or ChatGPT.
+- Steps: deploy → open `https://<app>.vercel.app` → make `MCP_SECRET`, add it in Vercel, redeploy → test the link (already filled in) → add it to Claude or ChatGPT (one-click install link for Claude).
 - Warnings: anyone with the URL can spend your credits, so keep it private. Set an AI Gateway budget. Video needs enough paid Gateway credits (whether the free monthly credit covers video is unverified, so the README does not claim it).
 - License: MIT.
 

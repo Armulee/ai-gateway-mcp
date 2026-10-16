@@ -32,7 +32,7 @@ function checkDeploy(): ServerStep {
 }
 
 const SECRET_PROBLEM = {
-  missing: 'Not set yet',
+  missing: 'A new copy starts without one',
   too_short: `Shorter than ${MIN_SECRET_LENGTH} characters`,
   weak: 'Too easy to guess (typed by hand or repeating). Make a new one below',
 };

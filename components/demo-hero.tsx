@@ -1,24 +1,39 @@
+'use client';
+
+import { useEffect } from 'react';
 import { DEPLOY_URL, LANDING_URL } from '@/lib/site';
+import { cosmos } from './cosmos/store';
 import { VercelMark } from './vercel-badge';
 
 /**
- * The public demo's opening (DEMO_MODE): the logo, large, over the starfield.
- * The arch draws itself, the point of light lands inside it and a beam passes
- * through, then the headline and the two ways on: deploy a copy, or read the
- * whole story on the landing site. Without motion it is simply there.
+ * The public demo's opening (DEMO_MODE), borrowed from the project's landing
+ * site: the eclipse over the starfield and its headline, then the two ways
+ * on: deploy a copy, or read the whole story. The eclipse sinks away as the
+ * page scrolls. Without WebGL the text stands on the plain sky.
  */
 export function DemoHero() {
+  useEffect(() => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const place = () => {
+      // Keep the disk clear of the headline: smaller and higher on narrow screens.
+      const narrow = window.innerWidth < 760;
+      const k = Math.min(1, window.scrollY / (window.innerHeight * 0.85));
+      cosmos.eclipse = 1 - k;
+      cosmos.eclipseScale = narrow ? 0.56 : 0.8;
+      cosmos.eclipseY = (narrow ? 0.33 : 0.25) + (reduce ? 0 : k * 0.2);
+    };
+    place();
+    window.addEventListener('scroll', place, { passive: true });
+    window.addEventListener('resize', place);
+    return () => {
+      window.removeEventListener('scroll', place);
+      window.removeEventListener('resize', place);
+      cosmos.eclipse = 0;
+    };
+  }, []);
+
   return (
     <section className="demo-hero" id="overview" data-chapter="overview">
-      <div className="demo-logo" aria-hidden="true">
-        <span className="demo-logo-beam" />
-        {/* Same drawing as app/icon.svg and BrandMark. */}
-        <svg viewBox="5 5.5 22 22">
-          <path className="demo-logo-arch" d="M9.5 25V14.5a6.5 6.5 0 0 1 13 0V25" pathLength={1} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-          <circle className="demo-logo-point" cx="16" cy="18.5" r="2.4" fill="currentColor" />
-        </svg>
-      </div>
-      <p className="demo-hero-name">AI Gateway MCP</p>
       <h1 className="demo-hero-title">
         Every AI model.
         <br />

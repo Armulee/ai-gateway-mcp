@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { pulse } from '../cosmos/store';
 import { CopyButton } from './copy-button';
-import { forgetSecret, markConnected, restoreSecret, setRemember, setSecret, useSetup } from './setup-store';
+import { forgetSecret, markConnected, setRemember, setSecret, useSetup } from './setup-store';
 
 // Runs in the browser only. The secret is only ever sent to this deployment:
 // to its MCP endpoint (Test connection) and to /api/stats (your usage). The
@@ -46,7 +46,6 @@ export function ConnectorPanel() {
 
   const [host, setHost] = useState('');
 
-  useEffect(restoreSecret, []);
   useEffect(() => setHost(window.location.host), []);
 
   const url = useMemo(

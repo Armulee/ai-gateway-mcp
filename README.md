@@ -159,13 +159,13 @@ Open your copy and it shows where you are: an arch of six stones, one per step. 
     </td>
     <td width="50%" valign="top">
       <img src="docs/readme/connect.jpg" alt="Get your link and test it: the secret pasted and hidden, and a passing test listing all 15 tools.">
-      <p><b>Your link, tested.</b> Paste your secret, and your copy builds the link and tests it against itself.</p>
+      <p><b>Your link, tested.</b> In the browser that made your secret it's checked by itself; anywhere else, paste it once and test it.</p>
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
       <img src="docs/readme/secret.jpg" alt="Set MCP_SECRET: done, with a button to make a new secret in the browser.">
-      <p><b>A secret in one click.</b> Made in your browser and never sent anywhere, with your link ready to copy at once and links straight to your project's settings. It comes after storage, so one redeploy sets up both.</p>
+      <p><b>A secret you can't lose.</b> Made and saved in your browser the moment you reach the step, never sent anywhere, with your link ready to copy. Add it in Vercel as a Config variable, redeploy once (it covers the storage too), and the page checks your link by itself.</p>
     </td>
     <td width="50%" valign="top">
       <img src="docs/readme/chat.jpg" alt="Add it to your chat app, with tabs for Claude, ChatGPT and other apps, and a test prompt to copy.">

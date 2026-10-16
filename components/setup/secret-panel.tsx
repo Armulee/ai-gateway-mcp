@@ -6,15 +6,17 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { DashboardLinks } from '@/lib/site';
 import { ActionSteps } from './action-steps';
 import { CopyButton } from './copy-button';
-import { adoptGeneratedSecret } from './setup-store';
+import { adoptGeneratedSecret, savedSecret } from './setup-store';
 
 gsap.registerPlugin(DrawSVGPlugin);
 
 // Makes a secret in the browser and points to where it goes in Vercel. The
 // value never leaves this page: the owner pastes it into Vercel themselves,
 // since this app holds no token that could write Environment Variables. The
-// link is shown right away and kept in this browser on copy, so nobody has
-// to rotate the secret after the redeploy just to get their link back.
+// link is shown right away. Until MCP_SECRET is set, the secret is made and
+// saved in this browser as soon as the step shows (reloads keep the same
+// one), so after the redeploy the link is already there: nobody has to
+// remember it or rotate it just to get their link back.
 
 const HEX = '0123456789abcdef';
 
@@ -51,7 +53,25 @@ export function SecretPanel({ isSet, links }: { isSet: boolean; links: Dashboard
   const id = useId();
   const [secret, setSecret] = useState('');
   const [origin, setOrigin] = useState('');
-  useEffect(() => setOrigin(window.location.origin), []);
+  // Whether this browser holds a secret (read after mount: storage is browser-only).
+  const [hasSaved, setHasSaved] = useState(true);
+  useEffect(() => {
+    setOrigin(window.location.origin);
+    const saved = savedSecret();
+    setHasSaved(Boolean(saved));
+    if (isSet) return;
+    // Not set yet: show the saved one, or make one and keep it right away.
+    const value = saved || randomSecret();
+    if (!saved) adoptGeneratedSecret(value);
+    setSecret(value);
+  }, [isSet]);
+
+  /** A fresh secret. Before MCP_SECRET is set it is saved at once; when rotating, on copy (the old link still works until the redeploy). */
+  const makeAnother = () => {
+    const value = randomSecret();
+    if (!isSet) adoptGeneratedSecret(value);
+    setSecret(value);
+  };
   const panel = useRef<HTMLDivElement>(null);
   const code = useRef<HTMLElement>(null);
   const wasOpen = useRef(false);
@@ -89,12 +109,21 @@ export function SecretPanel({ isSet, links }: { isSet: boolean; links: Dashboard
 
   return (
     <div className={`generator${isSet ? ' is-set' : ''}`}>
+      {isSet && !hasSaved && !open && (
+        <p className="gen-find">
+          This browser doesn&apos;t have your secret. Find it in{' '}
+          <a href={links.envVars} target="_blank" rel="noopener noreferrer">
+            Vercel → Environment Variables
+          </a>{' '}
+          (readable if it was saved as Config) and paste it under &ldquo;Test your link&rdquo;, or make a new one here.
+        </p>
+      )}
       <button
         type="button"
-        className={`btn ${isSet && !open ? 'btn-ghost' : 'btn-primary'} gen-trigger`}
+        className={`btn ${isSet || open ? 'btn-ghost' : 'btn-primary'} gen-trigger`}
         aria-expanded={open}
         aria-controls={id}
-        onClick={() => setSecret(randomSecret())}
+        onClick={makeAnother}
       >
         <svg className="gen-icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 3c.6 4.6 3.4 7.4 8 8-4.6.6-7.4 3.4-8 8-.6-4.6-3.4-7.4-8-8 4.6-.6 7.4-3.4 8-8z" />
@@ -130,6 +159,7 @@ export function SecretPanel({ isSet, links }: { isSet: boolean; links: Dashboard
                 <code className="gen-link-value">
                   {origin.replace(/^https?:\/\//, '')}/mcp/{secret.slice(0, 6)}…
                 </code>
+                {!isSet && <span className="gen-link-label">Saved in this browser, so you don&apos;t need to remember it.</span>}
               </p>
               <CopyButton value={link} label="Copy link" onCopy={() => adoptGeneratedSecret(secret)} />
             </div>
@@ -143,10 +173,10 @@ export function SecretPanel({ isSet, links }: { isSet: boolean; links: Dashboard
               ]}
               hints={[
                 <>
-                  Copy it, then {links.direct ? 'add' : 'pick this project and add'} it as <code>MCP_SECRET</code>. It&apos;s kept in this
-                  browser, and the link above works after the redeploy.
+                  Copy it, then {links.direct ? 'add' : 'pick this project and add'} it as <code>MCP_SECRET</code>. Choose type{' '}
+                  <b>Config</b> so you can look it up in Vercel later.
                 </>,
-                'Redeploy once: it applies the secret and the storage. Then reload this page; your link is already filled in.',
+                'Redeploy once: it applies the secret and the storage. Then reload this page: your link is checked by itself.',
               ]}
             />
           </div>

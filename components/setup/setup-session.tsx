@@ -15,11 +15,12 @@ export function SetupSession({ steps, open }: { steps: StepView[]; open: boolean
   const { stats } = useSetup();
   const states = useStepStates(steps);
   const complete = states.every((state, i) => state === 'done' || steps[i].optional);
+  const secretSet = steps.some((step) => step.id === 'secret' && step.state === 'done');
 
   useEffect(() => {
-    restoreSecret();
+    restoreSecret(secretSet);
     restoreChatAdded();
-  }, []);
+  }, [secretSet]);
 
   useEffect(() => {
     if (!open && complete) markGatewayOpen();

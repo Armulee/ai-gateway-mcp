@@ -1739,6 +1739,13 @@ html:not(.motion-ok) .step-body-inner {
   color: var(--muted);
 }
 
+/* When MCP_SECRET is set but this browser doesn't hold it. */
+.gen-find {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
 /* The link, right under the new secret: shortened on screen, copied in full. */
 .gen-link {
   display: flex;

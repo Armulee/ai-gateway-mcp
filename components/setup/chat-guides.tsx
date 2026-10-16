@@ -71,7 +71,8 @@ function Installs({ installs }: { installs: Install[] }) {
   const [origin, setOrigin] = useState('');
   useEffect(() => setOrigin(window.location.origin), []);
   if (installs.length === 0) return null;
-  const url = secret.trim() && origin ? `${origin}/mcp/${encodeURIComponent(secret.trim())}` : '';
+  // Only a link that works: the secret saved before the redeploy would add a dead connector.
+  const url = connected && secret.trim() && origin ? `${origin}/mcp/${encodeURIComponent(secret.trim())}` : '';
   return (
     <div className="action-steps guide-installs">
       <div className="action-row">
@@ -95,11 +96,11 @@ function Installs({ installs }: { installs: Install[] }) {
         )}
       </div>
       <p className="action-hint">
-        {!url
-          ? 'Paste your secret in “Get your link and test it” to turn these on.'
-          : connected
-            ? 'Each opens the app with your link filled in; you confirm there. Your link goes to that app, the same as pasting it.'
-            : 'Test your link above first, so you add one that works.'}
+        {url
+          ? 'Each opens the app with your link filled in; you confirm there. Your link goes to that app, the same as pasting it.'
+          : secret.trim()
+            ? 'These turn on once your link works: finish the redeploy and reload this page, or test it above.'
+            : 'These turn on once your link works: set MCP_SECRET above and redeploy, or paste your secret under “Test your link”.'}
       </p>
     </div>
   );

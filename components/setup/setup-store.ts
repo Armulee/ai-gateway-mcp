@@ -67,13 +67,22 @@ function storage(): Storage | null {
   }
 }
 
-/** Restores a remembered secret, then confirms it by loading usage. */
-export function restoreSecret() {
+/**
+ * Restores a remembered secret. It is checked (by loading usage) only once
+ * the server has MCP_SECRET: before the redeploy the endpoint is off, and a
+ * check would only fail, so the saved value just waits.
+ */
+export function restoreSecret(secretSet: boolean) {
   const saved = storage()?.getItem(KEY);
   if (saved && !state.secret) {
     set({ secret: saved });
-    void loadStats();
+    if (secretSet) void loadStats();
   }
+}
+
+/** The secret kept in this browser, if any. */
+export function savedSecret(): string {
+  return storage()?.getItem(KEY) ?? '';
 }
 
 export function setSecret(secret: string) {
@@ -114,9 +123,17 @@ export async function loadStats() {
       body: JSON.stringify({ secret }),
     });
     if (res.status === 404) {
-      storage()?.removeItem(KEY);
+      // Keep the saved value: a redeploy may still be finishing. Only "Forget" removes it.
       clearGatewayOpen();
-      set({ stats: { state: 'fail', message: 'This secret does not match MCP_SECRET on this deployment.', mismatch: true }, connected: false });
+      set({
+        stats: {
+          state: 'fail',
+          message:
+            "The secret saved in this browser doesn't open this deployment. If you just redeployed, wait for it to finish and reload; otherwise paste the one from Vercel or make a new one.",
+          mismatch: true,
+        },
+        connected: false,
+      });
       return;
     }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);

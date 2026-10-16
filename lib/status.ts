@@ -105,7 +105,7 @@ export async function getSetupSteps(): Promise<ServerStep[]> {
       id: 'connect',
       title: 'Test your link',
       state: 'todo',
-      detail: 'Made your secret on this page? Your link is already filled in. Otherwise paste the secret. Then test it.',
+      detail: 'Checked by itself when this browser has your secret. From another browser, paste it once and test it.',
     },
     { id: 'chat', title: 'Add it to your chat app', state: 'todo', detail: 'Add the link as a connector in Claude, ChatGPT or another MCP app.' },
   ];

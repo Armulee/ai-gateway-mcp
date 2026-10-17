@@ -2383,9 +2383,86 @@ html.motion-ok:has(.open-intro:not(.is-done)) :is(.nav-brand, .orbit, .setup-sec
   }
 }
 
-/* With the guide hidden the page starts at usage, under the nav. */
+/* With the guide hidden the page starts at the budget card, under the nav. */
 .setup-section.is-first {
   margin-top: clamp(96px, 14vh, 140px);
+}
+
+/* Set a spend limit: near the top in every state. Never "done": "I've set it"
+   folds it to one line in this browser. */
+.budget-card {
+  max-width: 760px;
+  padding: clamp(20px, 3.5vw, 40px);
+  border: 1px solid var(--line-strong);
+  border-radius: 20px;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(255, 255, 255, 0.08), transparent 55%),
+    rgba(10, 10, 12, 0.84);
+  backdrop-filter: blur(8px);
+}
+
+.budget-lead {
+  max-width: 46ch;
+  margin: 0.9rem 0 1.75rem;
+  color: var(--muted);
+  font-size: 1.125rem;
+}
+
+.budget-flow b.budget-project {
+  display: inline;
+  padding: 0;
+  color: var(--text);
+}
+
+.budget-flow p {
+  margin-bottom: 0;
+}
+
+.budget-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 1.75rem;
+}
+
+.budget-actions .btn {
+  gap: 0.6em;
+}
+
+.budget-note {
+  margin: 1rem 0 0;
+  color: var(--dim);
+  font-size: 0.875rem;
+}
+
+.budget-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 20px;
+  max-width: 760px;
+  padding: 12px 12px 12px 20px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(10, 10, 12, 0.6);
+}
+
+.budget-line p {
+  margin: 0;
+}
+
+.budget-line .dim {
+  color: var(--dim);
+}
+
+.budget-line .budget-actions {
+  margin-top: 0;
+}
+
+/* The shared Vercel mark is drawn for white buttons; the folded line's is dark. */
+.budget-line .btn-icon {
+  filter: invert(1);
 }
 
 /* Keep it safe: four statements, big, each with one plain sentence under it. */

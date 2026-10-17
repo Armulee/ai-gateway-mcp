@@ -142,6 +142,13 @@ export function toolError(
       `Unknown model "${modelId}". Call list_models to see the ids AI Gateway accepts.`,
     );
   }
+  // A budget that ran out is also a 402 (type quota_for_entity_exceeded) that the SDK may surface as a
+  // server error; its message ("Project budget exceeded…", "Quota limit exceeded for…") survives.
+  if (/budget exceeded|quota limit exceeded|quota_for_entity_exceeded/.test(lower)) {
+    return errorResult(
+      `AI Gateway budget reached while calling "${modelId}". Raise it in the Vercel dashboard (AI Gateway → Budgets) or wait for it to reset.`,
+    );
+  }
   if (status === 402 || /insufficient|out of credit|credit balance|top.?up|no credits/.test(lower)) {
     return errorResult(
       `Not enough AI Gateway credits to run "${modelId}". Add credits in the Vercel dashboard (AI Gateway → Credits) and try again.`,

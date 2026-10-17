@@ -6,9 +6,9 @@ const BADGES = {
   gateway: { href: 'https://vercel.com/ai-gateway', label: 'AI Gateway' },
 } as const;
 
-/** Inline pill with the Vercel mark that links to Vercel or to AI Gateway. Sized in em so it sits inside any sentence. */
-export function VercelBadge({ kind }: { kind: keyof typeof BADGES }) {
-  const { href, label } = BADGES[kind];
+/** Inline pill with the Vercel mark that links to Vercel or to AI Gateway (or `href`, say a dashboard page). Sized in em so it sits inside any sentence. */
+export function VercelBadge({ kind, href = BADGES[kind].href }: { kind: keyof typeof BADGES; href?: string }) {
+  const { label } = BADGES[kind];
   return (
     <a className="badge" href={href} target="_blank" rel="noopener noreferrer">
       {/* eslint-disable-next-line @next/next/no-img-element */}

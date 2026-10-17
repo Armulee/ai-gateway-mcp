@@ -38,7 +38,7 @@ export const checkCreditsTool = {
       } else {
         lines.push("This connector's own spend could not be read; the Vercel dashboard (AI Gateway → Usage) has it.");
       }
-      lines.push('The spending cap is the AI Gateway budget set in the Vercel dashboard.');
+      lines.push('The spending cap is the AI Gateway budget (Vercel dashboard: AI Gateway → Budgets; a project budget caps just this connector).');
       return textResult(lines.join('\n'));
     } catch (error) {
       return toolError(error, 'AI Gateway credits', 'credits');

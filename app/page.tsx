@@ -22,5 +22,5 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   const previewOpen = isDemo() || (process.env.NODE_ENV !== 'production' && params['preview-open'] !== undefined);
   const open = previewOpen || (jar.get(OPEN_COOKIE)?.value === '1' && serverStepsHold);
   const guide = !open || params.steps !== undefined;
-  return <Setup steps={steps} open={open} guide={guide} linkTtlHours={getConfig().signedUrlTtlHours} links={dashboardLinks(project)} />;
+  return <Setup steps={steps} open={open} guide={guide} linkTtlHours={getConfig().signedUrlTtlHours} links={dashboardLinks(project, { apiKey: Boolean(process.env.AI_GATEWAY_API_KEY) })} />;
 }

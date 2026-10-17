@@ -146,7 +146,7 @@ You need a [Vercel](https://vercel.com) account and a GitHub, GitLab or Bitbucke
   <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Farmulee%2Fai-gateway-mcp&project-name=gateway-mcp&repository-name=gateway-mcp&stores=%5B%7B%22type%22%3A%22blob%22%2C%22access%22%3A%22private%22%7D%5D"><img src="docs/readme/deploy.svg" width="380" alt="Deploy your own copy on Vercel, in one click"></a>
 </p>
 
-Then set a **spend budget** in the Vercel dashboard (AI Gateway → Budgets). It is the real limit on what your link can ever spend.
+Then set a **spend limit**: [AI Gateway → Budgets → Projects](https://vercel.com/d?to=%2F%5Bteam%5D%2F~%2Fai-gateway%2Fbudgets%2Fprojects&title=Open%20AI%20Gateway%20Budgets), Add budget, a monthly amount for this project (say $10, what you'd expect to spend). Anyone with your link can spend up to it, so keep it low. Your setup page has a button that opens it.
 
 ### Your copy comes with its own setup page
 
@@ -278,7 +278,7 @@ Your chat app picks these for you; you never have to name them. Every tool retur
 ## Keep it safe
 
 - **Your link works like a password that spends money.** Anyone who has it can use your AI Gateway credits. Keep it private.
-- **Set an AI Gateway budget.** Only Vercel's budget limits your total spend.
+- **Set an AI Gateway budget, and keep it low.** Only Vercel's budget limits your total spend, and a leaked link can spend up to it. [Open Budgets → Projects](https://vercel.com/d?to=%2F%5Bteam%5D%2F~%2Fai-gateway%2Fbudgets%2Fprojects&title=Open%20AI%20Gateway%20Budgets).
 - **If the link leaks, make a new secret** on your setup page, put its fingerprint in Project Settings → Environment Variables and redeploy. The old link stops working at once.
 - **Your usage is yours.** Anyone can open your setup page, but the numbers only appear for someone who has your secret.
 
@@ -288,7 +288,7 @@ Your chat app picks these for you; you never have to name them. Every tool retur
 <br>
 
 - **Your connector URL works like a password that spends money.** Anyone who has it can use your AI Gateway credits and generate content under your Vercel account.
-- **Set an AI Gateway budget.** This server caps each call (`MAX_VIDEO_SECONDS`, `MAX_IMAGES_PER_CALL`, `MAX_SPEECH_CHARACTERS`, `ALLOWED_MODELS`), but only Vercel's budget limits your total spend. Tools that start from your own video (`motion_control`, `upscale_video`, `edit_video`) follow its length, which the per-call caps cannot see.
+- **Set an AI Gateway budget.** Use a [project budget](https://vercel.com/d?to=%2F%5Bteam%5D%2F~%2Fai-gateway%2Fbudgets%2Fprojects&title=Open%20AI%20Gateway%20Budgets): it counts what this deployment spends through its OIDC token and leaves the rest of your team alone (if you set `AI_GATEWAY_API_KEY` on the deployment, use the Team tab instead; key spend never counts toward a project budget). This server caps each call (`MAX_VIDEO_SECONDS`, `MAX_IMAGES_PER_CALL`, `MAX_SPEECH_CHARACTERS`, `ALLOWED_MODELS`), but only Vercel's budget limits your total spend. Tools that start from your own video (`motion_control`, `upscale_video`, `edit_video`) follow its length, which the per-call caps cannot see.
 - **Rotate the secret if the URL leaks.** Set a new fingerprint (or `MCP_SECRET`) and redeploy. The old URL stops working right away, and any unfinished video jobs are abandoned.
 - **Optional: rate-limit the endpoint.** Guessing is hopeless, but every wrong request still counts toward your project's usage. If your plan includes Vercel Firewall rate limiting, add a rule for paths starting with `/mcp/` (for example, by IP). Do not turn on Attack Challenge Mode for it: Claude's and ChatGPT's servers cannot solve the challenge, so your connector would stop working.
 - **Files are private, but links are not.** Pictures, videos and audio are stored in a private Blob store. Anyone who holds one of the links returned in chat can open that file until the link expires (`SIGNED_URL_TTL_HOURS`).

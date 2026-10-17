@@ -104,13 +104,15 @@ export function SetupMotion() {
         );
       });
 
-      gsap.fromTo('.setup-section', { y: 40, opacity: 0 }, {
-        y: 0,
-        opacity: 1,
-        duration: 1,
-        ease: 'expo.out',
-        stagger: 0.1,
-        scrollTrigger: { trigger: '.setup-section', start: 'top 85%', toggleActions: 'play none none none' },
+      // Each section rises as it comes into view (the budget card sits near the top, usage far below the guide).
+      gsap.utils.toArray<HTMLElement>('.setup-section').forEach((section) => {
+        gsap.fromTo(section, { y: 40, opacity: 0 }, {
+          y: 0,
+          opacity: 1,
+          duration: 1,
+          ease: 'expo.out',
+          scrollTrigger: { trigger: section, start: 'top 85%', toggleActions: 'play none none none' },
+        });
       });
       cleanups.push(setupOrbitRail(true));
       return () => cleanups.forEach((fn) => fn());

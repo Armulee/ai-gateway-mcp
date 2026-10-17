@@ -1,5 +1,5 @@
 import { isDemo } from '@/lib/demo';
-import { DEPLOY_URL, LANDING_URL, REPO_URL, type DashboardLinks } from '@/lib/site';
+import { DEPLOY_URL, GATEWAY_BUDGETS_URL, LANDING_URL, REPO_URL, type DashboardLinks } from '@/lib/site';
 import type { ServerStep, StepId } from '@/lib/status';
 import { CosmosCanvas } from '../cosmos/cosmos-canvas';
 import { DemoBanner } from '../demo-banner';
@@ -13,6 +13,7 @@ import { GuideFold } from './guide-fold';
 import { ChatGuides } from './chat-guides';
 import { ConnectorPanel } from './connector-panel';
 import { BlobPanel } from './blob-panel';
+import { BudgetCard } from './budget-card';
 import { SecretPanel } from './secret-panel';
 import { SetupMotion } from './setup-motion';
 import { OpenIntro } from './open-intro';
@@ -60,13 +61,17 @@ export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: Serv
   const isDone = (id: StepId) => steps.some((s) => s.id === id && s.state === 'done');
   // Storage or MCP_SECRET still missing: the overview offers the agent, and the guide waits folded.
   const agent = isDone('blob') && isDone('secret') ? undefined : { blobDone: isDone('blob'), secretSet: isDone('secret'), links };
+  // The demo never links its own owner's team.
+  const budgets = demo ? GATEWAY_BUDGETS_URL : links.budgets;
   // With the gateway open the guide is gone (unless asked for with ?steps), and so are its stars on the rail.
   const chapters = [
-    // The open intro replaces the overview: the page starts at usage. The demo opens on its own hero.
+    // The open intro replaces the overview: the page starts at the budget card. The demo opens on its own hero.
     ...(guide ? [{ id: 'overview', label: 'Overview' }] : demo ? [{ id: 'overview', label: 'Intro' }] : []),
+    // The budget card sits right under the top, before the guide (after the chat recording in the demo).
+    ...(demo ? [] : [{ id: 'budget', label: 'Budget' }]),
     ...(!guide ? [] : steps.map((step) => ({ id: step.id, label: RAIL_LABELS[step.id], done: step.state === 'done' }))),
     // The public demo opens with a real chat recording.
-    ...(demo ? [{ id: 'in-chat', label: 'In chat' }] : []),
+    ...(demo ? [{ id: 'in-chat', label: 'In chat' }, { id: 'budget', label: 'Budget' }] : []),
     { id: 'usage', label: 'Usage' },
     { id: 'safety', label: 'Safety' },
   ];
@@ -99,6 +104,9 @@ export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: Serv
         ) : (
           <OpenIntro steps={views} />
         )}
+
+        {/* Not a step: near the top in every state, since a low budget is the real limit on a leaked link. */}
+        {!demo && <BudgetCard href={budgets} project={links.project?.name} team={links.budgetsTeam} first={!guide} />}
 
         {guide && (
         <GuideFold steps={views} folded={Boolean(agent)}>
@@ -133,8 +141,9 @@ export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: Serv
         )}
 
         {demo && <DemoClip />}
+        {demo && <BudgetCard href={budgets} team={false} first={false} />}
 
-        <section className={`setup-section${guide || demo ? '' : ' is-first'}`} id="usage" data-chapter="usage">
+        <section className="setup-section" id="usage" data-chapter="usage">
           <h2 className="section-title">Your usage</h2>
           <StatsPanel connectHref={guide ? '#connect' : '/?steps#connect'} />
         </section>
@@ -149,7 +158,7 @@ export function Setup({ steps, open, guide, linkTtlHours, links }: { steps: Serv
                 line: 'Your budget is the real limit.',
                 detail: (
                   <>
-                    Set a spend budget in <VercelBadge kind="gateway" />. This server caps each call, but only the budget caps the month.
+                    Set a spend budget in <VercelBadge kind="gateway" href={budgets} />. This server caps each call, but only the budget caps the month.
                   </>
                 ),
               },

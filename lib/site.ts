@@ -17,20 +17,40 @@ export const PAID_PLAN_NOTE =
 export const GATEWAY_DASHBOARD_URL = `https://vercel.com/d?to=${encodeURIComponent('/[team]/~/ai-gateway')}&title=${encodeURIComponent('Open AI Gateway')}`;
 export const VERCEL_PRICING_URL = 'https://vercel.com/pricing';
 
+/**
+ * AI Gateway's Budgets page, on its Projects tab: a project budget caps what
+ * this deployment spends through its OIDC token, and nothing else in the team.
+ * Spend through AI_GATEWAY_API_KEY never counts toward a project budget, so
+ * with a key set the Team tab is the one that caps it.
+ */
+const budgetsPath = (team: string, apiKey = false) => `/${team}/~/ai-gateway/budgets/${apiKey ? 'team' : 'projects'}`;
+export const GATEWAY_BUDGETS_URL = `https://vercel.com/d?to=${encodeURIComponent(budgetsPath('[team]'))}&title=${encodeURIComponent('Open AI Gateway Budgets')}`;
+
 export type VercelProject = { owner: string; name: string };
-export type DashboardLinks = { envVars: string; deployments: string; storage: string; direct: boolean; project?: VercelProject };
+export type DashboardLinks = { envVars: string; deployments: string; storage: string; budgets: string; budgetsTeam: boolean; direct: boolean; project?: VercelProject };
 
 /**
  * Pages of the owner's project in the Vercel dashboard. With the team and
  * project known (see lib/project.ts) they open it directly; otherwise
  * Vercel's "/d?to=" link asks which project to open.
  */
-export function dashboardLinks(project?: VercelProject): DashboardLinks {
+export function dashboardLinks(project?: VercelProject, { apiKey = false } = {}): DashboardLinks {
   const at = (path: string) =>
     project
       ? `https://vercel.com/${encodeURIComponent(project.owner)}/${encodeURIComponent(project.name)}/${path}`
       : `https://vercel.com/d?to=${encodeURIComponent(`/[team]/[project]/${path}`)}`;
-  return { envVars: at('settings/environment-variables'), deployments: at('deployments'), storage: at('stores'), direct: Boolean(project), project };
+  const budgets = project
+    ? `https://vercel.com${budgetsPath(encodeURIComponent(project.owner), apiKey)}`
+    : `https://vercel.com/d?to=${encodeURIComponent(budgetsPath('[team]', apiKey))}&title=${encodeURIComponent('Open AI Gateway Budgets')}`;
+  return {
+    envVars: at('settings/environment-variables'),
+    deployments: at('deployments'),
+    storage: at('stores'),
+    budgets,
+    budgetsTeam: apiKey,
+    direct: Boolean(project),
+    project,
+  };
 }
 
 /**

@@ -27,6 +27,31 @@ type Tool = {
 /** Tools whose results show in the media view (MCP Apps) in hosts that support it. */
 const UI_TOOLS = new Set(['generate_image', 'edit_image', 'upscale_image', 'get_video', 'list_files']);
 
+/**
+ * Tools that spend nothing and change nothing the owner would miss. get_video
+ * saves the finished file to Blob, which is a copy of its result, not a new
+ * job. Hosts may let these run without asking each time; every other tool
+ * spends Gateway credits.
+ */
+const READ_ONLY_TOOLS = new Set(['list_models', 'get_video', 'check_credits', 'list_files']);
+
+function annotations(name: string) {
+  return READ_ONLY_TOOLS.has(name)
+    ? { readOnlyHint: true, idempotentHint: true, openWorldHint: true }
+    : { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true };
+}
+
+/**
+ * Sent to the chat app when it connects. A declined call never reaches this
+ * server, so the only way to stop a model from asking again is to tell it.
+ */
+export const SERVER_INSTRUCTIONS = [
+  'Every tool except list_models, get_video, check_credits and list_files spends the owner\'s AI Gateway credits.',
+  'If the user declines or denies a tool call, do not call it again, with the same or other arguments, and do not switch to another tool to do the same thing. Ask the user what they want instead.',
+  'Never repeat a paid call on your own after a timeout or error; tell the user and let them decide.',
+  'For video, call get_video until it says to stop checking, then stop and tell the user. Check again only when they ask.',
+].join(' ');
+
 /** Every tool the connector offers, in the order chat apps list them. */
 const TOOLS: Tool[] = [
   listModels,
@@ -74,7 +99,7 @@ export const SERVER_INFO = { name: 'gateway-mcp', version: '0.1.0' };
  */
 export function registerGatewayTools(server: McpServer, getContext: () => ToolContext) {
   for (const tool of TOOLS) {
-    const config = { description: tool.description, inputSchema: tool.inputSchema };
+    const config = { description: tool.description, inputSchema: tool.inputSchema, annotations: annotations(tool.name) };
     const run = (args: unknown) => tool.run(args as never, getContext());
     if (UI_TOOLS.has(tool.name)) {
       // Hosts with MCP Apps show the result in the media view; others use its plain content.
@@ -98,5 +123,5 @@ export function registerGatewayTools(server: McpServer, getContext: () => ToolCo
  * Blob namespace the tools use.
  */
 export function createGatewayMcpHandler(getContext: () => ToolContext) {
-  return createMcpHandler((server) => registerGatewayTools(server, getContext), { serverInfo: SERVER_INFO, verboseLogs: false });
+  return createMcpHandler((server) => registerGatewayTools(server, getContext), { serverInfo: SERVER_INFO, instructions: SERVER_INSTRUCTIONS, verboseLogs: false });
 }

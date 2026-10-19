@@ -27,6 +27,22 @@ const WAIT_MS = 40_000;
 const POLL_MS = 5_000;
 export const GET_VIDEO_WAIT_S = WAIT_MS / 1000;
 
+/**
+ * How long after the start a pending job keeps getting "call again". Past it
+ * the reply says to stop and hand back to the user, so a slow job doesn't turn
+ * into an endless run of calls (about four calls before the stop).
+ */
+const CHECK_FOR_S = 180;
+
+function pendingMessage(job: VideoJob) {
+  const elapsed = job.startedAt != null ? Math.max(0, Math.floor(Date.now() / 1000) - job.startedAt) : undefined;
+  const running = elapsed != null ? `, running for ${Math.floor(elapsed / 60)} min ${elapsed % 60} s` : '';
+  if (elapsed != null && elapsed < CHECK_FOR_S) {
+    return `Still generating with ${job.model}${running}. Call get_video again; each call waits up to ${GET_VIDEO_WAIT_S} s, so there is no need to pause first.`;
+  }
+  return `Still generating with ${job.model}${running}. Stop checking now: tell the user the video is still being made and that you can check again when they ask. Do not call get_video again until they do. Nothing is charged while it waits.`;
+}
+
 async function linksMessage(job: VideoJob, pathnames: string[], cost?: number) {
   const lines = [`Video ready (${job.model})${cost != null ? `, cost: $${cost}` : ''}.`];
   const view: MediaView = { source: 'result', model: job.model, cost, items: [] };
@@ -42,7 +58,7 @@ async function linksMessage(job: VideoJob, pathnames: string[], cost?: number) {
 export const getVideoTool = {
   name: 'get_video',
   description:
-    'Check a video job from start_video, motion_control, upscale_video, edit_video or extend_video. Returns "still generating" or, when done, what AI Gateway billed and private download links (they expire; calling again issues fresh links).',
+    `Check a video job from start_video, motion_control, upscale_video, edit_video or extend_video. Returns "still generating" or, when done, what AI Gateway billed and private download links (they expire; calling again issues fresh links). Each call waits up to ${GET_VIDEO_WAIT_S} s. When the reply says to stop checking, stop and tell the user; call again only when they ask.`,
   inputSchema: z.object({
     job_id: z.string().min(1).describe('The job_id returned by a video tool'),
   }),
@@ -64,11 +80,7 @@ export const getVideoTool = {
         await new Promise((resolve) => setTimeout(resolve, POLL_MS));
         status = await checkStatus();
       }
-      if (status.status === 'pending') {
-        return textResult(
-          `Still generating with ${job.model} (this call waited ${GET_VIDEO_WAIT_S} s). Call get_video again; each call waits up to ${GET_VIDEO_WAIT_S} s, so there is no need to pause first.`,
-        );
-      }
+      if (status.status === 'pending') return textResult(pendingMessage(job));
       if (status.status === 'error') {
         if (await exists(stored)) return linksMessage(job, [stored]);
         return errorResult(`Video generation with "${job.model}" failed: ${status.error}`);

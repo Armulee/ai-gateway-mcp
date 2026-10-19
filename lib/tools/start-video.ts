@@ -60,13 +60,13 @@ export async function startVideoJob(
       return errorResult(`AI Gateway accepted the request for "${model}" but returned no job id, so it cannot be tracked.`);
     }
 
-    const jobId = encodeJobId({ model, gatewayJobId }, ctx.keyPrefix);
+    const jobId = encodeJobId({ model, gatewayJobId, startedAt: Math.floor(Date.now() / 1000) }, ctx.keyPrefix);
     const notes = warnings.map(warningNote);
     return textResult(
       [
         `Video job started with ${model}.`,
         `job_id: ${jobId}`,
-        `Call get_video with this job_id until it reports done (usually 1–5 minutes). Each call waits up to ${GET_VIDEO_WAIT_S} s, so call it right away. Fetch it soon: the provider's copy expires.`,
+        `Call get_video with this job_id right away (usually done in 1–5 minutes). Each call waits up to ${GET_VIDEO_WAIT_S} s, so there is no need to pause. If get_video says to stop checking, stop and tell the user; check again only when they ask. Fetch it soon: the provider's copy expires.`,
         ...notes,
       ].join('\n'),
     );
@@ -80,7 +80,7 @@ export async function startVideoJob(
  * failed, and a job_id that never arrived cannot be recovered.
  */
 export const NO_BLIND_RETRY =
-  'If this call times out or returns no answer, do not call it again on your own: the job may already be running and a retry pays twice. Tell the user and let them decide.';
+  'If this call times out or returns no answer, do not call it again on your own: the job may already be running and a retry pays twice. Tell the user and let them decide. If the user declines this call, do not call it again, with these or other arguments, unless they ask.';
 
 /** Input for the video tools: list price only, nothing starts. */
 export const estimateOnly = z
@@ -187,7 +187,7 @@ async function checkOptions(info: GatewayModel, mode: Mode, resolution: Resoluti
 export const startVideoTool = {
   name: 'start_video',
   description:
-    `Start an asynchronous AI Gateway video and return a job_id immediately. Then call get_video with that job_id until it is done (usually 1–5 minutes); each call waits up to ${GET_VIDEO_WAIT_S} s, so no pause is needed between calls. Set resolution (480p, 720p, 1080p, 4k) to pick the size and price; only some models allow it (list_models shows each model's resolutions and lengths), and a model that can't make the asked resolution or length is refused before anything is charged, with alternatives to offer the user. Before a paid run, tell the user the length and price; estimate_only gives the model's shortest clip and its price. Text-to-video needs only a prompt. image_url animates a picture (i2v models); add end_image_url to move from the first picture to the last (Veo, Kling, Seedance). reference_urls (pictures or videos of characters or objects) makes a new scene with them (r2v models such as "alibaba/wan-v2.6-r2v": call them character1, character2… in the prompt). For dialogue, write the lines in the prompt and set sound (models with audio, e.g. Veo 3.1, HeyGen). Links must be https; links returned by this server work. ${NO_BLIND_RETRY}`,
+    `Start an asynchronous AI Gateway video and return a job_id immediately. Then call get_video with that job_id (usually done in 1–5 minutes); each call waits up to ${GET_VIDEO_WAIT_S} s, so no pause is needed between calls, and when it says to stop checking, stop and tell the user. Set resolution (480p, 720p, 1080p, 4k) to pick the size and price; only some models allow it (list_models shows each model's resolutions and lengths), and a model that can't make the asked resolution or length is refused before anything is charged, with alternatives to offer the user. Before a paid run, tell the user the length and price; estimate_only gives the model's shortest clip and its price. Text-to-video needs only a prompt. image_url animates a picture (i2v models); add end_image_url to move from the first picture to the last (Veo, Kling, Seedance). reference_urls (pictures or videos of characters or objects) makes a new scene with them (r2v models such as "alibaba/wan-v2.6-r2v": call them character1, character2… in the prompt). For dialogue, write the lines in the prompt and set sound (models with audio, e.g. Veo 3.1, HeyGen). Links must be https; links returned by this server work. ${NO_BLIND_RETRY}`,
   inputSchema: z.object({
     model: z.string().describe('Video model id from list_models with type "video", e.g. "google/veo-3.1-fast-generate-001"'),
     prompt: z.string().min(1),

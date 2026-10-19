@@ -14,10 +14,10 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import { instanceContext } from '@/lib/gateway';
-import { registerGatewayTools, SERVER_INFO } from '@/lib/mcp';
+import { registerGatewayTools, SERVER_INFO, SERVER_INSTRUCTIONS } from '@/lib/mcp';
 
 serveStdio(() => {
-  const server = new McpServer(SERVER_INFO, { capabilities: { tools: {}, resources: {} } });
+  const server = new McpServer(SERVER_INFO, { capabilities: { tools: {}, resources: {} }, instructions: SERVER_INSTRUCTIONS });
   registerGatewayTools(server, instanceContext);
   return server;
 });

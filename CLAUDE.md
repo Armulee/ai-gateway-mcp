@@ -80,7 +80,7 @@ Threat: a leaked connector URL lets anyone spend the owner's Gateway credits and
 5. `get_video({ job_id })`
    - Return status. When done, upload the video to Blob and return the URL, plus the billed cost from `gateway.getGenerationInfo({ id: generationId })` (async video metadata carries no cost); leave the cost out if the lookup fails.
    - If Blob is not configured, return a clear error telling the user to connect a Blob store.
-   - Chat apps can't pause between calls (Claude polled a 5 s clip a dozen times in a row), so each call checks the status every 5 s for up to 40 s before answering "still generating". Blob is only touched once the job is over (a Blob `head` is an advanced operation, scarce on Hobby). Whether every chat app waits 40 s for a tool reply is unverified.
+   - Chat apps can't pause between calls (Claude polled a 5 s clip a dozen times in a row), so each call checks the status every 5 s for up to 40 s before answering "still generating". The `job_id` carries its start time; once a job has run 3 minutes, "still generating" tells the model to stop checking and hand back to the user (ids made before the start time was added get that reply at once). Blob is only touched once the job is over (a Blob `head` is an advanced operation, scarce on Hobby). Whether every chat app waits 40 s for a tool reply is unverified.
 
 6. `edit_image({ model, prompt, image_urls, mask_url?, size_or_aspect?, n? })` and `upscale_image({ image_url, model?, prompt? })`
    - Image models take the inputs as `generateImage({ prompt: { images, text, mask } })`; image-capable LLMs as image parts of one message.
@@ -105,6 +105,8 @@ Threat: a leaked connector URL lets anyone spend the owner's Gateway credits and
    - Upscale and Extend in the view send a chat message (`app.sendMessage`) instead of calling tools, so spending stays with the model and the owner. No `vh` units in the view: the host sizes the frame to its content. Video links get `#t=0.001` in the view so WebKit on iPhone (Claude's app, Safari) draws the first frame as a preview instead of a black box (the fragment never reaches Blob).
 
 Not offered, by design: 3D (no 3D models on AI Gateway), joining audio into video (needs ffmpeg), a talking-avatar tool (HeyGen Video on the Gateway is a general video model; put the dialogue in a `start_video` prompt), and app-level studios (ads, shorts, influencers, publishing). The chat app composes those from the tools above.
+
+Tool annotations: `list_models`, `get_video`, `check_credits` and `list_files` are `readOnlyHint` (they spend nothing); every other tool spends credits. The server's `instructions` (`SERVER_INSTRUCTIONS` in `lib/mcp.ts`) tell the model not to call again after the user declines a call (a declined call never reaches the server), not to retry paid calls on its own, and to stop polling when `get_video` says so.
 
 Every tool must return readable errors for: insufficient Gateway credits, video not available on the user's plan, unknown model, provider error. Include the model id in errors.
 

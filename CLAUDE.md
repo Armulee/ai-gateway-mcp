@@ -106,7 +106,7 @@ Threat: a leaked connector URL lets anyone spend the owner's Gateway credits and
 
 Not offered, by design: 3D (no 3D models on AI Gateway), joining audio into video (needs ffmpeg), a talking-avatar tool (HeyGen Video on the Gateway is a general video model; put the dialogue in a `start_video` prompt), and app-level studios (ads, shorts, influencers, publishing). The chat app composes those from the tools above.
 
-Tool annotations: `list_models`, `get_video`, `check_credits` and `list_files` are `readOnlyHint` (they spend nothing); every other tool spends credits. The server's `instructions` (`SERVER_INSTRUCTIONS` in `lib/mcp.ts`) tell the model not to call again after the user declines a call (a declined call never reaches the server), not to retry paid calls on its own, and to stop polling when `get_video` says so.
+Tool annotations: `list_models`, `get_video`, `check_credits` and `list_files` are `readOnlyHint` (they spend nothing); every other tool spends credits and is `destructiveHint: true` (spending can't be undone), so hosts ask before each call by default (partner guides say claude.ai defaults destructive tools to "Needs approval"; unverified). The server's `instructions` (`SERVER_INSTRUCTIONS` in `lib/mcp.ts`) tell the model to state the model, prompt and price (catalog or `estimate_only`) and wait for a yes before every paid call, not to call again after the user declines a call (a declined call never reaches the server), not to retry paid calls on its own, and to stop polling when `get_video` says so.
 
 Every tool must return readable errors for: insufficient Gateway credits, video not available on the user's plan, unknown model, provider error. Include the model id in errors.
 

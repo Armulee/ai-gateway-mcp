@@ -279,6 +279,7 @@ Your chat app picks these for you; you never have to name them. Every tool retur
 
 - **Your link works like a password that spends money.** Anyone who has it can use your AI Gateway credits. Keep it private.
 - **Set an AI Gateway budget.** Only Vercel's budget limits your total spend.
+- **Keep paid tools on "Needs approval".** Tools that spend credits are marked so chat apps ask before each call, and the chat is told to say the model, prompt and price first. If you once chose "Always allow", change it back in Claude under Settings → Connectors → your connector.
 - **If the link leaks, make a new secret** on your setup page, put its fingerprint in Project Settings → Environment Variables and redeploy. The old link stops working at once.
 - **Your usage is yours.** Anyone can open your setup page, but the numbers only appear for someone who has your secret.
 

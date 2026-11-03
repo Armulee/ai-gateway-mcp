@@ -30,15 +30,17 @@ const UI_TOOLS = new Set(['generate_image', 'edit_image', 'upscale_image', 'get_
 /**
  * Tools that spend nothing and change nothing the owner would miss. get_video
  * saves the finished file to Blob, which is a copy of its result, not a new
- * job. Hosts may let these run without asking each time; every other tool
- * spends Gateway credits.
+ * job. Hosts may let these run without asking each time. Every other tool
+ * spends Gateway credits and can't be undone, so it is marked destructive:
+ * hosts that read the hint (claude.ai among them, by partner guides) then ask
+ * the user before each call by default.
  */
 const READ_ONLY_TOOLS = new Set(['list_models', 'get_video', 'check_credits', 'list_files']);
 
 function annotations(name: string) {
   return READ_ONLY_TOOLS.has(name)
     ? { readOnlyHint: true, idempotentHint: true, openWorldHint: true }
-    : { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true };
+    : { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true };
 }
 
 /**
@@ -47,6 +49,7 @@ function annotations(name: string) {
  */
 export const SERVER_INSTRUCTIONS = [
   'Every tool except list_models, get_video, check_credits and list_files spends the owner\'s AI Gateway credits.',
+  'Before every call that spends credits, tell the user the model, the prompt you will send and the price, then wait for their yes. Get the price from list_models, or from estimate_only on the image and video tools (it charges nothing); for models priced by tokens or with no listed price, say the cost is only known after the call. Each reply reports what the call cost.',
   'If the user declines or denies a tool call, do not call it again, with the same or other arguments, and do not switch to another tool to do the same thing. Ask the user what they want instead.',
   'Never repeat a paid call on your own after a timeout or error; tell the user and let them decide.',
   'For video, call get_video until it says to stop checking, then stop and tell the user. Check again only when they ask.',
